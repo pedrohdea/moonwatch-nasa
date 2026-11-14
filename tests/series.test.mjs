@@ -173,3 +173,12 @@ test('fillRegions: area above the horizontal line and right of the vertical line
   const w = [[0, 6], [2, 0], [4, 6]];
   assert.deepEqual(fillRegions(w, 3, 0), [[[0, 3], [0, 6], [1, 3]], [[3, 3], [4, 6], [4, 3]]]);
 });
+
+test('polygonArea: shoelace in data units', () => {
+  const { polygonArea } = require('../site/shared/core.js');
+  assert.equal(polygonArea([[2, 4], [4, 8], [6, 4]]), 8); // triangle base 4, height 4
+  assert.equal(polygonArea([[0, 0], [0, 2], [3, 2], [3, 0]]), 6);
+  const tri = [[0, 0], [4, 8], [8, 0]];
+  const total = fillRegions(tri, 4, 3).reduce((s, p) => s + polygonArea(p), 0);
+  assert.ok(Math.abs(total - 7) < 1e-9, `cut at x=3: ${total}`); // 8 minus the triangle (2,4)-(3,6)-(3,4) = 1
+});

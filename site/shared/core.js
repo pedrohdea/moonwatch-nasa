@@ -159,6 +159,17 @@
     return polys.filter(function (poly) { return poly.length >= 3; });
   }
 
+  // Polygon area (shoelace), absolute value, in data units (x unit × y unit).
+  function polygonArea(poly) {
+    var sum = 0;
+    for (var i = 0; i < poly.length; i++) {
+      var a = poly[i];
+      var b = poly[(i + 1) % poly.length];
+      sum += a[0] * b[1] - b[0] * a[1];
+    }
+    return Math.abs(sum) / 2;
+  }
+
   var api = root.MoonSeries ? createCore(root.MoonSeries.all.length) : null;
   if (api) {
     var ds = root.MoonSeries.dataset;
@@ -186,7 +197,16 @@
         });
     };
     api.fillRegions = fillRegions;
+    // Filled area per vertical line: V(k+1) <-> series k, independent of the series filter.
+    api.areas = function () {
+      var h = api.line.get();
+      return api.vlines.list().slice(0, seriesCount).map(function (l, k) {
+        var s = root.MoonSeries.all[k];
+        var area = fillRegions(s.points, h, l.value).reduce(function (sum, poly) { return sum + polygonArea(poly); }, 0);
+        return { label: 'V' + (k + 1), seriesIndex: k, name: s.name, color: s.color, area: area };
+      });
+    };
     root.MoonCore = api;
   }
-  if (typeof module !== 'undefined' && module.exports) module.exports = { createCore: createCore, createLine: createLine, createVLines: createVLines, defaultVLines: defaultVLines, fillRegions: fillRegions };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { createCore: createCore, createLine: createLine, createVLines: createVLines, defaultVLines: defaultVLines, fillRegions: fillRegions, polygonArea: polygonArea };
 })(typeof window !== 'undefined' ? window : globalThis);

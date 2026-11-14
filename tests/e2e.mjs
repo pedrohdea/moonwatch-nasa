@@ -180,6 +180,11 @@ async function main() {
     const [vz0, vz1] = await evaluate(`(${XVIEW[lib]})()`);
     check('vertical drag does not zoom', Math.abs(vz0 - d.xRange[0]) < span * 0.01 && Math.abs(vz1 - d.xRange[1]) < span * 0.01, `${vz0}..${vz1}`);
     check('vertical drag leaves the horizontal line', (await evaluate(`MoonCore.line.get()`)) === hBefore);
+    const areasMatch = `(()=>{const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
+    check('filled areas shown per vertical line', await evaluate(areasMatch));
+    const areaBefore = await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`);
+    await evaluate(`MoonCore.line.set(MoonCore.line.min + (MoonCore.line.max - MoonCore.line.min) * 0.1, 'input')`); await wait(200);
+    check('areas follow the horizontal line', (await evaluate(areasMatch)) && (await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`)) !== areaBefore, String(areaBefore));
     await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
 
     const before = await evaluate(`document.querySelectorAll('#table-body tr').length`);

@@ -107,6 +107,7 @@
           '<div class="toolbar vlines-bar" aria-label="Linhas verticais">' +
             '<span class="vlines-label">Linhas verticais</span>' +
             '<div id="vlines-list" class="vlines-list"></div>' +
+          '<div id="fill-areas" class="fill-areas" role="status" aria-live="polite" aria-label="Área preenchida por linha vertical"></div>' +
             '<button id="vline-add" class="btn btn-ghost" type="button">+ Linha vertical</button>' +
           '</div>' +
           '<div id="chart" class="chart" role="img" aria-label="Gráfico de linhas com seis funções matemáticas"></div>' +
@@ -211,6 +212,22 @@
   // Switching dataset reloads the page so every chart adapter starts clean.
   doc.getElementById('dataset-select').addEventListener('change', function (e) {
     var url = new URL(root.location.href);
+  // Filled area per vertical line (above the horizontal line, right of Vk), refreshed on any line move.
+  var areasEl = doc.getElementById('fill-areas');
+  var areaFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function renderAreas() {
+    var items = root.MoonCore.areas();
+    areasEl.innerHTML = '<span class="fill-areas-label">Área preenchida <span class="unit">(' + data.xLabel + ' × ' + data.yLabel + ')</span></span>' +
+      (items.map(function (a) {
+        return '<span class="fill-area" title="' + a.name + '" style="--area-color:' + a.color + '">' +
+          '<span><span class="vline-tag" style="color:' + a.color + '">' + a.label + '</span> <span class="fill-area-name">' + a.name + '</span></span>' +
+          '<strong>' + areaFmt.format(a.area) + '</strong></span>';
+      }).join('') || '<span class="vlines-empty">nenhuma linha vertical</span>');
+  }
+  vl.onChange(renderAreas);
+  root.MoonCore.line.onChange(renderAreas);
+  renderAreas();
+
     url.searchParams.set('dataset', e.target.value);
     url.hash = 'track';
     root.location.href = url.toString();
