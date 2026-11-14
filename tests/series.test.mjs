@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const MoonSeries = require('../site/shared/series.js');
-const { createCore, createLine } = require('../site/shared/core.js');
+const { createCore, createLine, createVLines, defaultVLines } = require('../site/shared/core.js');
 
 const near = (a, b) => Math.abs(a - b) < 1e-3;
 
@@ -138,4 +138,22 @@ test('horizontal line: default middle, clamps, rounds, notifies with source', ()
   line.set(-1);
   assert.deepEqual(seen, [[10, 'drag'], [3.46, 'input'], [0, undefined]]);
   assert.equal(createLine(0, 10, '7.5').get(), 7.5);
+});
+
+test('vertical lines: defaults, add in widest gap, remove, set with step and clamp, limit', () => {
+  assert.deepEqual(defaultVLines(0, 10), [2.5, 5, 7.5]);
+  const vl = createVLines(0, 10, 0.01, defaultVLines(0, 10), 4);
+  const seen = [];
+  vl.onChange((lines, src) => seen.push([lines.map((l) => l.value), src]));
+  const id = vl.add(null, 'button');
+  assert.equal(vl.list().find((l) => l.id === id).value, 1.25, 'widest gap is 0–2.5 (ties keep the first)');
+  assert.equal(vl.add(null, 'button'), null, 'limit 4');
+  vl.set(id, 99, 'drag');
+  assert.equal(vl.list().find((l) => l.id === id).value, 10);
+  vl.set(id, 'x', 'drag');
+  vl.remove(id, 'button');
+  vl.remove(999, 'button');
+  assert.deepEqual(seen, [[[2.5, 5, 7.5, 1.25], 'button'], [[2.5, 5, 7.5, 10], 'drag'], [[2.5, 5, 7.5], 'button']]);
+  const years = createVLines(1987, 2022, 1, ['1995.6', ''], 10);
+  assert.deepEqual(years.list().map((l) => l.value), [1996], 'years round to whole numbers; empty ignored');
 });

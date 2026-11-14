@@ -104,6 +104,11 @@
             '</label>' +
             '<button id="reset-zoom" class="btn btn-ghost" type="button">Resetar zoom</button>' +
           '</div>' +
+          '<div class="toolbar vlines-bar" aria-label="Linhas verticais">' +
+            '<span class="vlines-label">Linhas verticais</span>' +
+            '<div id="vlines-list" class="vlines-list"></div>' +
+            '<button id="vline-add" class="btn btn-ghost" type="button">+ Linha vertical</button>' +
+          '</div>' +
           '<div id="chart" class="chart" role="img" aria-label="Gráfico de linhas com seis funções matemáticas"></div>' +
           '<div class="table-box" id="table-box" tabindex="0" aria-label="Dados do gráfico">' +
             '<table class="data">' +
@@ -166,6 +171,41 @@
   lineInput.addEventListener('input', function () { root.MoonCore.line.set(lineInput.value, 'input'); });
   lineInput.addEventListener('change', function () { lineInput.value = root.MoonCore.line.get(); });
   root.MoonCore.line.onChange(showLine);
+
+  // Vertical lines: one chip per line (number input + remove) and an add button; values kept in ?vlinhas=.
+  var vl = root.MoonCore.vlines;
+  var vlList = doc.getElementById('vlines-list');
+  var vlAdd = doc.getElementById('vline-add');
+  var vlStep = vl.step === 1 ? '1' : '0.1';
+
+  function renderVLines(lines, source) {
+    var url = new URL(root.location.href);
+    url.searchParams.set('vlinhas', lines.map(function (l) { return l.value; }).join(','));
+    root.history.replaceState(null, '', url);
+    vlAdd.disabled = lines.length >= vl.limit;
+    // While typing, only refresh other inputs so the focused one keeps the caret.
+    if (source === 'input') return;
+    vlList.innerHTML = lines.map(function (l, i) {
+      return '<span class="vline-chip" data-id="' + l.id + '">' +
+        '<span class="vline-tag">V' + (i + 1) + '</span>' +
+        '<input type="number" step="' + vlStep + '" min="' + vl.min + '" max="' + vl.max + '" value="' + l.value + '" aria-label="Posição da linha vertical V' + (i + 1) + '">' +
+        '<button type="button" class="vline-remove" aria-label="Excluir linha vertical V' + (i + 1) + '" title="Excluir">×</button>' +
+      '</span>';
+    }).join('') || '<span class="vlines-empty">nenhuma</span>';
+  }
+
+  vlList.addEventListener('input', function (e) {
+    var chip = e.target.closest('.vline-chip');
+    if (chip && e.target.tagName === 'INPUT') vl.set(Number(chip.getAttribute('data-id')), e.target.value, 'input');
+  });
+  vlList.addEventListener('change', function () { renderVLines(vl.list(), 'change'); }); // show the clamped value
+  vlList.addEventListener('click', function (e) {
+    var chip = e.target.closest('.vline-chip');
+    if (chip && e.target.classList.contains('vline-remove')) vl.remove(Number(chip.getAttribute('data-id')), 'button');
+  });
+  vlAdd.addEventListener('click', function () { vl.add(null, 'button'); });
+  vl.onChange(renderVLines);
+  renderVLines(vl.list(), 'init');
 
   // Switching dataset reloads the page so every chart adapter starts clean.
   doc.getElementById('dataset-select').addEventListener('change', function (e) {

@@ -261,10 +261,62 @@
         ]
       }] } });
     }
+    // Draggable vertical lines: one graphic group per line (id 'vline-<id>'), geometry in absolute pixels.
+    var VL = core.vlines;
+    var vSig = '';
+    var vPrevIds = [];
+    function drawVLines() {
+      var gm = chart.getModel().getComponent('grid');
+      if (!gm || !gm.coordinateSystem) return;
+      var rect = gm.coordinateSystem.getRect();
+      var items = VL.list().map(function (l, n) {
+        var px = chart.convertToPixel({ xAxisIndex: 0 }, l.value);
+        return { id: l.id, n: n, px: px, hidden: !isFinite(px) || px < rect.x - 0.5 || px > rect.x + rect.width + 0.5 };
+      });
+      var sig = [rect.x, rect.y, rect.width, rect.height].concat(items.map(function (it) { return it.id + ':' + it.px + ':' + it.n; })).join('|');
+      if (sig === vSig) return;
+      vSig = sig;
+      var ids = items.map(function (it) { return it.id; });
+      var elements = vPrevIds.filter(function (id) { return ids.indexOf(id) < 0; })
+        .map(function (id) { return { id: 'vline-' + id, $action: 'remove' }; });
+      vPrevIds = ids;
+      var top = rect.y, bottom = rect.y + rect.height, cy = top - 8; // handle center: 8 px above the plot
+      items.forEach(function (it) {
+        var cx = it.px, p = it.id;
+        var drag = {
+          draggable: true, cursor: 'ew-resize', z: 100, invisible: it.hidden,
+          ondrag: function (e) {
+            lastDragAt = Date.now();
+            if (e.target) { e.target.x = 0; e.target.y = 0; } // geometry is absolute; only the redraw moves it
+            VL.set(it.id, chart.convertFromPixel({ xAxisIndex: 0 }, e.offsetX), 'drag');
+          },
+          ondragend: function () { lastDragAt = Date.now(); vSig = ''; drawVLines(); }
+        };
+        elements.push({
+          id: 'vline-' + p, type: 'group', x: 0, y: 0, z: 100, invisible: it.hidden, children: [
+            Object.assign({ id: 'vline-' + p + '-line', type: 'line', x: 0, y: 0,
+              shape: { x1: cx, y1: top, x2: cx, y2: bottom },
+              style: { stroke: 'rgba(255,255,255,0.85)', lineWidth: 1.5, lineDash: [6, 4] } }, drag),
+            Object.assign({ id: 'vline-' + p + '-hit', type: 'rect', x: 0, y: 0,
+              shape: { x: cx - 5, y: top, width: 10, height: rect.height }, style: { fill: 'rgba(0,0,0,0)' } }, drag),
+            Object.assign({ id: 'vline-' + p + '-arrow', type: 'polygon', x: 0, y: 0,
+              shape: { points: [[cx - 6, cy - 5], [cx + 6, cy - 5], [cx, cy + 5]] }, style: { fill: '#FFFFFF' } }, drag),
+            Object.assign({ id: 'vline-' + p + '-text', type: 'text', x: 0, y: 0,
+              style: { text: 'V' + (it.n + 1), x: cx + 9, y: cy, fill: '#FFFFFF',
+                font: '11px "Fira Code", monospace', textVerticalAlign: 'middle' } }, drag)
+          ]
+        });
+      });
+      chart.setOption({ graphic: { elements: elements } });
+    }
+
+    function drawAll() { drawLine(); drawVLines(); }
     LINE.onChange(drawLine);
-    chart.on('datazoom', drawLine);
-    chart.on('finished', drawLine); // layout/resize/setOption; signature check prevents loops
-    drawLine();
+    VL.onChange(drawVLines);
+    chart.on('datazoom', drawAll);
+    // 'finished' can fire inside ECharts' main process, where setOption is silently ignored: defer it.
+    chart.on('finished', function () { setTimeout(drawAll, 0); }); // signature checks prevent loops
+    drawAll();
 
     core.onFilterChange(applyFilter);
     applyFilter(core.getFilter());

@@ -54,10 +54,19 @@
     }
 
     // Decorations drawn on the canvas (not datasets): never in legend, tooltips, hit test or indices.
+    // Empty top box (below the legend) that reserves room for the vertical-line handles.
+    var spacer = {
+      position: 'top', weight: 999, fullSize: true, options: {}, height: 24, width: 0, left: 0, right: 0, top: 0, bottom: 0,
+      isHorizontal: function () { return true; },
+      update: function (w) { this.width = w; this.height = 24; },
+      draw: function () {}
+    };
+
     var decor = {
       id: 'moonDecor',
       beforeDatasetsDraw: function (c) { drawDecor(c, true); },
-      afterDatasetsDraw: function (c) { drawDecor(c, false); drawLine(c); }
+      afterDatasetsDraw: function (c) { drawDecor(c, false); drawLine(c); drawVLines(c); },
+      beforeInit: function (c) { root.Chart.layouts.addBox(c, spacer); }
     };
 
     var LINE_COLOR = '#EAFE07';
@@ -96,6 +105,47 @@
       ctx.textBaseline = 'middle';
       ctx.fillText(root.MoonCore.line.get().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), a.right + HANDLE_W + 3, py);
       ctx.restore();
+    }
+
+    var VLINE_COLOR = '#FFFFFF';
+    var VH_W = 12; // px: down-arrow width
+    var VH_H = 10; // px: down-arrow height
+    var VH_OFFSET = 8; // px: handle center above the plot top
+
+    // Pixel x of a vertical line, or null when outside the visible x range (zoom).
+    function vlinePixel(c, v) {
+      var px = c.scales.x.getPixelForValue(v);
+      return px >= c.chartArea.left - 0.5 && px <= c.chartArea.right + 0.5 ? px : null;
+    }
+
+    // Dashed vertical lines + down-pointing handle above the plot + V1..Vn label.
+    function drawVLines(c) {
+      var ctx = c.ctx, a = c.chartArea, cy = a.top - VH_OFFSET;
+      root.MoonCore.vlines.list().forEach(function (l, i) {
+        var px = vlinePixel(c, l.value);
+        if (px === null) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(px, a.top);
+        ctx.lineTo(px, a.bottom);
+        ctx.setLineDash([6, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = withAlpha(VLINE_COLOR, 0.85);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(px - VH_W / 2, cy - VH_H / 2);
+        ctx.lineTo(px + VH_W / 2, cy - VH_H / 2);
+        ctx.lineTo(px, cy + VH_H / 2);
+        ctx.closePath();
+        ctx.fillStyle = VLINE_COLOR;
+        ctx.fill();
+        ctx.font = "11px 'Fira Code', monospace";
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('V' + (i + 1), px + VH_W / 2 + 3, cy);
+        ctx.restore();
+      });
     }
 
     function drawDecor(c, below) {
@@ -174,7 +224,7 @@
       },
       plugins: [decor],
       options: {
-        layout: { padding: { right: 46 } },
+        layout: { padding: { right: 46, top: 4 } },
         responsive: true,
         maintainAspectRatio: false,
         animation: false,
@@ -274,8 +324,8 @@
       return bestDist <= PICK_RADIUS ? best : null;
     }
 
-    // Line drag: capture-phase listeners keep plugin-zoom (drag-zoom/pan) and the filter click out of it.
-    var lineDrag = false, swallowClick = false;
+    // Line drag (horizontal line or vertical lines): capture-phase listeners keep plugin-zoom (drag-zoom/pan) and the filter click out of it.
+    var lineDrag = false, vDrag = null, swallowClick = false;
     function onHandle(e) {
       var py = linePixel(chart);
       if (py === null) return false;
@@ -284,34 +334,52 @@
       var onLine = pos.x >= a.left && pos.x <= a.right && Math.abs(pos.y - py) <= 5;
       return onArrow || onLine;
     }
+    // Id of the vertical line whose handle (<= 9 px) or body (<= 5 px, inside the plot) is under the pointer, or null.
+    function vHit(e) {
+      var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea, hit = null, best = Infinity;
+      root.MoonCore.vlines.list().forEach(function (l) {
+        var px = vlinePixel(chart, l.value);
+        if (px === null) return;
+        var d = Math.abs(pos.x - px);
+        var onHandleV = Math.hypot(pos.x - px, pos.y - (a.top - VH_OFFSET)) <= 9;
+        var onBody = pos.y >= a.top && pos.y <= a.bottom && d <= 5;
+        if ((onHandleV || onBody) && d < best) { best = d; hit = l.id; }
+      });
+      return hit;
+    }
     function setFromPointer(e) {
       var pos = root.Chart.helpers.getRelativePosition(e, chart);
-      root.MoonCore.line.set(chart.scales.y.getValueForPixel(pos.y), 'drag');
+      if (vDrag !== null) root.MoonCore.vlines.set(vDrag, chart.scales.x.getValueForPixel(pos.x), 'drag');
+      else root.MoonCore.line.set(chart.scales.y.getValueForPixel(pos.y), 'drag');
     }
     canvas.addEventListener('pointerdown', function (e) {
-      if (!onHandle(e)) return;
+      var v = onHandle(e) ? null : vHit(e); // horizontal handle has priority
+      if (v === null && !onHandle(e)) return;
       lineDrag = true;
+      vDrag = v;
       canvas.setPointerCapture(e.pointerId);
       e.stopImmediatePropagation();
       e.preventDefault();
       setFromPointer(e);
     }, true);
     canvas.addEventListener('mousedown', function (e) {
-      if (lineDrag || onHandle(e)) { e.stopImmediatePropagation(); e.preventDefault(); }
+      if (lineDrag || onHandle(e) || vHit(e) !== null) { e.stopImmediatePropagation(); e.preventDefault(); }
     }, true);
     canvas.addEventListener('pointermove', function (e) {
       if (lineDrag) { setFromPointer(e); return; }
-      canvas.style.cursor = onHandle(e) ? 'ns-resize' : '';
+      canvas.style.cursor = onHandle(e) ? 'ns-resize' : vHit(e) !== null ? 'ew-resize' : '';
     });
     function endDrag() {
       if (!lineDrag) return;
       lineDrag = false;
+      vDrag = null;
       swallowClick = true;
       root.setTimeout(function () { swallowClick = false; }, 0); // click, if any, fires right after pointerup
     }
     canvas.addEventListener('pointerup', endDrag);
     canvas.addEventListener('pointercancel', endDrag);
     root.MoonCore.line.onChange(function () { chart.draw(); });
+    root.MoonCore.vlines.onChange(function () { chart.draw(); });
 
     var down = null;
     canvas.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY }; });

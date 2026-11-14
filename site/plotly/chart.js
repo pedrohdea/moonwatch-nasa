@@ -127,7 +127,7 @@
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
       font: { family: 'Overpass, sans-serif', size: 13, color: TEXT },
-      margin: { l: 56, r: 56, t: 16, b: 56 }, // right margin holds the line handle
+      margin: { l: 56, r: 56, t: 44, b: 56 }, // right margin holds the hline handle; top margin holds the vline handles below the modebar
       xaxis: axis(ds.xLabel, ds.xRange, ds.xIsYear),
       yaxis: axis(ds.yLabel, ds.yRange, false),
       separators: ',.',
@@ -168,7 +168,16 @@
         line: { color: LINE_COLOR, width: 2, dash: 'dash' }, layer: 'above'
       };
     }
-    function allShapes() { return devShapes.concat([hlineShape()]); }
+    // Vertical draggable lines: one shape per line, spanning the full plot height.
+    function vlineShapes() {
+      return core.vlines.list().map(function (l) {
+        return {
+          name: 'vline-' + l.id, type: 'line', xref: 'x', x0: l.value, x1: l.value, yref: 'paper', y0: 0, y1: 1,
+          line: { color: 'rgba(255,255,255,0.85)', width: 1.5, dash: 'dash' }, layer: 'above'
+        };
+      });
+    }
+    function allShapes() { return devShapes.concat([hlineShape()], vlineShapes()); }
     layout.shapes = allShapes();
 
     var queue = Promise.resolve();
@@ -253,6 +262,66 @@
         handle.addEventListener(t, function (e) { e.stopPropagation(); });
       });
 
+      // Vertical line handles: HTML down-pointing triangle + label above the plot, one per line.
+      var vHandles = {}; // id -> element
+      function syncVHandles() {
+        var L = container._fullLayout;
+        if (!L || !L._size) return;
+        var lines = core.vlines.list();
+        var live = {};
+        lines.forEach(function (l, i) {
+          live[l.id] = true;
+          var el = vHandles[l.id] || createVHandle(l.id);
+          var r = L.xaxis.range;
+          el.querySelector('.vline-label').textContent = 'V' + (i + 1);
+          if (l.value < Math.min(r[0], r[1]) || l.value > Math.max(r[0], r[1])) { el.style.display = 'none'; return; }
+          el.style.display = 'block';
+          el.style.left = (L._size.l + L.xaxis.l2p(l.value) - 10) + 'px';
+          el.style.top = (L._size.t - 8 - 10) + 'px'; // 20 px box: center exactly 8 px above the plot top
+        });
+        Object.keys(vHandles).forEach(function (id) {
+          if (!live[id]) { vHandles[id].remove(); delete vHandles[id]; }
+        });
+      }
+      function createVHandle(id) {
+        var el = document.createElement('div');
+        el.className = 'vline-handle';
+        el.style.cssText = 'position:absolute;display:none;width:20px;height:20px;cursor:ew-resize;touch-action:none;user-select:none;z-index:5;';
+        el.innerHTML = '<span style="position:absolute;left:4px;top:5px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid #FFFFFF;"></span>' +
+          '<span class="vline-label" style="position:absolute;left:22px;top:3px;font:11px Fira Code,monospace;color:#FFFFFF;white-space:nowrap;"></span>';
+        container.appendChild(el);
+        vHandles[id] = el;
+        el.addEventListener('pointerdown', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          el.setPointerCapture(e.pointerId);
+          function move(ev) {
+            var L = container._fullLayout;
+            var px = ev.clientX - container.getBoundingClientRect().left - L._size.l;
+            core.vlines.set(id, L.xaxis.p2l(px), 'drag');
+          }
+          function up(ev) {
+            el.removeEventListener('pointermove', move);
+            el.removeEventListener('pointerup', up);
+            el.removeEventListener('pointercancel', up);
+            if (el.hasPointerCapture(ev.pointerId)) el.releasePointerCapture(ev.pointerId);
+          }
+          el.addEventListener('pointermove', move);
+          el.addEventListener('pointerup', up);
+          el.addEventListener('pointercancel', up);
+        });
+        ['mousedown', 'click'].forEach(function (t) {
+          el.addEventListener(t, function (e) { e.stopPropagation(); });
+        });
+        return el;
+      }
+      core.vlines.onChange(function () {
+        syncVHandles();
+        Plotly.relayout(container, { shapes: allShapes() });
+      });
+      container.on('plotly_afterplot', syncVHandles);
+      syncVHandles();
+
       applyFilter(core.getFilter());
       core.onFilterChange(applyFilter);
 
@@ -266,12 +335,12 @@
       // Empty click: clear filter when no plotly_click fired and the mouse did not drag.
       var down = null;
       container.addEventListener('mousedown', function (e) {
-        if (e.target.closest && e.target.closest('.hline-handle')) return;
+        if (e.target.closest && e.target.closest('.hline-handle, .vline-handle')) return;
         down = { x: e.clientX, y: e.clientY };
       }, true);
       container.addEventListener('click', function (e) {
         var target = e.target;
-        if (target.closest && target.closest('.hline-handle')) return;
+        if (target.closest && target.closest('.hline-handle, .vline-handle')) return;
         var moved = !down || Math.abs(e.clientX - down.x) > MOVE_TOLERANCE || Math.abs(e.clientY - down.y) > MOVE_TOLERANCE;
         down = null;
         if (moved || !target.closest || !target.closest('.nsewdrag, .draglayer')) return; // legend, modebar and axes are ignored

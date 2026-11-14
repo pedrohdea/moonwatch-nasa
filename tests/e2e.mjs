@@ -17,11 +17,11 @@ const XVIEW = {
 };
 
 // Lines are straight segments between table points, so the helpers interpolate 8 samples per segment.
-const NORM = `const d=MoonSeries.dataset,nx=x=>(x-d.xRange[0])/(d.xRange[1]-d.xRange[0]),ny=y=>(y-d.yRange[0])/(d.yRange[1]-d.yRange[0]),dense=s=>s.points.flatMap((p,k,a)=>k===0?[p]:Array.from({length:8},(_,j)=>[a[k-1][0]+(p[0]-a[k-1][0])*(j+1)/8,a[k-1][1]+(p[1]-a[k-1][1])*(j+1)/8]));`;
+const NORM = `const d=MoonSeries.dataset,nx=x=>(x-d.xRange[0])/(d.xRange[1]-d.xRange[0]),ny=y=>(y-d.yRange[0])/(d.yRange[1]-d.yRange[0]),nearGuide=(a,b)=>Math.abs(b-ny(MoonCore.line.get()))<0.04||MoonCore.vlines.list().some(l=>Math.abs(a-nx(l.value))<0.04),dense=s=>s.points.flatMap((p,k,a)=>k===0?[p]:Array.from({length:8},(_,j)=>[a[k-1][0]+(p[0]-a[k-1][0])*(j+1)/8,a[k-1][1]+(p[1]-a[k-1][1])*(j+1)/8]));`;
 // Spot on series s farthest from every other series (avoids the edges, where legends/toolbars sit). Returns [x, y, distance].
-const ISOLATED = `(s)=>{${NORM}const me=dense(MoonSeries.all[s]),others=MoonSeries.all.filter((_,i)=>i!==s).flatMap(dense);let best=null,bd=-1;for(const[x,y]of me){const a=nx(x),b=ny(y);if(a<0.08||a>0.92||b<0.08||b>0.92)continue;let m=1e9;for(const[ox,oy]of others){const dd=(nx(ox)-a)**2+(ny(oy)-b)**2;if(dd<m)m=dd}if(m>bd){bd=m;best=[x,y,Math.sqrt(m)]}}return best||[...me[Math.floor(me.length/2)].slice(0,2),0];}`;
+const ISOLATED = `(s)=>{${NORM}const me=dense(MoonSeries.all[s]),others=MoonSeries.all.filter((_,i)=>i!==s).flatMap(dense);let best=null,bd=-1;for(const[x,y]of me){const a=nx(x),b=ny(y);if(a<0.08||a>0.92||b<0.08||b>0.92||nearGuide(a,b))continue;let m=1e9;for(const[ox,oy]of others){const dd=(nx(ox)-a)**2+(ny(oy)-b)**2;if(dd<m)m=dd}if(m>bd){bd=m;best=[x,y,Math.sqrt(m)]}}return best||[...me[Math.floor(me.length/2)].slice(0,2),0];}`;
 // Spot inside the plot farthest from every line.
-const EMPTY = `()=>{${NORM}const pts=MoonSeries.all.flatMap(dense);let best=null,bd=-1;for(let i=1;i<20;i++)for(let j=1;j<20;j++){const a=0.1+0.8*i/20,b=0.1+0.8*j/20;let m=1e9;for(const[ox,oy]of pts){const dd=(nx(ox)-a)**2+(ny(oy)-b)**2;if(dd<m)m=dd}if(m>bd){bd=m;best=[d.xRange[0]+a*(d.xRange[1]-d.xRange[0]),d.yRange[0]+b*(d.yRange[1]-d.yRange[0])]}}return best;}`;
+const EMPTY = `()=>{${NORM}const pts=MoonSeries.all.flatMap(dense);let best=null,bd=-1;for(let i=1;i<20;i++)for(let j=1;j<20;j++){const a=0.1+0.8*i/20,b=0.1+0.8*j/20;if(nearGuide(a,b))continue;let m=1e9;for(const[ox,oy]of pts){const dd=(nx(ox)-a)**2+(ny(oy)-b)**2;if(dd<m)m=dd}if(m>bd){bd=m;best=[d.xRange[0]+a*(d.xRange[1]-d.xRange[0]),d.yRange[0]+b*(d.yRange[1]-d.yRange[0]),Math.sqrt(m)]}}return best;}`;
 
 // Returns page-relative pixel of data point (x, y) for series s, using each lib's API.
 const PIXEL = {
@@ -98,9 +98,15 @@ async function main() {
     await evaluate(`document.getElementById('reset-zoom').click()`);
     await wait(400);
 
-    const [ex2, ey2] = await emptySpot();
-    await click(ex2, ey2);
-    check('empty click clears', (await badge()).startsWith('Todas'), await badge());
+    const emptyDist = (await evaluate(`(${EMPTY})()`))[2];
+    if (emptyDist < AMBIGUOUS) {
+      skip('empty click clears', 'no empty spot far enough from lines and guides');
+      await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
+    } else {
+      const [ex2, ey2] = await emptySpot();
+      await click(ex2, ey2);
+      check('empty click clears', (await badge()).startsWith('Todas'), await badge());
+    }
 
     if (await isolation(second) < AMBIGUOUS) skip(`click ${series[second]}`, 'lines overlap');
     else {
@@ -137,6 +143,32 @@ async function main() {
     for (let k = 1; k <= 6; k++) await mouse('mouseMoved', hx, sy + ((ey8 - sy) * k) / 6);
     await mouse('mouseReleased', hx, ey8); await wait(400);
     check('typed value moves the handle', Math.abs((await evaluate(`MoonCore.line.get()`)) - 8) <= 0.25, String(await evaluate(`MoonCore.line.get()`)));
+    await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
+
+    // Vertical lines: 3 by default, add/remove buttons, drag V1 by its ▼ handle (plot top − 8 px).
+    const chips = () => evaluate(`document.querySelectorAll('#vlines-list .vline-chip').length`);
+    check('3 vertical lines by default', (await evaluate(`MoonCore.vlines.list().length`)) === 3 && (await chips()) === 3);
+    await evaluate(`document.getElementById('vline-add').click()`); await wait(250);
+    check('add button adds a vertical line', (await evaluate(`MoonCore.vlines.list().length`)) === 4 && (await chips()) === 4);
+    await evaluate(`[...document.querySelectorAll('#vlines-list .vline-remove')].pop().click()`); await wait(250);
+    check('× removes a vertical line', (await evaluate(`MoonCore.vlines.list().length`)) === 3 && (await chips()) === 3);
+    await evaluate(`MoonCore.setFilter(${first})`); await wait(300);
+    const hBefore = await evaluate(`MoonCore.line.get()`);
+    const v1 = (await evaluate(`MoonCore.vlines.list()`))[0];
+    const vTarget = d.xRange[0] + span * 0.4;
+    const [vx, vtop] = await px(0, v1.value, d.yRange[1]);
+    const [tx] = await px(0, vTarget, d.yRange[1]);
+    const vy = vtop - 8;
+    await mouse('mouseMoved', vx, vy); await mouse('mousePressed', vx, vy);
+    for (let k = 1; k <= 6; k++) await mouse('mouseMoved', vx + ((tx - vx) * k) / 6, vy);
+    await mouse('mouseReleased', tx, vy); await wait(400);
+    const v1After = (await evaluate(`MoonCore.vlines.list()`))[0].value;
+    check('drag ▼ moves vertical line', Math.abs(v1After - vTarget) <= Math.max(span * 0.02, 1), `${v1.value} -> ${v1After} (want ${vTarget})`);
+    check('chip input follows the drag', Number(await evaluate(`document.querySelector('#vlines-list .vline-chip input').value`)) === v1After);
+    check('vertical drag keeps the filter', (await badge()).includes(series[first]), await badge());
+    const [vz0, vz1] = await evaluate(`(${XVIEW[lib]})()`);
+    check('vertical drag does not zoom', Math.abs(vz0 - d.xRange[0]) < span * 0.01 && Math.abs(vz1 - d.xRange[1]) < span * 0.01, `${vz0}..${vz1}`);
+    check('vertical drag leaves the horizontal line', (await evaluate(`MoonCore.line.get()`)) === hBefore);
     await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
 
     const before = await evaluate(`document.querySelectorAll('#table-body tr').length`);
