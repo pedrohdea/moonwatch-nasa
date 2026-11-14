@@ -109,10 +109,37 @@
       return out;
     }
 
+    // Curve fills: one silent custom series (id 'fills', last, below the lines). Polygons live in a JS array;
+    // data items only carry the index, so a redraw is a cheap data-only merge by id.
+    var fillPolys = [];
+    function fillData() {
+      var active = core.getFilter();
+      fillPolys = [];
+      core.fills().forEach(function (f) {
+        f.polygons.forEach(function (pts) {
+          fillPolys.push({ pts: pts, color: hex(f.color, active === f.seriesIndex ? 0.35 : 0.22) });
+        });
+      });
+      return fillPolys.map(function (_, k) { return [k, 0]; });
+    }
+    function fillsSeries() {
+      return {
+        id: 'fills', type: 'custom', coordinateSystem: 'cartesian2d', clip: true, silent: true,
+        tooltip: { show: false }, legendHoverLink: false, z: 0.5, data: fillData(),
+        renderItem: function (params, api) {
+          var poly = fillPolys[api.value(0)];
+          if (!poly) return null;
+          return { type: 'polygon', shape: { points: poly.pts.map(function (q) { return api.coord(q); }) },
+            style: { fill: poly.color, stroke: 'none' }, silent: true };
+        }
+      };
+    }
+    function drawFills() { chart.setOption({ series: [{ id: 'fills', data: fillData() }] }); }
+
     // Updates highlight, labels and decorations; replaceMerge keeps dataZoom (it is not a series).
     function applyFilter(active) {
       var focus = MS.focus(active);
-      chart.setOption({ series: mainSeries(active, focus, false).concat(decorations(focus)) }, { replaceMerge: ['series'] });
+      chart.setOption({ series: mainSeries(active, focus, false).concat(decorations(focus), [fillsSeries()]) }, { replaceMerge: ['series'] });
     }
 
     var ds = root.MoonSeries.dataset;
@@ -311,8 +338,8 @@
     }
 
     function drawAll() { drawLine(); drawVLines(); }
-    LINE.onChange(drawLine);
-    VL.onChange(drawVLines);
+    LINE.onChange(function () { drawLine(); drawFills(); });
+    VL.onChange(function () { drawVLines(); drawFills(); });
     chart.on('datazoom', drawAll);
     // 'finished' can fire inside ECharts' main process, where setOption is silently ignored: defer it.
     chart.on('finished', function () { setTimeout(drawAll, 0); }); // signature checks prevent loops

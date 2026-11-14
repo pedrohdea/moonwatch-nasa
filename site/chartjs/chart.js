@@ -64,7 +64,7 @@
 
     var decor = {
       id: 'moonDecor',
-      beforeDatasetsDraw: function (c) { drawDecor(c, true); },
+      beforeDatasetsDraw: function (c) { drawFills(c); drawDecor(c, true); },
       afterDatasetsDraw: function (c) { drawDecor(c, false); drawLine(c); drawVLines(c); },
       beforeInit: function (c) { root.Chart.layouts.addBox(c, spacer); }
     };
@@ -145,6 +145,26 @@
         ctx.fillText('V' + (i + 1), px + VH_W / 2 + 3, cy);
         ctx.restore();
       });
+    }
+
+    // Translucent fill between curve and horizontal line (polygons in data units from MoonCore.fills), under the lines.
+    function drawFills(c) {
+      var ctx = c.ctx, xs = c.scales.x, ys = c.scales.y, a = c.chartArea, f = root.MoonCore.getFilter();
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top);
+      ctx.clip();
+      root.MoonCore.fills().forEach(function (fl) {
+        if (!c.isDatasetVisible(fl.seriesIndex)) return;
+        ctx.fillStyle = withAlpha(fl.color, f === fl.seriesIndex ? 0.35 : 0.22);
+        fl.polygons.forEach(function (poly) {
+          ctx.beginPath();
+          poly.forEach(function (p, k) { ctx[k ? 'lineTo' : 'moveTo'](xs.getPixelForValue(p[0]), ys.getPixelForValue(p[1])); });
+          ctx.closePath();
+          ctx.fill();
+        });
+      });
+      ctx.restore();
     }
 
     function drawDecor(c, below) {

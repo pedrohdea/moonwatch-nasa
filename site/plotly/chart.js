@@ -177,7 +177,24 @@
         };
       });
     }
-    function allShapes() { return devShapes.concat([hlineShape()], vlineShapes()); }
+    // Fill polygons (data units) below the traces; shapes are not hoverable or clickable and follow zoom.
+    function fillShapes() {
+      var active = core.getFilter();
+      var out = [];
+      core.fills().forEach(function (f) {
+        var alpha = Number.isInteger(active) && f.seriesIndex === active ? 0.35 : 0.22;
+        f.polygons.forEach(function (poly) {
+          if (poly.length < 3) return;
+          out.push({
+            type: 'path', xref: 'x', yref: 'y',
+            path: 'M ' + poly.map(function (p) { return p[0] + ',' + p[1]; }).join(' L ') + ' Z',
+            fillcolor: hexToRgba(f.color, alpha), line: { width: 0 }, layer: 'below'
+          });
+        });
+      });
+      return out;
+    }
+    function allShapes() { return fillShapes().concat(devShapes, [hlineShape()], vlineShapes()); }
     layout.shapes = allShapes();
 
     var queue = Promise.resolve();
@@ -189,7 +206,7 @@
         'line.width': series.map(function (_, i) { return active && i === index ? 4 : 2; }),
         opacity: series.map(function (_, i) { return !active || i === index ? 1 : 0.15; })
       }, mainIdx);
-      if (viz === 'tamanho' || viz === 'cor') return;
+      if (viz === 'tamanho' || viz === 'cor') return Plotly.relayout(container, { shapes: allShapes() });
       var d = decorations(S.focus(active ? index : null));
       // Serialized so quick filter changes cannot interleave trace deletion and insertion.
       queue = queue.then(function () {

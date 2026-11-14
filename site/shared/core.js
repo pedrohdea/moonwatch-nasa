@@ -126,6 +126,39 @@
     return out;
   }
 
+  // Fill regions of one series: area between the curve and the horizontal line y = h, only where the
+  // curve is above h AND x >= v (right of the series' vertical line). Straight segments, linear crossings.
+  // Returns polygons in data units: [[x, y], ...], each closed along y = h.
+  function fillRegions(points, h, v) {
+    var pts = [];
+    for (var i = 0; i < points.length; i++) {
+      var p = points[i];
+      if (p[0] < v) continue;
+      var prev = points[i - 1];
+      if (prev && prev[0] < v && p[0] > prev[0]) pts.push([v, prev[1] + ((p[1] - prev[1]) * (v - prev[0])) / (p[0] - prev[0])]);
+      pts.push([p[0], p[1]]);
+    }
+    var polys = [];
+    var cur = null;
+    for (var k = 0; k < pts.length; k++) {
+      var x = pts[k][0];
+      var y = pts[k][1];
+      var last = pts[k - 1];
+      if (last && (last[1] - h) * (y - h) < 0) {
+        var xc = last[0] + ((h - last[1]) * (x - last[0])) / (y - last[1]);
+        if (cur) { cur.push([xc, h]); polys.push(cur); cur = null; } else cur = [[xc, h]];
+      }
+      if (y >= h) {
+        if (!cur) cur = [[x, h]];
+        cur.push([x, y]);
+      } else if (cur) { // previous point sat exactly on h
+        cur.push([last[0], h]); polys.push(cur); cur = null;
+      }
+    }
+    if (cur) { cur.push([pts[pts.length - 1][0], h]); polys.push(cur); }
+    return polys.filter(function (poly) { return poly.length >= 3; });
+  }
+
   var api = root.MoonSeries ? createCore(root.MoonSeries.all.length) : null;
   if (api) {
     var ds = root.MoonSeries.dataset;
@@ -140,7 +173,20 @@
       vparam === null ? defaultVLines(ds.xRange[0], ds.xRange[1], seriesCount) : vparam.split(',').filter(Boolean), seriesCount);
     // Line k (order of list()) takes the color of series k, so each vertical line maps to one chart line.
     api.vlineColor = function (k) { return root.MoonSeries.colors[k % seriesCount]; };
+    // Fills to draw now: [{seriesIndex, color, polygons}] — all series, or only the filtered one.
+    // Series k uses vertical line k; a series without a vertical line (removed) gets no fill.
+    api.fills = function () {
+      var lines = api.vlines.list();
+      var h = api.line.get();
+      var active = api.getFilter();
+      return root.MoonSeries.all
+        .filter(function (s) { return (active === null || s.index === active) && lines[s.index]; })
+        .map(function (s) {
+          return { seriesIndex: s.index, color: s.color, polygons: fillRegions(s.points, h, lines[s.index].value) };
+        });
+    };
+    api.fillRegions = fillRegions;
     root.MoonCore = api;
   }
-  if (typeof module !== 'undefined' && module.exports) module.exports = { createCore: createCore, createLine: createLine, createVLines: createVLines, defaultVLines: defaultVLines };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { createCore: createCore, createLine: createLine, createVLines: createVLines, defaultVLines: defaultVLines, fillRegions: fillRegions };
 })(typeof window !== 'undefined' ? window : globalThis);

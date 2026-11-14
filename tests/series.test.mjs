@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const MoonSeries = require('../site/shared/series.js');
-const { createCore, createLine, createVLines, defaultVLines } = require('../site/shared/core.js');
+const { createCore, createLine, createVLines, defaultVLines, fillRegions } = require('../site/shared/core.js');
 
 const near = (a, b) => Math.abs(a - b) < 1e-3;
 
@@ -158,4 +158,18 @@ test('vertical lines: defaults, add in widest gap, remove, set with step and cla
   assert.deepEqual(seen, [[[2.5, 5, 7.5, 1.25], 'button'], [[2.5, 5, 7.5, 10], 'drag'], [[2.5, 5, 7.5], 'button']]);
   const years = createVLines(1987, 2022, 1, ['1995.6', ''], 10);
   assert.deepEqual(years.list().map((l) => l.value), [1996], 'years round to whole numbers; empty ignored');
+});
+
+test('fillRegions: area above the horizontal line and right of the vertical line', () => {
+  const tri = [[0, 0], [4, 8], [8, 0]]; // peak at (4, 8)
+  // Above y=4, right of x=0: one polygon from crossing (2,4) over the peak to crossing (6,4).
+  assert.deepEqual(fillRegions(tri, 4, 0), [[[2, 4], [4, 8], [6, 4]]]);
+  // Vertical line at x=3 cuts it: starts at (3,4) up to the curve at (3,6).
+  assert.deepEqual(fillRegions(tri, 4, 3), [[[3, 4], [3, 6], [4, 8], [6, 4]]]);
+  // Line above the peak or vertical line past the end: nothing.
+  assert.deepEqual(fillRegions(tri, 9, 0), []);
+  assert.deepEqual(fillRegions(tri, 4, 9), []);
+  // Two humps -> two polygons; ends above the line close at the last x.
+  const w = [[0, 6], [2, 0], [4, 6]];
+  assert.deepEqual(fillRegions(w, 3, 0), [[[0, 3], [0, 6], [1, 3]], [[3, 3], [4, 6], [4, 3]]]);
 });
