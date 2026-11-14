@@ -23,7 +23,7 @@
     '<header class="topbar">' +
       '<a class="brand" href="#home">Moon<span>Watch</span></a>' +
       '<nav class="nav" aria-label="Seções">' +
-        '<a href="#home">Home</a><a href="#track">Track</a><a href="#about">About</a>' +
+        '<a href="#home">Home</a><a href="#track">Track</a><a href="#mission">Missão</a><a href="#about">About</a>' +
       '</nav>' +
       '<div class="variants" aria-label="Versões do gráfico">' + variantLinks + '</div>' +
     '</header>' +
@@ -58,6 +58,20 @@
             '</table>' +
             '<div id="table-sentinel" class="sentinel">Carregando mais linhas…</div>' +
           '</div>' +
+        '</div>' +
+      '</section>' +
+      '<section id="mission" class="mission">' +
+        '<div class="wrap">' +
+          '<h2>Definições da missão</h2>' +
+          '<p class="hint">Conceitos usados para comparar sítios e datas de pouso no polo sul lunar.</p>' +
+          '<dl class="defs">' +
+            '<div><dt>Objetivo</dt><dd>Ajudar planejadores, educadores e o público a comparar sítios e datas de pouso de forma rápida e intuitiva.</dd></div>' +
+            '<div><dt>Sítio de pouso</dt><dd>Local candidato na superfície lunar, definido por latitude e longitude selenográficas.</dd></div>' +
+            '<div><dt>Elevação</dt><dd>Ângulo do Sol ou da Terra acima (positivo) ou abaixo (negativo) do horizonte local, em graus.</dd></div>' +
+            '<div><dt>Janela de iluminação</dt><dd>Período com o Sol acima do horizonte: potencial de geração de energia solar.</dd></div>' +
+            '<div><dt>Janela de comunicação</dt><dd>Período com a Terra acima do horizonte: comunicação direta com a Terra (DTE), sem satélite de retransmissão.</dd></div>' +
+            '<div><dt>Restrições do polo sul</dt><dd>Sol e Terra ficam baixos no horizonte, então pequenas variações de data e local mudam muito a iluminação e a comunicação.</dd></div>' +
+          '</dl>' +
         '</div>' +
       '</section>' +
       '<section id="about" class="about">' +

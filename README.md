@@ -24,7 +24,7 @@ google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir=/tmp/m
 node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 ```
 
-- Página única com âncoras `#home`, `#track`, `#about`.
+- Página única com âncoras `#home`, `#track`, `#mission` (Definições da missão), `#about`.
 - Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
 - Tabela com scroll infinito (50 linhas por vez) dentro da própria caixa.
 - Dados fictícios: 6 funções matemáticas (linear, quadrática, cúbica, exponencial, logarítmica, senoidal).

@@ -86,6 +86,13 @@ section { scroll-margin-top: var(--topbar-h); }
 /* Track */
 .track, .about { padding: 72px 0; }
 .about { border-top: 1px solid var(--line); }
+
+/* Mission definitions */
+.mission { padding: 72px 0; border-top: 1px solid var(--line); }
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 24px 0 0; }
+.defs > div { background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--neon-yellow); border-radius: var(--radius); padding: 18px 20px; }
+.defs dt { font-family: var(--font-head); font-weight: 700; font-size: 20px; margin-bottom: 6px; }
+.defs dd { margin: 0; color: var(--text-muted); font-size: 16px; }
 .about p { max-width: 760px; }
 .about .variant { display: inline-block; margin: 0 2px; }
 .hint { color: var(--text-muted); font-size: 16px; max-width: 760px; }
@@ -128,6 +135,6 @@ section { scroll-margin-top: var(--topbar-h); }
   .variants { margin-left: 0; }
   section { scroll-margin-top: 104px; } /* top bar wraps to two rows */
   .hero { padding: 56px 0 48px; }
-  .track, .about { padding: 48px 0; }
+  .track, .mission, .about { padding: 48px 0; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
