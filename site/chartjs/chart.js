@@ -18,6 +18,9 @@
     return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + alpha + ')';
   }
 
+  // Integer ticks only (no locale thousands separator on years).
+  function yearTick(v) { return Number.isInteger(v) ? String(v) : ''; }
+
   function distToSegment(px, py, a, b) {
     var dx = b.x - a.x, dy = b.y - a.y;
     var len2 = dx * dx + dy * dy;
@@ -25,7 +28,17 @@
     return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy));
   }
 
+  var nf = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 });
+
+  // Smaller legend on narrow canvases so 20 entries do not eat the plot.
+  function legendSize(width) {
+    return width < 600 ? { box: 8, font: 9 } : { box: 20, font: 12 };
+  }
+
   function render(container, series) {
+    var ds = root.MoonSeries.dataset;
+    var spurious = ds.kind === 'spurious';
+    var ls = legendSize(container.clientWidth || root.innerWidth);
     var canvas = root.document.createElement('canvas');
     container.appendChild(canvas);
 
@@ -35,11 +48,16 @@
         datasets: series.map(function (s) {
           return {
             label: s.name,
-            data: s.points.map(function (p) { return { x: p[0], y: p[1] }; }),
+            data: s.points.map(function (p) { return { x: p[0], y: p[1], raw: p[2], acc: p[3] }; }),
+            unit: s.unit,
             parsing: false,
             normalized: true,
-            pointRadius: 0,
-            pointHoverRadius: 4,
+            tension: 0, // straight segments between table points
+            showLine: true,
+            pointRadius: function (ctx) { return 1.5 + 3.5 * (ctx.raw.acc / 100); }, // bigger = more accurate
+            pointHoverRadius: function (ctx) { return 3 + 3.5 * (ctx.raw.acc / 100); },
+            pointBackgroundColor: s.color,
+            pointBorderColor: s.color,
             borderWidth: 2,
             borderColor: s.color,
             backgroundColor: s.color
@@ -50,23 +68,32 @@
         responsive: true,
         maintainAspectRatio: false,
         animation: false,
+        onResize: function (c, size) {
+          var l = legendSize(size.width);
+          var lab = c.options.plugins.legend.labels;
+          lab.boxWidth = l.box;
+          lab.font = { family: "'Overpass', sans-serif", size: l.font };
+        },
         interaction: { mode: 'nearest', intersect: false },
         font: { family: "'Overpass', sans-serif" },
         scales: {
           x: {
-            type: 'linear', min: 0, max: 10,
+            type: 'linear', min: ds.xRange[0], max: ds.xRange[1],
+            title: { display: true, text: ds.xLabel, color: MUTED },
             grid: { color: GRID }, border: { color: MUTED },
-            ticks: { color: MUTED, font: { family: "'Fira Code', monospace" } }
+            ticks: ds.xIsYear
+              ? { color: MUTED, font: { family: "'Fira Code', monospace" }, stepSize: 1, callback: yearTick }
+              : { color: MUTED, font: { family: "'Fira Code', monospace" } }
           },
           y: {
-            type: 'linear', min: 0, max: 10,
+            type: 'linear', min: ds.yRange[0], max: ds.yRange[1],
+            title: { display: true, text: ds.yLabel, color: MUTED },
             grid: { color: GRID }, border: { color: MUTED },
             ticks: { color: MUTED, font: { family: "'Fira Code', monospace" } }
           }
         },
         plugins: {
-          legend: { labels: { color: TEXT, font: { family: "'Overpass', sans-serif" } } },
-          decimation: { enabled: true, algorithm: 'lttb', samples: 600 },
+          legend: { labels: { color: TEXT, boxWidth: ls.box, font: { family: "'Overpass', sans-serif", size: ls.font } } },
           tooltip: {
             mode: 'nearest', intersect: false,
             bodyFont: { family: "'Fira Code', monospace" },
@@ -74,12 +101,16 @@
             callbacks: {
               title: function () { return ''; },
               label: function (ctx) {
-                return ctx.dataset.label + ': x=' + ctx.parsed.x.toFixed(3) + ', y=' + ctx.parsed.y.toFixed(3);
+                var acc = 'Assertividade: ' + ctx.raw.acc + '%';
+                if (spurious) {
+                  return [ctx.dataset.label + ' (' + ctx.parsed.x + '): ' + nf.format(ctx.raw.raw) + ' ' + ctx.dataset.unit, acc];
+                }
+                return [ctx.dataset.label + ': x=' + ctx.parsed.x.toFixed(3) + ', y=' + ctx.parsed.y.toFixed(3), acc];
               }
             }
           },
           zoom: {
-            limits: { x: { min: 0, max: 10 }, y: { min: 0, max: 10 } },
+            limits: { x: { min: ds.xRange[0], max: ds.xRange[1] }, y: { min: ds.yRange[0], max: ds.yRange[1] } },
             zoom: {
               mode: 'x',
               wheel: { enabled: true },
@@ -102,7 +133,10 @@
       chart.data.datasets.forEach(function (ds, i) {
         var base = series[i].color;
         var active = index === i;
-        ds.borderColor = index === null || active ? base : withAlpha(base, 0.15);
+        var c = index === null || active ? base : withAlpha(base, 0.15);
+        ds.borderColor = c;
+        ds.pointBackgroundColor = c;
+        ds.pointBorderColor = c;
         ds.borderWidth = active ? 4 : 2;
         ds.order = active ? -1 : 0; // draw highlighted line on top
       });
@@ -112,19 +146,17 @@
     root.MoonCore.onFilterChange(applyFilter);
 
     // Nearest visible line within PICK_RADIUS px of the event, or null.
+    // Scans every segment of every visible dataset (few points, so no need for chart's nearest-element shortcut).
     function pickDataset(evt) {
-      var hits = chart.getElementsAtEventForMode(evt, 'nearest', { intersect: false, axis: 'xy' }, true);
       var pos = root.Chart.helpers.getRelativePosition(evt, chart);
       var best = null, bestDist = Infinity;
-      hits.forEach(function (h) {
-        if (!chart.isDatasetVisible(h.datasetIndex)) return;
-        var data = chart.getDatasetMeta(h.datasetIndex).data;
-        var el = data[h.index];
-        var d = Math.hypot(el.x - pos.x, el.y - pos.y);
-        [data[h.index - 1], data[h.index + 1]].forEach(function (nb) {
-          if (nb) d = Math.min(d, distToSegment(pos.x, pos.y, el, nb));
-        });
-        if (d < bestDist) { bestDist = d; best = h.datasetIndex; }
+      chart.data.datasets.forEach(function (_, di) {
+        if (!chart.isDatasetVisible(di)) return;
+        var data = chart.getDatasetMeta(di).data;
+        for (var k = 0; k < data.length; k++) {
+          var d = k ? distToSegment(pos.x, pos.y, data[k - 1], data[k]) : Math.hypot(data[0].x - pos.x, data[0].y - pos.y);
+          if (d < bestDist) { bestDist = d; best = di; }
+        }
       });
       return bestDist <= PICK_RADIUS ? best : null;
     }

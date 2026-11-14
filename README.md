@@ -26,8 +26,13 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 
 - Página única com âncoras `#home`, `#track`, `#mission` (Definições da missão), `#about`.
 - Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
-- Tabela com scroll infinito (50 linhas por vez) dentro da própria caixa.
-- Dados fictícios: 6 funções matemáticas (linear, quadrática, cúbica, exponencial, logarítmica, senoidal).
+- Tabela equivalente ao gráfico logo abaixo dele, com scroll infinito (50 linhas por vez) dentro da própria caixa.
+- Seletor "Conjunto de dados" (`?dataset=<chave>`):
+  - `curvas` — 20 tipos de curva matemática, dados fictícios, 21 pontos medidos por curva (linear, quadrática, parabólica, cúbica, quártica, polinomial, exponencial, logarítmica, hiperbólica, racional, modular, inversa, potência, radical, por partes, implícita, paramétrica, trigonométrica, senoidal, cossenoidal).
+  - `barco`, `milho`, `malta`, `sarah` — correlações espúrias reais de [Tyler Vigen](https://www.tylervigen.com/spurious-correlations) (CC BY 4.0). Cada série é normalizada para 0–10 no gráfico; a tabela mostra os valores reais, uma linha por ano, como no site original.
+- O gráfico é desenhado a partir dos pontos da tabela (marcadores ligados por retas). Cada ponto tem **assertividade** (0–100%), mostrada na tabela, no tooltip e no tamanho do marcador:
+  - curvas: proximidade do ponto medido à curva teórica (ruído fixo por semente, 75–100%);
+  - correlações espúrias: concordância das duas séries normalizadas no ano, `100·(1 − |A − B|/10)`.
 - Bibliotecas ficam em `site/<versão>/vendor/`; funciona sem internet (só as fontes do Google caem para fontes do sistema).
 
 Estrutura: tudo que não é gráfico (dados, filtro, tabela, layout, CSS) fica em `site/shared/` e vale para as 3 versões. Cada versão só tem seu `chart.js` (adaptador da biblioteca). Plano e decisões: [`docs/PLAN.md`](docs/PLAN.md).

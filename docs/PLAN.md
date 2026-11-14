@@ -103,3 +103,31 @@ Manual (`scripts/serve.sh`, abrir `localhost:8001`, `:8002`, `:8003`):
 - Bug corrigido no Plotly: `plotly_click` dispara antes do `click` DOM, e o handler de área vazia limpava o filtro logo em seguida. Correção: comparar timestamp (janela de 300 ms).
 - Verificação: `node --test` (4/4) e `tests/e2e.mjs` via Chrome headless em 1280 px e 390 px — todos os checks OK nas 3 versões.
 - Pendências conhecidas: modebar do Plotly em inglês (basic não traz locale pt-BR); mini-preview do slider do ECharts cinza (cosmético).
+
+## Atualização: conjuntos de dados (2026-11-14)
+
+Pedido do Pedro: usar como exemplo os gráficos de https://www.tylervigen.com/spurious-correlations e a lista de 20 tipos de curva; cada gráfico com a tabela equivalente embaixo.
+
+Decisões:
+- `shared/series.js` passa a ter conjuntos de dados, escolhidos por `?dataset=<chave>` (seletor na seção Track). Trocar de conjunto recarrega a página: os adaptadores não precisam saber redesenhar.
+- `curvas`: 20 curvas da lista, x de 0 a 10, y entre 0 e 10, 2001 pontos cada. Paramétrica = cicloide (x não uniforme, mas crescente — necessário para a decimation do Chart.js).
+- 4 correlações espúrias reais (barco, milho, malta, sarah). Dados extraídos das páginas e validados: o r de Pearson recalculado bate com o da página até a 7ª casa nos 4 casos.
+- Duas grandezas com unidades diferentes no mesmo eixo: cada série normalizada min-max para 0–10 (equivale aos 2 eixos Y do site original). Valor real fica no 3º campo do ponto e aparece no tooltip e na tabela.
+- Tabela equivalente: espúrias em formato largo (Ano | série A | série B), como no site original; clique numa linha do gráfico deixa só Ano + aquela coluna. Curvas mantêm formato longo (uma linha por ponto), porque a Paramétrica não compartilha os x das outras.
+- Contrato dos adaptadores: faixas e títulos dos eixos vêm de `MoonSeries.dataset`; anos sem separador de milhar. Os 3 adaptadores atualizados por 3 sub-agentes (sonnet).
+- `tests/e2e.mjs` virou genérico: acha em cada série o ponto mais isolado e o ponto vazio mais distante das linhas; roda em `curvas` e `sarah`.
+
+## Atualização: gráfico a partir da tabela + assertividade (2026-11-14)
+
+Pedido do Pedro: não mostrar fórmula no site; o gráfico deve surgir a partir dos pontos da tabela; cada ponto tem uma assertividade.
+
+Decisões:
+- Fórmula removida da tabela e do site (fica só como documentação no código de `series.js`).
+- Curvas: 21 pontos "medidos" por curva (x de 0 a 10, passo 0,5) em vez de 2001 pontos teóricos. Medido = valor teórico + ruído limitado a ±0,4, gerado por PRNG com semente fixa (mesmos dados em toda carga e nos testes).
+- Ponto = `[x, y, valorReal|null, assertividade]`. Gráfico desenha marcadores em todos os pontos ligados por retas (sem suavização), então cada marcador = uma linha da tabela.
+- Assertividade (0–100%):
+  - curvas: `100 − 25·|medido − teórico|/0,4` (75–100%);
+  - espúrias: concordância das séries normalizadas no ano, `100·(1 − |A − B|/10)`, igual para as duas séries daquele ano.
+- Exibição: coluna "Assertividade" com barra na tabela; tooltip; tamanho do marcador proporcional nos 3 gráficos.
+- E2E: linhas interpoladas entre pontos; clique ambíguo (séries sobrepostas, ex. Malta) vira SKIP e o filtro é aplicado via `MoonCore` para os demais checks.
+- Plotly: `hoverdistance` 20 → 12 px (igual ao Chart.js), senão com 20 curvas no celular não sobra área vazia para limpar o filtro.

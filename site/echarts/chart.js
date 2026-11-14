@@ -16,6 +16,7 @@
       var dim = active !== null && active !== i;
       return {
         lineStyle: { width: active === i ? 4 : 2, opacity: dim ? 0.15 : 1 },
+        itemStyle: { color: series[i].color, opacity: dim ? 0.15 : 1 },
         z: active === i ? 10 : 2
       };
     }
@@ -25,15 +26,19 @@
       chart.setOption({
         series: series.map(function (s, i) {
           var st = seriesStyle(active, i);
-          return { id: 's' + i, lineStyle: st.lineStyle, z: st.z };
+          return { id: 's' + i, lineStyle: st.lineStyle, itemStyle: st.itemStyle, z: st.z };
         })
       });
     }
 
+    var ds = root.MoonSeries.dataset;
+    var spurious = ds.kind === 'spurious';
+    var ptbr = function (v, d) { return Number(v).toLocaleString('pt-BR', { maximumFractionDigits: d }); };
+    var mouseY = null; // last pointer y (px), used to pick the nearest curve in the tooltip
+    chart.getZr().on('mousemove', function (e) { mouseY = e.offsetY; });
+
     var axisBase = {
       type: 'value',
-      min: 0,
-      max: 10,
       axisLine: { lineStyle: { color: MUTED } },
       axisLabel: { color: MUTED, fontFamily: 'Fira Code, monospace' },
       splitLine: { lineStyle: { color: GRID } },
@@ -45,10 +50,15 @@
       backgroundColor: 'transparent',
       color: series.map(function (s) { return s.color; }),
       textStyle: { fontFamily: 'Overpass, sans-serif', color: TEXT },
-      grid: { left: 48, right: 24, top: 80, bottom: 80 },
+      grid: { left: 56, right: 24, top: 104, bottom: 84 },
       legend: {
-        top: 8,
+        type: 'scroll',
+        top: 44,
         left: 'center',
+        width: '86%',
+        pageIconColor: ACCENT,
+        pageIconInactiveColor: '#5A6A94',
+        pageTextStyle: { color: MUTED },
         textStyle: { color: TEXT, fontFamily: 'Overpass, sans-serif' },
         inactiveColor: '#5A6A94'
       },
@@ -70,16 +80,33 @@
         axisPointer: { type: 'line', lineStyle: { color: MUTED } },
         formatter: function (params) {
           if (!params.length) return '';
-          var x = Number(params[0].value[0]).toFixed(3);
-          var rows = params.map(function (p) {
-            return p.marker + p.seriesName + ': <span style="font-family:\'Fira Code\',monospace;float:right;margin-left:16px">' +
-              Number(p.value[1]).toFixed(3) + '</span>';
+          var mono = 'font-family:\'Fira Code\',monospace;';
+          var head = ds.xIsYear ? String(Math.round(params[0].value[0])) : 'x = ' + ptbr(params[0].value[0], 3);
+          var list = params;
+          if (!spurious) { // 20 curves: show only the one nearest to the pointer
+            var best = Infinity;
+            params.forEach(function (p) {
+              var py = chart.convertToPixel({ yAxisIndex: 0 }, p.value[1]);
+              var d = mouseY === null ? 0 : Math.abs(py - mouseY);
+              if (d < best) { best = d; list = [p]; }
+            });
+          }
+          var rows = list.map(function (p) {
+            var val = spurious
+              ? ptbr(p.value[2], 6) + ' ' + (series[p.seriesIndex].unit || '')
+              : 'y = ' + ptbr(p.value[1], 3);
+            val += ' · Assertividade: ' + p.value[3] + '%';
+            return p.marker + p.seriesName + ': <span style="' + mono + 'float:right;margin-left:16px">' + val + '</span>';
           });
-          return '<div style="font-family:\'Fira Code\',monospace;color:' + MUTED + '">x = ' + x + '</div>' + rows.join('<br>');
+          return '<div style="' + mono + 'color:' + MUTED + '">' + head + '</div>' + rows.join('<br>');
         }
       },
-      xAxis: Object.assign({}, axisBase, { name: 'x', nameLocation: 'end' }),
-      yAxis: Object.assign({}, axisBase, { name: 'y' }),
+      xAxis: Object.assign({}, axisBase, {
+        name: ds.xLabel, nameLocation: 'middle', nameGap: 22, min: ds.xRange[0], max: ds.xRange[1],
+        minInterval: ds.xIsYear ? 1 : 0,
+        axisLabel: Object.assign({}, axisBase.axisLabel, ds.xIsYear ? { formatter: function (v) { return String(Math.round(v)); } } : {})
+      }),
+      yAxis: Object.assign({}, axisBase, { name: ds.yLabel, nameTextStyle: { color: MUTED, align: 'left' }, min: ds.yRange[0], max: ds.yRange[1] }),
       dataZoom: [
         { type: 'inside', xAxisIndex: 0, filterMode: 'none' },
         {
@@ -104,12 +131,15 @@
           name: s.name,
           type: 'line',
           data: s.points,
-          showSymbol: false,
+          dimensions: ['x', 'y', 'raw', 'acc'],
+          encode: { x: 'x', y: 'y' },
+          showSymbol: true,
+          symbolSize: function (value) { return 3 + 7 * (value[3] / 100); },
           triggerLineEvent: true,
-          sampling: 'lttb',
+          smooth: false,
           lineStyle: st.lineStyle,
           z: st.z,
-          itemStyle: { color: s.color },
+          itemStyle: st.itemStyle,
           emphasis: { disabled: true }
         };
       })
