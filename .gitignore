@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# MoonWatch: SQLite built by scripts/build-db.mjs (derived artifact)
+data/*.sqlite

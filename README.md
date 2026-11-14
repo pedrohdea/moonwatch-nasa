@@ -29,6 +29,7 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - Tabela equivalente ao gráfico logo abaixo dele, com scroll infinito (50 linhas por vez) dentro da própria caixa.
 - Linha horizontal tracejada com setinha amarela na borda direita do gráfico: arraste a seta (ou digite em "Linha horizontal" na barra) para reposicionar. O valor fica na URL (`?linha=`).
 - Linhas verticais arrastáveis: uma por série do gráfico (V1…Vn, com a cor da série n), cada uma com setinha ▼ na borda de cima do gráfico. Arraste a seta para mudar a posição, digite no chip da linha, "×" exclui e "+ Linha vertical" adiciona de volta (máximo = número de séries). Posições na URL (`?vlinhas=`).
+- Preenchimento: cada curva é pintada (cor da série, translúcida) entre ela e a linha horizontal, só onde a curva está acima da linha e à direita da linha vertical da série (Vk ↔ série k). Com filtro, só a série escolhida. Acompanha o arrasto das linhas.
 - Seletor "Conjunto de dados" (`?dataset=<chave>`):
   - `curvas` — 20 tipos de curva matemática, dados fictícios, 21 pontos medidos por curva (linear, quadrática, parabólica, cúbica, quártica, polinomial, exponencial, logarítmica, hiperbólica, racional, modular, inversa, potência, radical, por partes, implícita, paramétrica, trigonométrica, senoidal, cossenoidal).
   - `barco`, `milho`, `malta`, `sarah` — correlações espúrias reais de [Tyler Vigen](https://www.tylervigen.com/spurious-correlations) (CC BY 4.0). Cada série é normalizada para 0–10 no gráfico; a tabela mostra os valores reais, uma linha por ano, como no site original.
@@ -46,6 +47,22 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - Bibliotecas ficam em `site/<versão>/vendor/`; funciona sem internet (só as fontes do Google caem para fontes do sistema).
 
 Estrutura: tudo que não é gráfico (dados, filtro, tabela, layout, CSS) fica em `site/shared/` e vale para as 3 versões. Cada versão só tem seu `chart.js` (adaptador da biblioteca). Plano e decisões: [`docs/PLAN.md`](docs/PLAN.md).
+
+### Banco de dados (SQLite)
+
+```bash
+node scripts/build-db.mjs   # gera data/moonwatch.sqlite (git-ignored) a partir dos 2 CSVs
+```
+
+Esquema estrela, montado com o `node:sqlite` nativo do Node 22 (sem dependência):
+
+| Tabela/view | Origem | Chave |
+|---|---|---|
+| `d_landing_sites` (id, name, lat, long, mission_id, prs_id, nearest_cold) | `site/shared/data/dLandingSites.csv` | `id` |
+| `f_viability` (landing_site_id, date, viability) | `docs/fLandingSites_viability.csv` | (`landing_site_id`, `date`); `landing_site_id` → `d_landing_sites.id` |
+| `v_viability` | join das duas | — |
+
+O build valida cabeçalhos, números, datas e chaves estrangeiras, e carrega tudo numa transação (se algo falhar, não sobra banco pela metade).
 
 About the Challenge
 https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/
