@@ -166,8 +166,8 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs/Zensical documentation
-/site
+# mkdocs/Zensical documentation (disabled: /site holds the MoonWatch web app)
+# /site
 
 # mypy
 .mypy_cache/

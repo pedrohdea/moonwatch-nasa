@@ -1,0 +1,133 @@
+/* MoonWatch shared styles — Space Apps 2026 brand (Brand Guide, 2025-05-23). */
+:root {
+  --deep-blue: #07173F;
+  --electric-blue: #0042A6;
+  --neon-blue: #0960E1;
+  --blue-yonder: #2E96F5;
+  --neon-yellow: #EAFE07; /* accent only, never a background */
+  --rocket-red: #E43700;
+  --martian-red: #8E1100;
+  --white: #FFFFFF;
+  --text-muted: #B9C6E4;
+  --line: rgba(255, 255, 255, 0.14);
+  --panel: rgba(255, 255, 255, 0.04);
+  --font-head: 'Fira Sans', system-ui, sans-serif;
+  --font-body: 'Overpass', system-ui, sans-serif;
+  --font-mono: 'Fira Code', ui-monospace, monospace;
+  --radius: 10px;
+  --topbar-h: 64px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--deep-blue);
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 18px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+h1, h2 { font-family: var(--font-head); line-height: 1.1; margin: 0 0 16px; }
+h1 { font-weight: 900; font-size: clamp(36px, 7vw, 60px); }
+h2 { font-weight: 700; font-size: clamp(28px, 4.5vw, 40px); }
+a { color: var(--blue-yonder); }
+a:hover { color: var(--neon-yellow); }
+:focus-visible { outline: 2px solid var(--neon-yellow); outline-offset: 2px; }
+section { scroll-margin-top: var(--topbar-h); }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+
+/* Top bar */
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  min-height: var(--topbar-h); padding: 8px 16px;
+  background: rgba(7, 23, 63, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.brand { font-family: var(--font-head); font-weight: 900; font-size: 22px; color: var(--white); text-decoration: none; }
+.brand span { color: var(--neon-yellow); }
+.nav { display: flex; gap: 4px; }
+.nav a { color: var(--white); text-decoration: none; font-weight: 700; padding: 6px 10px; border-radius: 6px; }
+.nav a:hover { color: var(--neon-yellow); }
+.variants { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
+.variant {
+  font-size: 14px; font-weight: 700; text-decoration: none; color: var(--text-muted);
+  border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px;
+}
+.variant[aria-current="page"] { color: var(--deep-blue); background: var(--neon-yellow); border-color: var(--neon-yellow); }
+
+/* Hero: 45° Electric Blue -> Deep Blue */
+.hero {
+  background: linear-gradient(135deg, var(--electric-blue) 0%, var(--deep-blue) 75%);
+  padding: 96px 0 80px;
+}
+.eyebrow { font-family: var(--font-mono); font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--neon-yellow); margin: 0 0 12px; }
+.lead { max-width: 640px; font-size: 20px; color: var(--white); }
+.stats { display: flex; gap: 32px; flex-wrap: wrap; margin: 32px 0; }
+.stats strong { display: block; font-family: var(--font-head); font-weight: 900; font-size: 32px; color: var(--neon-yellow); }
+.stats span { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* Buttons */
+.btn {
+  display: inline-block; font-family: var(--font-body); font-weight: 700; font-size: 16px;
+  color: var(--deep-blue); background: var(--neon-yellow);
+  border: 2px solid var(--neon-yellow); border-radius: 999px;
+  padding: 10px 22px; text-decoration: none; cursor: pointer;
+}
+.btn:hover { color: var(--deep-blue); filter: brightness(1.08); }
+.btn-ghost { background: transparent; color: var(--white); border-color: var(--line); padding: 6px 16px; font-size: 15px; }
+.btn-ghost:hover:not(:disabled) { color: var(--neon-yellow); border-color: var(--neon-yellow); filter: none; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+
+/* Track */
+.track, .about { padding: 72px 0; }
+.about { border-top: 1px solid var(--line); }
+.about p { max-width: 760px; }
+.about .variant { display: inline-block; margin: 0 2px; }
+.hint { color: var(--text-muted); font-size: 16px; max-width: 760px; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+.badge {
+  --series-color: var(--blue-yonder);
+  font-family: var(--font-mono); font-size: 14px;
+  padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel);
+}
+.badge.is-active { border-color: var(--series-color); box-shadow: inset 4px 0 0 var(--series-color); }
+.toolbar .badge { margin-right: auto; }
+.chart {
+  position: relative; width: 100%; height: clamp(320px, 55vh, 520px);
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  overflow: hidden;
+}
+.chart-error { padding: 24px; color: var(--text-muted); }
+
+/* Table with internal infinite scroll */
+.table-box {
+  margin-top: 20px; max-height: 420px; overflow: auto;
+  border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
+}
+.data { width: 100%; border-collapse: collapse; font-size: 15px; }
+.data th, .data td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.data thead th {
+  position: sticky; top: 0; background: var(--electric-blue);
+  font-family: var(--font-head); font-weight: 700; text-transform: uppercase; font-size: 13px; letter-spacing: 0.06em;
+}
+.data tbody tr:hover { background: rgba(46, 150, 245, 0.12); }
+.data .num { text-align: right; }
+.mono { font-family: var(--font-mono); font-size: 14px; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+.sentinel { padding: 12px; text-align: center; color: var(--text-muted); font-size: 14px; }
+
+.footer { border-top: 1px solid var(--line); padding: 24px 0; color: var(--text-muted); font-size: 14px; }
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .variants { margin-left: 0; }
+  section { scroll-margin-top: 104px; } /* top bar wraps to two rows */
+  .hero { padding: 56px 0 48px; }
+  .track, .about { padding: 48px 0; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
