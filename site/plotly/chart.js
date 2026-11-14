@@ -170,10 +170,10 @@
     }
     // Vertical draggable lines: one shape per line, spanning the full plot height.
     function vlineShapes() {
-      return core.vlines.list().map(function (l) {
+      return core.vlines.list().map(function (l, i) {
         return {
           name: 'vline-' + l.id, type: 'line', xref: 'x', x0: l.value, x1: l.value, yref: 'paper', y0: 0, y1: 1,
-          line: { color: 'rgba(255,255,255,0.85)', width: 1.5, dash: 'dash' }, layer: 'above'
+          line: { color: core.vlineColor(i), width: 1.5, dash: 'dash' }, opacity: 0.85, layer: 'above'
         };
       });
     }
@@ -274,6 +274,8 @@
           var el = vHandles[l.id] || createVHandle(l.id);
           var r = L.xaxis.range;
           el.querySelector('.vline-label').textContent = 'V' + (i + 1);
+          el.querySelector('.vline-label').style.color = core.vlineColor(i); // color of series i
+          el.firstChild.style.borderTopColor = core.vlineColor(i);
           if (l.value < Math.min(r[0], r[1]) || l.value > Math.max(r[0], r[1])) { el.style.display = 'none'; return; }
           el.style.display = 'block';
           el.style.left = (L._size.l + L.xaxis.l2p(l.value) - 10) + 'px';

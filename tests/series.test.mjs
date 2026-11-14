@@ -141,8 +141,10 @@ test('horizontal line: default middle, clamps, rounds, notifies with source', ()
 });
 
 test('vertical lines: defaults, add in widest gap, remove, set with step and clamp, limit', () => {
-  assert.deepEqual(defaultVLines(0, 10), [2.5, 5, 7.5]);
-  const vl = createVLines(0, 10, 0.01, defaultVLines(0, 10), 4);
+  assert.deepEqual(defaultVLines(0, 10, 3), [2.5, 5, 7.5]);
+  assert.equal(defaultVLines(0, 10, 20).length, 20, 'one per series');
+  assert.deepEqual(defaultVLines(1987, 2022, 2).map(Math.round), [1999, 2010]);
+  const vl = createVLines(0, 10, 0.01, defaultVLines(0, 10, 3), 4);
   const seen = [];
   vl.onChange((lines, src) => seen.push([lines.map((l) => l.value), src]));
   const id = vl.add(null, 'button');

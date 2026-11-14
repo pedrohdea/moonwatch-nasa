@@ -107,7 +107,6 @@
       ctx.restore();
     }
 
-    var VLINE_COLOR = '#FFFFFF';
     var VH_W = 12; // px: down-arrow width
     var VH_H = 10; // px: down-arrow height
     var VH_OFFSET = 8; // px: handle center above the plot top
@@ -130,7 +129,7 @@
         ctx.lineTo(px, a.bottom);
         ctx.setLineDash([6, 4]);
         ctx.lineWidth = 1.5;
-        ctx.strokeStyle = withAlpha(VLINE_COLOR, 0.85);
+        ctx.strokeStyle = withAlpha(root.MoonCore.vlineColor(i), 0.85); // color of series i
         ctx.stroke();
         ctx.setLineDash([]);
         ctx.beginPath();
@@ -138,7 +137,7 @@
         ctx.lineTo(px + VH_W / 2, cy - VH_H / 2);
         ctx.lineTo(px, cy + VH_H / 2);
         ctx.closePath();
-        ctx.fillStyle = VLINE_COLOR;
+        ctx.fillStyle = root.MoonCore.vlineColor(i);
         ctx.fill();
         ctx.font = "11px 'Fira Code', monospace";
         ctx.textAlign = 'left';

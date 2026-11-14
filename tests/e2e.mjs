@@ -17,7 +17,7 @@ const XVIEW = {
 };
 
 // Lines are straight segments between table points, so the helpers interpolate 8 samples per segment.
-const NORM = `const d=MoonSeries.dataset,nx=x=>(x-d.xRange[0])/(d.xRange[1]-d.xRange[0]),ny=y=>(y-d.yRange[0])/(d.yRange[1]-d.yRange[0]),nearGuide=(a,b)=>Math.abs(b-ny(MoonCore.line.get()))<0.04||MoonCore.vlines.list().some(l=>Math.abs(a-nx(l.value))<0.04),dense=s=>s.points.flatMap((p,k,a)=>k===0?[p]:Array.from({length:8},(_,j)=>[a[k-1][0]+(p[0]-a[k-1][0])*(j+1)/8,a[k-1][1]+(p[1]-a[k-1][1])*(j+1)/8]));`;
+const NORM = `const d=MoonSeries.dataset,nx=x=>(x-d.xRange[0])/(d.xRange[1]-d.xRange[0]),ny=y=>(y-d.yRange[0])/(d.yRange[1]-d.yRange[0]),g=9/document.getElementById('chart').clientWidth,nearGuide=(a,b)=>Math.abs(b-ny(MoonCore.line.get()))<g||MoonCore.vlines.list().some(l=>Math.abs(a-nx(l.value))<g),dense=s=>s.points.flatMap((p,k,a)=>k===0?[p]:Array.from({length:8},(_,j)=>[a[k-1][0]+(p[0]-a[k-1][0])*(j+1)/8,a[k-1][1]+(p[1]-a[k-1][1])*(j+1)/8]));`;
 // Spot on series s farthest from every other series (avoids the edges, where legends/toolbars sit). Returns [x, y, distance].
 const ISOLATED = `(s)=>{${NORM}const me=dense(MoonSeries.all[s]),others=MoonSeries.all.filter((_,i)=>i!==s).flatMap(dense);let best=null,bd=-1;for(const[x,y]of me){const a=nx(x),b=ny(y);if(a<0.08||a>0.92||b<0.08||b>0.92||nearGuide(a,b))continue;let m=1e9;for(const[ox,oy]of others){const dd=(nx(ox)-a)**2+(ny(oy)-b)**2;if(dd<m)m=dd}if(m>bd){bd=m;best=[x,y,Math.sqrt(m)]}}return best||[...me[Math.floor(me.length/2)].slice(0,2),0];}`;
 // Spot inside the plot farthest from every line.
@@ -71,7 +71,8 @@ async function main() {
     const skip = (name, why) => console.log(`  SKIP ${name} (${why})`);
     // Lines closer than ~16px on screen are ambiguous for any 12px click tolerance.
     const AMBIGUOUS = 16 / await evaluate(`document.getElementById('chart').clientWidth`);
-    const emptySpot = async () => { const [x, y] = await evaluate(`(${EMPTY})()`); return px(0, x, y); };
+    // null when every candidate spot is next to a draggable guide line (crowded phone view).
+    const emptySpot = async () => { const e = await evaluate(`(${EMPTY})()`); return e ? px(0, e[0], e[1]) : null; };
 
     check('no chart error', !(await evaluate(`!!document.querySelector('.chart-error')`)));
     check('initial badge', (await badge()).startsWith('Todas'), await badge());
@@ -91,14 +92,18 @@ async function main() {
 
     check('table accuracy belongs to the filtered series', await evaluate(`(()=>{const want=MoonSeries.all[${first}].points.map(p=>p[3]+'%');const got=[...document.querySelectorAll('#table-body .acc')].map(e=>e.textContent);return got.length>0&&got.every((t,i)=>t===want[i]);})()`));
 
-    const [ex, ey] = await emptySpot();
-    await mouse('mouseMoved', ex, ey); await mouse('mousePressed', ex, ey);
-    await mouse('mouseMoved', ex + 120, ey + 60); await mouse('mouseReleased', ex + 120, ey + 60); await wait(400);
-    check('drag keeps filter', (await badge()).includes(series[first]), await badge());
+    const spot = await emptySpot();
+    if (!spot) skip('drag keeps filter', 'no free spot away from guide lines');
+    else {
+      const [ex, ey] = spot;
+      await mouse('mouseMoved', ex, ey); await mouse('mousePressed', ex, ey);
+      await mouse('mouseMoved', ex + 120, ey + 60); await mouse('mouseReleased', ex + 120, ey + 60); await wait(400);
+      check('drag keeps filter', (await badge()).includes(series[first]), await badge());
+    }
     await evaluate(`document.getElementById('reset-zoom').click()`);
     await wait(400);
 
-    const emptyDist = (await evaluate(`(${EMPTY})()`))[2];
+    const emptyDist = ((await evaluate(`(${EMPTY})()`)) || [0, 0, 0])[2];
     if (emptyDist < AMBIGUOUS) {
       skip('empty click clears', 'no empty spot far enough from lines and guides');
       await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
@@ -147,12 +152,18 @@ async function main() {
 
     // Vertical lines: 3 by default, add/remove buttons, drag V1 by its ▼ handle (plot top − 8 px).
     const chips = () => evaluate(`document.querySelectorAll('#vlines-list .vline-chip').length`);
-    check('3 vertical lines by default', (await evaluate(`MoonCore.vlines.list().length`)) === 3 && (await chips()) === 3);
-    await evaluate(`document.getElementById('vline-add').click()`); await wait(250);
-    check('add button adds a vertical line', (await evaluate(`MoonCore.vlines.list().length`)) === 4 && (await chips()) === 4);
+    const nSeries = series.length;
+    const nLines = () => evaluate(`MoonCore.vlines.list().length`);
+    check('one vertical line per series by default', (await nLines()) === nSeries && (await chips()) === nSeries, `${await nLines()} lines, ${nSeries} series`);
+    check('add disabled at the series count', await evaluate(`document.getElementById('vline-add').disabled`));
     await evaluate(`[...document.querySelectorAll('#vlines-list .vline-remove')].pop().click()`); await wait(250);
-    check('× removes a vertical line', (await evaluate(`MoonCore.vlines.list().length`)) === 3 && (await chips()) === 3);
+    check('× removes a vertical line', (await nLines()) === nSeries - 1 && (await chips()) === nSeries - 1);
+    await evaluate(`document.getElementById('vline-add').click()`); await wait(250);
+    check('add button adds it back', (await nLines()) === nSeries && (await chips()) === nSeries);
+    check('vertical line k has the color of series k', await evaluate(`MoonCore.vlines.list().every((_,k)=>MoonCore.vlineColor(k)===MoonSeries.colors[k])`));
     await evaluate(`MoonCore.setFilter(${first})`); await wait(300);
+    // Put the plot top below the sticky top bar (3 rows on phones), instantly (page uses smooth scroll).
+    await evaluate(`(()=>{const r=document.getElementById('chart').getBoundingClientRect();const bar=document.querySelector('.topbar').getBoundingClientRect().bottom;window.scrollTo({top:scrollY+r.top-bar-40,behavior:'instant'})})()`); await wait(300);
     const hBefore = await evaluate(`MoonCore.line.get()`);
     const v1 = (await evaluate(`MoonCore.vlines.list()`))[0];
     const vTarget = d.xRange[0] + span * 0.4;

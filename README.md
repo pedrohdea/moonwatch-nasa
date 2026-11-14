@@ -28,7 +28,7 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
 - Tabela equivalente ao gráfico logo abaixo dele, com scroll infinito (50 linhas por vez) dentro da própria caixa.
 - Linha horizontal tracejada com setinha amarela na borda direita do gráfico: arraste a seta (ou digite em "Linha horizontal" na barra) para reposicionar. O valor fica na URL (`?linha=`).
-- Linhas verticais arrastáveis: 3 por padrão (V1, V2, V3), cada uma com setinha ▼ na borda de cima do gráfico. Arraste a seta para mudar a posição, digite no chip da linha, "+ Linha vertical" adiciona (até 10) e "×" exclui. Posições na URL (`?vlinhas=`).
+- Linhas verticais arrastáveis: uma por série do gráfico (V1…Vn, com a cor da série n), cada uma com setinha ▼ na borda de cima do gráfico. Arraste a seta para mudar a posição, digite no chip da linha, "×" exclui e "+ Linha vertical" adiciona de volta (máximo = número de séries). Posições na URL (`?vlinhas=`).
 - Seletor "Conjunto de dados" (`?dataset=<chave>`):
   - `curvas` — 20 tipos de curva matemática, dados fictícios, 21 pontos medidos por curva (linear, quadrática, parabólica, cúbica, quártica, polinomial, exponencial, logarítmica, hiperbólica, racional, modular, inversa, potência, radical, por partes, implícita, paramétrica, trigonométrica, senoidal, cossenoidal).
   - `barco`, `milho`, `malta`, `sarah` — correlações espúrias reais de [Tyler Vigen](https://www.tylervigen.com/spurious-correlations) (CC BY 4.0). Cada série é normalizada para 0–10 no gráfico; a tabela mostra os valores reais, uma linha por ano, como no site original.

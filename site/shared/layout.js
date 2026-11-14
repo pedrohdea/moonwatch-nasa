@@ -186,8 +186,9 @@
     // While typing, only refresh other inputs so the focused one keeps the caret.
     if (source === 'input') return;
     vlList.innerHTML = lines.map(function (l, i) {
-      return '<span class="vline-chip" data-id="' + l.id + '">' +
-        '<span class="vline-tag">V' + (i + 1) + '</span>' +
+      var color = root.MoonCore.vlineColor(i);
+      return '<span class="vline-chip" data-id="' + l.id + '" style="border-color:' + color + '">' +
+        '<span class="vline-tag" style="color:' + color + '" title="' + root.MoonSeries.all[i % root.MoonSeries.all.length].name + '">V' + (i + 1) + '</span>' +
         '<input type="number" step="' + vlStep + '" min="' + vl.min + '" max="' + vl.max + '" value="' + l.value + '" aria-label="Posição da linha vertical V' + (i + 1) + '">' +
         '<button type="button" class="vline-remove" aria-label="Excluir linha vertical V' + (i + 1) + '" title="Excluir">×</button>' +
       '</span>';

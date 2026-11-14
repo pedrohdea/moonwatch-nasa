@@ -119,10 +119,11 @@
     };
   }
 
-  var VLINES_LIMIT = 10;
-
-  function defaultVLines(min, max) {
-    return [0.25, 0.5, 0.75].map(function (f) { return min + (max - min) * f; });
+  // One vertical line per chart series (default and maximum), evenly spaced: k/(n+1) of the x range.
+  function defaultVLines(min, max, count) {
+    var out = [];
+    for (var k = 1; k <= count; k++) out.push(min + ((max - min) * k) / (count + 1));
+    return out;
   }
 
   var api = root.MoonSeries ? createCore(root.MoonSeries.all.length) : null;
@@ -134,8 +135,11 @@
     var vparam = params.get('vlinhas'); // "" = user removed all lines; absent = defaults
     api.createCore = createCore;
     api.line = createLine(range[0], range[1], initial === null ? NaN : initial);
+    var seriesCount = root.MoonSeries.all.length;
     api.vlines = createVLines(ds.xRange[0], ds.xRange[1], ds.xIsYear ? 1 : 0.01,
-      vparam === null ? defaultVLines(ds.xRange[0], ds.xRange[1]) : vparam.split(',').filter(Boolean), VLINES_LIMIT);
+      vparam === null ? defaultVLines(ds.xRange[0], ds.xRange[1], seriesCount) : vparam.split(',').filter(Boolean), seriesCount);
+    // Line k (order of list()) takes the color of series k, so each vertical line maps to one chart line.
+    api.vlineColor = function (k) { return root.MoonSeries.colors[k % seriesCount]; };
     root.MoonCore = api;
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = { createCore: createCore, createLine: createLine, createVLines: createVLines, defaultVLines: defaultVLines };

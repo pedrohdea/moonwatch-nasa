@@ -296,13 +296,13 @@
           id: 'vline-' + p, type: 'group', x: 0, y: 0, z: 100, invisible: it.hidden, children: [
             Object.assign({ id: 'vline-' + p + '-line', type: 'line', x: 0, y: 0,
               shape: { x1: cx, y1: top, x2: cx, y2: bottom },
-              style: { stroke: 'rgba(255,255,255,0.85)', lineWidth: 1.5, lineDash: [6, 4] } }, drag),
+              style: { stroke: MoonCore.vlineColor(it.n), opacity: 0.85, lineWidth: 1.5, lineDash: [6, 4] } }, drag), // color of series n
             Object.assign({ id: 'vline-' + p + '-hit', type: 'rect', x: 0, y: 0,
               shape: { x: cx - 5, y: top, width: 10, height: rect.height }, style: { fill: 'rgba(0,0,0,0)' } }, drag),
             Object.assign({ id: 'vline-' + p + '-arrow', type: 'polygon', x: 0, y: 0,
-              shape: { points: [[cx - 6, cy - 5], [cx + 6, cy - 5], [cx, cy + 5]] }, style: { fill: '#FFFFFF' } }, drag),
+              shape: { points: [[cx - 6, cy - 5], [cx + 6, cy - 5], [cx, cy + 5]] }, style: { fill: MoonCore.vlineColor(it.n) } }, drag),
             Object.assign({ id: 'vline-' + p + '-text', type: 'text', x: 0, y: 0,
-              style: { text: 'V' + (it.n + 1), x: cx + 9, y: cy, fill: '#FFFFFF',
+              style: { text: 'V' + (it.n + 1), x: cx + 9, y: cy, fill: MoonCore.vlineColor(it.n),
                 font: '11px "Fira Code", monospace', textVerticalAlign: 'middle' } }, drag)
           ]
         });
