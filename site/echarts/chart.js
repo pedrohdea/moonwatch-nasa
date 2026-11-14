@@ -134,7 +134,7 @@
       backgroundColor: 'transparent',
       color: series.map(function (s) { return s.color; }),
       textStyle: { fontFamily: 'Overpass, sans-serif', color: TEXT },
-      grid: { left: 56, right: 24, top: 104, bottom: 84 },
+      grid: { left: 56, right: 72, top: 104, bottom: 84 },
       legend: {
         data: series.map(function (s) { return s.name; }),
         type: 'scroll',
@@ -221,8 +221,50 @@
       if (e.seriesIndex < series.length) core.setFilter(e.seriesIndex);
     });
     chart.getZr().on('click', function (e) {
-      if (!e.target) core.setFilter(null);
+      if (!e.target && Date.now() - lastDragAt > 300) core.setFilter(null);
     });
+
+    // Draggable horizontal line: graphic group (dashed line + hit area + arrow + value label).
+    var LINE = core.line;
+    var lastSig = '';
+    var lastDragAt = 0;
+    function drawLine() {
+      var gm = chart.getModel().getComponent('grid');
+      if (!gm || !gm.coordinateSystem) return;
+      var rect = gm.coordinateSystem.getRect();
+      var v = LINE.get();
+      var py = chart.convertToPixel({ yAxisIndex: 0 }, v);
+      var hidden = !isFinite(py) || py < rect.y - 0.5 || py > rect.y + rect.height + 0.5;
+      var sig = [rect.x, rect.y, rect.width, rect.height, py, v].join('|');
+      if (sig === lastSig) return;
+      lastSig = sig;
+      var drag = {
+        draggable: true, cursor: 'ns-resize', z: 100, invisible: hidden,
+        ondrag: function (e) {
+          lastDragAt = Date.now();
+          LINE.set(chart.convertFromPixel({ yAxisIndex: 0 }, e.offsetY), 'drag');
+        }
+      };
+      var right = rect.x + rect.width;
+      chart.setOption({ graphic: { elements: [{
+        id: 'hline', type: 'group', x: 0, y: 0, z: 100, children: [
+          Object.assign({ id: 'hline-line', type: 'line', x: rect.x, y: py,
+            shape: { x1: 0, y1: 0, x2: rect.width, y2: 0 },
+            style: { stroke: ACCENT, lineWidth: 2, lineDash: [6, 4] } }, drag),
+          Object.assign({ id: 'hline-hit', type: 'rect', x: rect.x, y: py - 6,
+            shape: { x: 0, y: 0, width: rect.width, height: 12 }, style: { fill: 'rgba(0,0,0,0)' } }, drag),
+          Object.assign({ id: 'hline-arrow', type: 'polygon', x: right + 2, y: py,
+            shape: { points: [[0, 0], [12, -7], [12, 7]] }, style: { fill: ACCENT } }, drag),
+          Object.assign({ id: 'hline-text', type: 'text', x: right + 18, y: py,
+            style: { text: isFinite(v) ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+              fill: ACCENT, font: '11px "Fira Code", monospace', textVerticalAlign: 'middle' } }, drag)
+        ]
+      }] } });
+    }
+    LINE.onChange(drawLine);
+    chart.on('datazoom', drawLine);
+    chart.on('finished', drawLine); // layout/resize/setOption; signature check prevents loops
+    drawLine();
 
     core.onFilterChange(applyFilter);
     applyFilter(core.getFilter());

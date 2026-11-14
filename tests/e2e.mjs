@@ -7,6 +7,15 @@ const SEED = process.env.SEED || 424242; // fixed random accuracy so runs are re
 const VIZS = (process.env.VIZ || 'tamanho,desvio,cor,faixa,rotulo').split(',');
 
 // In-page helpers working on MoonSeries data (normalized to the dataset ranges), so any dataset can be tested.
+// Handle (arrow) center = right end of the plot area + HANDLE_DX px. Filled in from each adapter's report.
+const HANDLE_DX = { echarts: 8, plotly: 5, chartjs: 6 };
+// Visible x range per library (to prove dragging the line did not zoom).
+const XVIEW = {
+  echarts: `()=>{const el=document.getElementById('chart');const c=echarts.getInstanceByDom(el)||echarts.getInstanceByDom(el.firstElementChild);const r=c.getModel().getComponent('grid').coordinateSystem.getRect();return [c.convertFromPixel({xAxisIndex:0},r.x),c.convertFromPixel({xAxisIndex:0},r.x+r.width)];}`,
+  plotly: `()=>document.querySelector('.js-plotly-plot')._fullLayout.xaxis.range.slice()`,
+  chartjs: `()=>{const c=Chart.getChart(document.querySelector('#chart canvas'));return [c.scales.x.min,c.scales.x.max];}`,
+};
+
 // Lines are straight segments between table points, so the helpers interpolate 8 samples per segment.
 const NORM = `const d=MoonSeries.dataset,nx=x=>(x-d.xRange[0])/(d.xRange[1]-d.xRange[0]),ny=y=>(y-d.yRange[0])/(d.yRange[1]-d.yRange[0]),dense=s=>s.points.flatMap((p,k,a)=>k===0?[p]:Array.from({length:8},(_,j)=>[a[k-1][0]+(p[0]-a[k-1][0])*(j+1)/8,a[k-1][1]+(p[1]-a[k-1][1])*(j+1)/8]));`;
 // Spot on series s farthest from every other series (avoids the edges, where legends/toolbars sit). Returns [x, y, distance].
@@ -101,6 +110,34 @@ async function main() {
     }
     await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
     check('clear button', (await badge()).startsWith('Todas'));
+
+    // Draggable horizontal line: press on the arrow handle, drag to y=2, release.
+    await evaluate(`MoonCore.setFilter(${first})`); await wait(300);
+    const lineStart = await evaluate(`MoonCore.line.get()`);
+    const d = await evaluate(`MoonSeries.dataset`);
+    const [rx, ry] = await px(0, d.xRange[1], lineStart);
+    const target = 2;
+    const [, ty] = await px(0, d.xRange[1], target);
+    const hx = rx + HANDLE_DX[lib];
+    await mouse('mouseMoved', hx, ry); await mouse('mousePressed', hx, ry);
+    for (let k = 1; k <= 6; k++) await mouse('mouseMoved', hx, ry + ((ty - ry) * k) / 6);
+    await mouse('mouseReleased', hx, ty); await wait(400);
+    const lineEnd = await evaluate(`MoonCore.line.get()`);
+    check('drag arrow moves the line', Math.abs(lineEnd - target) <= 0.25, `${lineStart} -> ${lineEnd}`);
+    check('input follows the line', Math.abs(Number(await evaluate(`document.getElementById('line-value').value`)) - lineEnd) < 1e-9);
+    check('line drag keeps the filter', (await badge()).includes(series[first]), await badge());
+    const [zx0, zx1] = await evaluate(`(${XVIEW[lib]})()`);
+    const span = d.xRange[1] - d.xRange[0];
+    check('line drag does not zoom', Math.abs(zx0 - d.xRange[0]) < span * 0.01 && Math.abs(zx1 - d.xRange[1]) < span * 0.01, `${zx0}..${zx1}`);
+    // Typed value must move the drawn handle: drag again from the typed position.
+    await evaluate(`MoonCore.line.set(5.5,'input')`); await wait(300);
+    const [, sy] = await px(0, d.xRange[1], 5.5);
+    const [, ey8] = await px(0, d.xRange[1], 8);
+    await mouse('mouseMoved', hx, sy); await mouse('mousePressed', hx, sy);
+    for (let k = 1; k <= 6; k++) await mouse('mouseMoved', hx, sy + ((ey8 - sy) * k) / 6);
+    await mouse('mouseReleased', hx, ey8); await wait(400);
+    check('typed value moves the handle', Math.abs((await evaluate(`MoonCore.line.get()`)) - 8) <= 0.25, String(await evaluate(`MoonCore.line.get()`)));
+    await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
 
     const before = await evaluate(`document.querySelectorAll('#table-body tr').length`);
     for (let i = 0; i < 4; i++) { await evaluate(`(b=>b.scrollTop=b.scrollHeight)(document.getElementById('table-box'))`); await wait(250); }

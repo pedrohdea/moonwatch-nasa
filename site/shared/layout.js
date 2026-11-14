@@ -99,6 +99,9 @@
           '<div class="toolbar">' +
             '<span id="filter-badge" class="badge" role="status" aria-live="polite"></span>' +
             '<button id="clear-filter" class="btn btn-ghost" type="button">Limpar filtro</button>' +
+            '<label class="line-input" title="Arraste a seta no gráfico ou digite o valor">Linha horizontal ' +
+              '<input id="line-value" type="number" step="0.1" min="' + data.yRange[0] + '" max="' + data.yRange[1] + '" inputmode="decimal">' +
+            '</label>' +
             '<button id="reset-zoom" class="btn btn-ghost" type="button">Resetar zoom</button>' +
           '</div>' +
           '<div id="chart" class="chart" role="img" aria-label="Gráfico de linhas com seis funções matemáticas"></div>' +
@@ -150,6 +153,19 @@
   }
   root.MoonCore.onFilterChange(updateHint);
   updateHint(root.MoonCore.getFilter());
+
+  // Horizontal line: toolbar input <-> MoonCore.line; value kept in ?linha= (replaceState, no reload).
+  var lineInput = doc.getElementById('line-value');
+  function showLine(value, source) {
+    if (source !== 'input') lineInput.value = value;
+    var url = new URL(root.location.href);
+    url.searchParams.set('linha', value);
+    root.history.replaceState(null, '', url);
+  }
+  lineInput.value = root.MoonCore.line.get();
+  lineInput.addEventListener('input', function () { root.MoonCore.line.set(lineInput.value, 'input'); });
+  lineInput.addEventListener('change', function () { lineInput.value = root.MoonCore.line.get(); });
+  root.MoonCore.line.onChange(showLine);
 
   // Switching dataset reloads the page so every chart adapter starts clean.
   doc.getElementById('dataset-select').addEventListener('change', function (e) {

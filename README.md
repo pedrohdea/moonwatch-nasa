@@ -17,7 +17,7 @@ Três versões do mesmo site, cada uma com uma biblioteca de gráficos diferente
 | Chart.js | http://localhost:8003/ | Chart.js 4.4.1 + chartjs-plugin-zoom 2.0.1 |
 
 ```bash
-./scripts/serve.sh   # sobe as 3 portas; Ctrl+C para todas
+./scripts/serve.sh   # sobe as 3 portas (Node, sem cache do navegador); Ctrl+C para todas
 node --test          # testes do núcleo (tests/*.test.mjs)
 # E2E nas 3 versões (clique na linha, área vazia, arraste, scroll infinito):
 google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir=/tmp/mw-e2e about:blank &
@@ -27,6 +27,7 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - Página única com âncoras `#home`, `#track`, `#mission` (Definições da missão), `#about`.
 - Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
 - Tabela equivalente ao gráfico logo abaixo dele, com scroll infinito (50 linhas por vez) dentro da própria caixa.
+- Linha horizontal tracejada com setinha amarela na borda direita do gráfico: arraste a seta (ou digite em "Linha horizontal" na barra) para reposicionar. O valor fica na URL (`?linha=`).
 - Seletor "Conjunto de dados" (`?dataset=<chave>`):
   - `curvas` — 20 tipos de curva matemática, dados fictícios, 21 pontos medidos por curva (linear, quadrática, parabólica, cúbica, quártica, polinomial, exponencial, logarítmica, hiperbólica, racional, modular, inversa, potência, radical, por partes, implícita, paramétrica, trigonométrica, senoidal, cossenoidal).
   - `barco`, `milho`, `malta`, `sarah` — correlações espúrias reais de [Tyler Vigen](https://www.tylervigen.com/spurious-correlations) (CC BY 4.0). Cada série é normalizada para 0–10 no gráfico; a tabela mostra os valores reais, uma linha por ano, como no site original.

@@ -8,6 +8,7 @@
   var MOVE_TOLERANCE = 5; // px: larger mouse movement is a drag (zoom/pan), not a click
   var CLICK_WINDOW = 300; // ms: a plotly_click this close to a DOM click means a line was hit
   var HIT_RADIUS = 12; // px: same tolerance as hoverdistance and the Chart.js variant
+  var LINE_COLOR = '#EAFE07';
 
   function axis(title, range, isYear) {
     return assign({
@@ -126,10 +127,11 @@
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
       font: { family: 'Overpass, sans-serif', size: 13, color: TEXT },
-      margin: { l: 56, r: 20, t: 16, b: 56 },
+      margin: { l: 56, r: 56, t: 16, b: 56 }, // right margin holds the line handle
       xaxis: axis(ds.xLabel, ds.xRange, ds.xIsYear),
       yaxis: axis(ds.yLabel, ds.yRange, false),
       separators: ',.',
+      shapes: [],
       hovermode: 'closest',
       hoverdistance: 12, // px; same click tolerance as the Chart.js variant, keeps empty clicks possible with 20 curves on phones
       clickmode: 'event',
@@ -157,6 +159,18 @@
     };
 
     var decoCount = 0;
+    var devShapes = [];
+
+    // Horizontal draggable line, always the last shape so deviation shapes can be rebuilt independently.
+    function hlineShape() {
+      return {
+        name: 'hline', type: 'line', xref: 'paper', x0: 0, x1: 1, yref: 'y', y0: core.line.get(), y1: core.line.get(),
+        line: { color: LINE_COLOR, width: 2, dash: 'dash' }, layer: 'above'
+      };
+    }
+    function allShapes() { return devShapes.concat([hlineShape()]); }
+    layout.shapes = allShapes();
+
     var queue = Promise.resolve();
     var mainIdx = series.map(function (_, i) { return i; });
 
@@ -177,12 +191,68 @@
       }).then(function () {
         return decoCount ? Plotly.addTraces(container, d.traces) : null;
       }).then(function () {
-        return Plotly.relayout(container, { shapes: d.shapes });
+        devShapes = d.shapes;
+        return Plotly.relayout(container, { shapes: allShapes() });
       });
       return queue;
     }
 
     return Plotly.newPlot(container, traces, layout, config).then(function () {
+      // Handle: HTML triangle + value label over the right edge of the plot area.
+      if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+      var handle = document.createElement('div');
+      handle.className = 'hline-handle';
+      handle.style.cssText = 'position:absolute;display:none;align-items:center;height:20px;cursor:ns-resize;touch-action:none;user-select:none;z-index:5;';
+      handle.innerHTML = '<span style="width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:11px solid ' + LINE_COLOR + ';"></span>' +
+        '<span class="hline-label" style="margin-left:3px;font:11px Fira Code,monospace;color:' + LINE_COLOR + ';"></span>';
+      container.appendChild(handle);
+      var label = handle.querySelector('.hline-label');
+
+      function placeHandle() {
+        var L = container._fullLayout;
+        if (!L || !L._size) return;
+        var v = core.line.get();
+        var r = L.yaxis.range;
+        label.textContent = v.toFixed(2).replace('.', ',');
+        // Out of the visible y range: hide the handle (the shape is clipped by the plot area).
+        if (v < Math.min(r[0], r[1]) || v > Math.max(r[0], r[1])) { handle.style.display = 'none'; return; }
+        handle.style.display = 'flex';
+        handle.style.left = (L._size.l + L._size.w) + 'px';
+        handle.style.top = (L._size.t + L.yaxis.l2p(v) - 10) + 'px';
+      }
+      function drawLine() {
+        placeHandle();
+        Plotly.relayout(container, { shapes: allShapes() });
+      }
+      core.line.onChange(function (v, source) {
+        if (source === 'drag') { placeHandle(); Plotly.relayout(container, { shapes: allShapes() }); } else drawLine();
+      });
+      container.on('plotly_afterplot', placeHandle);
+      placeHandle();
+
+      handle.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        handle.setPointerCapture(e.pointerId);
+        function move(ev) {
+          var L = container._fullLayout;
+          var py = ev.clientY - container.getBoundingClientRect().top - L._size.t;
+          core.line.set(L.yaxis.p2l(py), 'drag');
+        }
+        function up(ev) {
+          handle.removeEventListener('pointermove', move);
+          handle.removeEventListener('pointerup', up);
+          handle.removeEventListener('pointercancel', up);
+          if (handle.hasPointerCapture(ev.pointerId)) handle.releasePointerCapture(ev.pointerId);
+        }
+        handle.addEventListener('pointermove', move);
+        handle.addEventListener('pointerup', up);
+        handle.addEventListener('pointercancel', up);
+      });
+      ['mousedown', 'click'].forEach(function (t) {
+        handle.addEventListener(t, function (e) { e.stopPropagation(); });
+      });
+
       applyFilter(core.getFilter());
       core.onFilterChange(applyFilter);
 
@@ -196,10 +266,12 @@
       // Empty click: clear filter when no plotly_click fired and the mouse did not drag.
       var down = null;
       container.addEventListener('mousedown', function (e) {
+        if (e.target.closest && e.target.closest('.hline-handle')) return;
         down = { x: e.clientX, y: e.clientY };
       }, true);
       container.addEventListener('click', function (e) {
         var target = e.target;
+        if (target.closest && target.closest('.hline-handle')) return;
         var moved = !down || Math.abs(e.clientX - down.x) > MOVE_TOLERANCE || Math.abs(e.clientY - down.y) > MOVE_TOLERANCE;
         down = null;
         if (moved || !target.closest || !target.closest('.nsewdrag, .draglayer')) return; // legend, modebar and axes are ignored

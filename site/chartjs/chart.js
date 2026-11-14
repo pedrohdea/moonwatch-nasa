@@ -57,8 +57,46 @@
     var decor = {
       id: 'moonDecor',
       beforeDatasetsDraw: function (c) { drawDecor(c, true); },
-      afterDatasetsDraw: function (c) { drawDecor(c, false); }
+      afterDatasetsDraw: function (c) { drawDecor(c, false); drawLine(c); }
     };
+
+    var LINE_COLOR = '#EAFE07';
+    var HANDLE_W = 11; // px: arrow width
+    var HANDLE_H = 12; // px: arrow height
+
+    // Pixel y of the draggable line, or null when outside the visible y range (zoom).
+    function linePixel(c) {
+      var py = c.scales.y.getPixelForValue(root.MoonCore.line.get());
+      return py >= c.chartArea.top - 0.5 && py <= c.chartArea.bottom + 0.5 ? py : null;
+    }
+
+    // Dashed horizontal line + left-pointing arrow just right of the plot + pt-BR value label.
+    function drawLine(c) {
+      var py = linePixel(c);
+      if (py === null) return;
+      var ctx = c.ctx, a = c.chartArea;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(a.left, py);
+      ctx.lineTo(a.right, py);
+      ctx.setLineDash([6, 4]);
+      ctx.lineWidth = 1.75;
+      ctx.strokeStyle = LINE_COLOR;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.moveTo(a.right + 1, py);
+      ctx.lineTo(a.right + 1 + HANDLE_W, py - HANDLE_H / 2);
+      ctx.lineTo(a.right + 1 + HANDLE_W, py + HANDLE_H / 2);
+      ctx.closePath();
+      ctx.fillStyle = LINE_COLOR;
+      ctx.fill();
+      ctx.font = "11px 'Fira Code', monospace";
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(root.MoonCore.line.get().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), a.right + HANDLE_W + 3, py);
+      ctx.restore();
+    }
 
     function drawDecor(c, below) {
       if (viz === 'tamanho' || viz === 'cor') return;
@@ -136,6 +174,7 @@
       },
       plugins: [decor],
       options: {
+        layout: { padding: { right: 46 } },
         responsive: true,
         maintainAspectRatio: false,
         animation: false,
@@ -235,9 +274,49 @@
       return bestDist <= PICK_RADIUS ? best : null;
     }
 
+    // Line drag: capture-phase listeners keep plugin-zoom (drag-zoom/pan) and the filter click out of it.
+    var lineDrag = false, swallowClick = false;
+    function onHandle(e) {
+      var py = linePixel(chart);
+      if (py === null) return false;
+      var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea;
+      var onArrow = Math.abs(pos.x - (a.right + 1 + HANDLE_W / 2)) <= 8 + HANDLE_W / 2 && pos.x >= a.right && Math.abs(pos.y - py) <= 8;
+      var onLine = pos.x >= a.left && pos.x <= a.right && Math.abs(pos.y - py) <= 5;
+      return onArrow || onLine;
+    }
+    function setFromPointer(e) {
+      var pos = root.Chart.helpers.getRelativePosition(e, chart);
+      root.MoonCore.line.set(chart.scales.y.getValueForPixel(pos.y), 'drag');
+    }
+    canvas.addEventListener('pointerdown', function (e) {
+      if (!onHandle(e)) return;
+      lineDrag = true;
+      canvas.setPointerCapture(e.pointerId);
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      setFromPointer(e);
+    }, true);
+    canvas.addEventListener('mousedown', function (e) {
+      if (lineDrag || onHandle(e)) { e.stopImmediatePropagation(); e.preventDefault(); }
+    }, true);
+    canvas.addEventListener('pointermove', function (e) {
+      if (lineDrag) { setFromPointer(e); return; }
+      canvas.style.cursor = onHandle(e) ? 'ns-resize' : '';
+    });
+    function endDrag() {
+      if (!lineDrag) return;
+      lineDrag = false;
+      swallowClick = true;
+      root.setTimeout(function () { swallowClick = false; }, 0); // click, if any, fires right after pointerup
+    }
+    canvas.addEventListener('pointerup', endDrag);
+    canvas.addEventListener('pointercancel', endDrag);
+    root.MoonCore.line.onChange(function () { chart.draw(); });
+
     var down = null;
     canvas.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY }; });
     canvas.addEventListener('click', function (e) {
+      if (swallowClick) { swallowClick = false; return; }
       var moved = down && Math.hypot(e.clientX - down.x, e.clientY - down.y) > DRAG_TOLERANCE;
       down = null;
       if (moved) return;
