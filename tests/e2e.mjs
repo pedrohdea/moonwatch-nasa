@@ -3,6 +3,8 @@
 const PORTS = { echarts: 8001, plotly: 8002, chartjs: 8003 };
 const WIDTH = Number(process.env.W || 1280);
 const DATASETS = (process.env.DATASETS || 'curvas,sarah').split(',');
+const SEED = process.env.SEED || 424242; // fixed random accuracy so runs are reproducible
+const VIZS = (process.env.VIZ || 'tamanho,desvio,cor,faixa,rotulo').split(',');
 
 // In-page helpers working on MoonSeries data (normalized to the dataset ranges), so any dataset can be tested.
 // Lines are straight segments between table points, so the helpers interpolate 8 samples per segment.
@@ -44,10 +46,10 @@ async function main() {
   let failed = 0;
   const check = (name, ok, extra = '') => { if (!ok) failed++; console.log(`  ${ok ? 'OK  ' : 'FAIL'} ${name} ${extra}`); };
 
-  for (const dataset of DATASETS) for (const [lib, port] of Object.entries(PORTS)) {
+  for (const dataset of DATASETS) for (const viz of VIZS) for (const [lib, port] of Object.entries(PORTS)) {
     errors.length = 0;
-    console.log(`${lib} (:${port}) dataset=${dataset} width=${WIDTH}`);
-    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=${dataset}#track` });
+    console.log(`${lib} (:${port}) dataset=${dataset} viz=${viz} width=${WIDTH}`);
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=${dataset}&viz=${viz}&seed=${SEED}#track` });
     await wait(2500);
     await evaluate(`document.getElementById('chart').scrollIntoView({block:'center'})`);
     await wait(400);
@@ -58,7 +60,8 @@ async function main() {
     const isolation = async (s) => (await evaluate(`(${ISOLATED})(${s})`))[2];
     const pointOn = async (s) => { const [x, y] = await evaluate(`(${ISOLATED})(${s})`); return px(s, x, y); };
     const skip = (name, why) => console.log(`  SKIP ${name} (${why})`);
-    const AMBIGUOUS = 0.03; // normalized distance: lines closer than this overlap on screen
+    // Lines closer than ~16px on screen are ambiguous for any 12px click tolerance.
+    const AMBIGUOUS = 16 / await evaluate(`document.getElementById('chart').clientWidth`);
     const emptySpot = async () => { const [x, y] = await evaluate(`(${EMPTY})()`); return px(0, x, y); };
 
     check('no chart error', !(await evaluate(`!!document.querySelector('.chart-error')`)));
@@ -76,6 +79,8 @@ async function main() {
     check('table shows only that series', await evaluate(MoonSeriesKind === 'spurious'
       ? `(()=>{const h=document.getElementById('table-head').textContent;return h.includes(${JSON.stringify(series[first])})&&!h.includes(${JSON.stringify(series[second === first ? 0 : second])})})()`
       : `[...document.querySelectorAll('#table-body tr')].every(t=>t.children[1].textContent===${JSON.stringify(series[first])})`));
+
+    check('table accuracy belongs to the filtered series', await evaluate(`(()=>{const want=MoonSeries.all[${first}].points.map(p=>p[3]+'%');const got=[...document.querySelectorAll('#table-body .acc')].map(e=>e.textContent);return got.length>0&&got.every((t,i)=>t===want[i]);})()`));
 
     const [ex, ey] = await emptySpot();
     await mouse('mouseMoved', ex, ey); await mouse('mousePressed', ex, ey);

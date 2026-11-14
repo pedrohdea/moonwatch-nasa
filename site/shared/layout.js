@@ -17,18 +17,43 @@
     return String(text).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; });
   }
 
+  // Accuracy visualization versions (?viz=), kept with the current dataset.
+  var vizLinks = root.MoonSeries.vizModes.map(function (m) {
+    var url = new URL(root.location.href);
+    url.searchParams.set('viz', m.key);
+    url.searchParams.set('seed', root.MoonSeries.seed); // same random points in every version
+    url.hash = 'track';
+    var current = m.key === root.MoonSeries.viz ? ' aria-current="page"' : '';
+    return '<a class="variant" href="' + url.search + url.hash + '"' + current + '>' + m.label + '</a>';
+  }).join('');
+  var rerollHref = (function () {
+    var url = new URL(root.location.href);
+    url.searchParams.delete('seed');
+    url.hash = 'track';
+    return url.search + url.hash;
+  })();
+  var vizMode = root.MoonSeries.vizModes.filter(function (m) { return m.key === root.MoonSeries.viz; })[0];
+  var stops = root.MoonSeries.accuracyStops;
+  var accDomain = root.MoonSeries.accuracyDomain;
+
   var datasetOptions = root.MoonSeries.datasets.map(function (d) {
     return '<option value="' + d.key + '"' + (d.key === data.key ? ' selected' : '') + '>' + escapeHtml(d.label) + '</option>';
   }).join('');
 
   var datasetInfo = data.kind === 'spurious'
     ? '<p class="dataset-info">' + escapeHtml(data.title) + ' · r = ' + data.r.toFixed(4).replace('.', ',') +
-      ' · cada série normalizada para 0–10; valores reais na tabela; assertividade = concordância das duas séries no ano. Fonte: <a href="' + data.url + '" target="_blank" rel="noopener">Tyler Vigen, Spurious Correlations</a> (CC BY 4.0).</p>'
-    : '<p class="dataset-info">20 tipos de curvas matemáticas, dados fictícios: 21 pontos medidos por curva (x de 0 a 10). O gráfico liga os pontos da tabela; o tamanho do marcador mostra a assertividade.</p>';
+      ' · cada série normalizada para 0–10; valores reais na tabela; assertividade aleatória (teste de usabilidade). Fonte: <a href="' + data.url + '" target="_blank" rel="noopener">Tyler Vigen, Spurious Correlations</a> (CC BY 4.0).</p>'
+    : '<p class="dataset-info">20 tipos de curvas matemáticas, dados fictícios: 21 pontos medidos por curva (x de 0 a 10), com assertividade aleatória: quanto menor, mais longe o ponto fica da curva teórica.</p>';
+
+  var sharedQuery = (function () {
+    var q = new URLSearchParams(root.location.search);
+    q.set('seed', root.MoonSeries.seed);
+    return '?' + q.toString();
+  })();
 
   var variantLinks = VARIANTS.map(function (v) {
     var protocol = root.location.protocol === 'https:' ? 'https:' : 'http:'; // file:// still links to the local servers
-    var href = protocol + '//' + (root.location.hostname || 'localhost') + ':' + v.port + '/' + root.location.search; // keep the chosen dataset across variants
+    var href = protocol + '//' + (root.location.hostname || 'localhost') + ':' + v.port + '/' + sharedQuery; // keep dataset, viz mode and random seed across variants
     var current = v.name === lib ? ' aria-current="page"' : '';
     return '<a class="variant" href="' + href + '"' + current + '>' + v.name + '</a>';
   }).join('');
@@ -40,6 +65,7 @@
         '<a href="#home">Home</a><a href="#track">Track</a><a href="#mission">Missão</a><a href="#about">About</a>' +
       '</nav>' +
       '<div class="variants" aria-label="Versões do gráfico">' + variantLinks + '</div>' +
+      '<div class="variants viz" aria-label="Visualização da assertividade"><span class="variants-label">Assertividade:</span>' + vizLinks + '</div>' +
     '</header>' +
     '<main>' +
       '<section id="home" class="hero">' +
@@ -63,6 +89,13 @@
             '<select id="dataset-select">' + datasetOptions + '</select>' +
           '</label>' +
           datasetInfo +
+          '<p class="viz-info"><strong>Assertividade · ' + vizMode.label + ':</strong> ' + vizMode.help +
+            ' Referência = ' + root.MoonSeries.dataset.referenceLabel + '.' +
+            (vizMode.key === 'cor'
+              ? ' <span class="acc-scale" style="background:linear-gradient(90deg,' + stops.join(',') + ')"></span> <span class="mono">' + accDomain[0] + '% → 100%</span>'
+              : '') +
+            ' <span id="viz-hint" class="viz-hint"></span>' +
+            ' <a class="reroll" href="' + rerollHref + '">Sortear de novo</a></p>' +
           '<div class="toolbar">' +
             '<span id="filter-badge" class="badge" role="status" aria-live="polite"></span>' +
             '<button id="clear-filter" class="btn btn-ghost" type="button">Limpar filtro</button>' +
@@ -101,13 +134,22 @@
             '<li><strong>Curvas matemáticas (fictícias)</strong>: 20 tipos de curva, de linear a cossenoidal, com 21 pontos medidos cada (x de 0 a 10, y entre 0 e 10).</li>' +
             '<li><strong>Correlações espúrias (reais)</strong>: quatro exemplos de <a href="https://www.tylervigen.com/spurious-correlations" target="_blank" rel="noopener">Spurious Correlations</a>, de Tyler Vigen (CC BY 4.0). Correlação alta não significa causa.</li>' +
           '</ul>' +
-          '<p>O gráfico é desenhado a partir dos pontos da tabela. Cada ponto tem uma <strong>assertividade</strong> (0–100%): nas curvas, quão perto o ponto medido está da curva teórica; nas correlações espúrias, quanto as duas séries normalizadas concordam naquele ano.</p>' +
+          '<p>O gráfico é desenhado a partir dos pontos da tabela. Cada ponto tem uma <strong>assertividade</strong> (0–100%): neste protótipo ela é <strong>aleatória</strong> (sorteada a cada carga; <code>?seed=N</code> repete um sorteio). Nas curvas, o ponto fica afastado da curva teórica na proporção da assertividade: 100% em cima da curva, 0% a 2,5 unidades dela. Nas correlações espúrias os valores são reais e só a assertividade é sorteada.</p>' +
           '<p>Existem três versões da mesma página, cada uma com uma biblioteca de gráficos diferente: ' + variantLinks + '. Tabela, filtro e layout são os mesmos nas três.</p>' +
         '</div>' +
       '</section>' +
     '</main>' +
     '<footer class="footer"><div class="wrap">MoonWatch · Myr Battlesphere · gráfico com ' + lib + '</div></footer>'
   );
+
+  // Modes drawn only on focused series tell the user to pick one when nothing is focused.
+  var hint = doc.getElementById('viz-hint');
+  function updateHint(index) {
+    var needsFocus = ['desvio', 'faixa', 'rotulo'].indexOf(root.MoonSeries.viz) >= 0;
+    hint.textContent = needsFocus && root.MoonSeries.focus(index).length === 0 ? 'Clique numa linha para ver.' : '';
+  }
+  root.MoonCore.onFilterChange(updateHint);
+  updateHint(root.MoonCore.getFilter());
 
   // Switching dataset reloads the page so every chart adapter starts clean.
   doc.getElementById('dataset-select').addEventListener('change', function (e) {

@@ -42,17 +42,19 @@
     };
   }
 
-  // Wide format: year + one real-value column per visible series + the year's accuracy.
+  // Wide format: year + (real value, accuracy) per visible series — accuracy belongs to each series' own point.
   function wideTable(index) {
     var cols = index === null ? series : [series[index]];
     head.innerHTML = '<tr><th class="num">Ano</th>' + cols.map(function (s) {
-      return '<th class="num">' + swatch(s.index) + s.name + ' <span class="unit">(' + s.unit + ')</span></th>';
-    }).join('') + '<th class="num">Assertividade</th></tr>';
-    rows = series[0].points.map(function (p, k) { return { year: p[0], k: k, accuracy: p[3] }; });
+      return '<th class="num">' + swatch(s.index) + s.name + ' <span class="unit">(' + s.unit + ')</span></th>' +
+        '<th class="num">' + swatch(s.index) + 'Assertividade</th>';
+    }).join('') + '</tr>';
+    rows = series[0].points.map(function (p, k) { return { year: p[0], k: k }; });
     renderRow = function (r) {
       return '<tr><td class="num mono">' + r.year + '</td>' + cols.map(function (s) {
-        return '<td class="num mono">' + real.format(s.points[r.k][2]) + '</td>';
-      }).join('') + accuracyCell(r.accuracy) + '</tr>';
+        var p = s.points[r.k];
+        return '<td class="num mono">' + real.format(p[2]) + '</td>' + accuracyCell(p[3]);
+      }).join('') + '</tr>';
     };
   }
 

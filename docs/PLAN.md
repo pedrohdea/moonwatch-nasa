@@ -131,3 +131,31 @@ Decisões:
 - Exibição: coluna "Assertividade" com barra na tabela; tooltip; tamanho do marcador proporcional nos 3 gráficos.
 - E2E: linhas interpoladas entre pontos; clique ambíguo (séries sobrepostas, ex. Malta) vira SKIP e o filtro é aplicado via `MoonCore` para os demais checks.
 - Plotly: `hoverdistance` 20 → 12 px (igual ao Chart.js), senão com 20 curvas no celular não sobra área vazia para limpar o filtro.
+
+## Atualização: versões de visualização da assertividade (2026-11-14)
+
+Pedido do Pedro: o gráfico deve ilustrar a assertividade ponto–curva. Opções apresentadas em quiz; resposta: "testa todos e faz versões no cabeçalho", com sub-agentes.
+
+Decisões:
+- 5 modos, escolhidos por `?viz=` (pílulas "Assertividade" no cabeçalho, preservando o conjunto de dados e a biblioteca): `tamanho`, `desvio` (padrão), `cor`, `faixa`, `rotulo`.
+- Ponto ganha 5º campo `refY`: valor da curva teórica (curvas) ou da outra série no mesmo ano (espúrias). Cada série tem `reference` (201 amostras da curva teórica; ou os pontos da outra série).
+- Escala de cor única para as 3 libs: `MoonSeries.accuracyColor` (vermelho `#FF6A3D` → Neon Yellow → verde `#3DDC84`) sobre a faixa de assertividade do conjunto.
+- Foco (`MoonSeries.focus`): desvio, faixa e rótulo desenham só na série filtrada; sem filtro, em todas se houver ≤ 4 séries (espúrias). Com 20 curvas sem filtro aparece o aviso "Clique numa linha para ver."
+- Tolerância da faixa: curvas ±0,4 (ruído máximo); espúrias ±1 (= 90% de concordância).
+- Decorações nunca são clicáveis nem entram em legenda/tooltip, para não deslocar índices do filtro.
+- 1 sub-agente (sonnet) por biblioteca, com spec comum.
+- E2E percorre conjunto × modo × biblioteca (`VIZ=`, `DATASETS=`, `W=`).
+
+## Atualização: assertividade aleatória + correções de vínculo (2026-11-14)
+
+Pedidos do Pedro: assertividade aleatória e diferença mais evidente; bug "ao selecionar a curva amarela, mostra a assertividade da azul".
+
+Decisões:
+- Assertividade sorteada por ponto (5–100%), novo sorteio a cada carga; `?seed=N` repete. Links de biblioteca e de modo carregam o `seed`, para comparar versões com os mesmos pontos; link "Sortear de novo".
+- Curvas: ponto afastado da curva teórica em `(1 − acc/100)·2,5`; faixa de tolerância ±1,25 (fora = < 50%). Correlações reais: valores reais mantidos, só a assertividade é sorteada (o traço de desvio mostra a distância real até a outra série; a cor mostra a assertividade sorteada).
+- Mais evidente: escala de cor fixa 0–100%; marcador 3–14 px (`MoonSeries.markerSize`, comum às 3 libs); rótulos coloridos pela assertividade.
+- Bug do vínculo (tabela): a coluna de assertividade das correlações lia sempre a 1ª série. Agora há uma coluna de assertividade por série; com filtro, só a da série escolhida. E2E verifica que a assertividade da tabela bate com a série filtrada.
+- Decorações (desvio/faixa/rótulo) só na série clicada; antes, sem filtro, as duas séries de correlação desenhavam traços sobrepostos.
+- Plotly: hover só mede distância até pontos; clique entre marcadores agora testa a distância ao segmento (12 px), como no Chart.js.
+- E2E: `seed` fixo; ambiguidade de clique medida em pixels (16 px).
+- Correlações reais: referência deixou de ser "a outra série" e virou um valor esperado fictício a `(1 − acc/100)·2,5` do ponto real. Assim, em todos os conjuntos, distância até a referência, cor e % contam a mesma coisa (antes um traço longo podia sair verde).

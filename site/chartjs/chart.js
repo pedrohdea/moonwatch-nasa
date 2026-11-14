@@ -38,25 +38,95 @@
   function render(container, series) {
     var ds = root.MoonSeries.dataset;
     var spurious = ds.kind === 'spurious';
+    var S = root.MoonSeries;
+    var viz = S.viz;
     var ls = legendSize(container.clientWidth || root.innerWidth);
     var canvas = root.document.createElement('canvas');
     container.appendChild(canvas);
 
+    // 'cor' mode: marker fill = accuracy color, dimmed like its series when another is active.
+    function colorFill(i) {
+      return function (ctx) {
+        var f = root.MoonCore.getFilter();
+        var c = S.accuracyColor(ctx.raw.acc);
+        return f === null || f === i ? c : withAlpha(c, 0.15);
+      };
+    }
+
+    // Decorations drawn on the canvas (not datasets): never in legend, tooltips, hit test or indices.
+    var decor = {
+      id: 'moonDecor',
+      beforeDatasetsDraw: function (c) { drawDecor(c, true); },
+      afterDatasetsDraw: function (c) { drawDecor(c, false); }
+    };
+
+    function drawDecor(c, below) {
+      if (viz === 'tamanho' || viz === 'cor') return;
+      var ctx = c.ctx, xs = c.scales.x, ys = c.scales.y, a = c.chartArea;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(a.left, a.top, a.right - a.left, a.bottom - a.top);
+      ctx.clip();
+      S.focus(root.MoonCore.getFilter()).forEach(function (i) {
+        if (!c.isDatasetVisible(i)) return;
+        var sr = series[i], color = sr.color, tol = ds.tolerance;
+        var ref = sr.reference.map(function (r) { return { x: xs.getPixelForValue(r[0]), y: ys.getPixelForValue(r[1]) }; });
+        if (below && viz === 'faixa') {
+          ctx.beginPath();
+          sr.reference.forEach(function (r, k) { ctx[k ? 'lineTo' : 'moveTo'](xs.getPixelForValue(r[0]), ys.getPixelForValue(r[1] + tol)); });
+          for (var k = sr.reference.length - 1; k >= 0; k--) ctx.lineTo(xs.getPixelForValue(sr.reference[k][0]), ys.getPixelForValue(sr.reference[k][1] - tol));
+          ctx.closePath();
+          ctx.fillStyle = withAlpha(color, 0.15);
+          ctx.fill();
+        }
+        if (below && (viz === 'desvio' || viz === 'faixa')) {
+          ctx.beginPath();
+          ref.forEach(function (p, k) { ctx[k ? 'lineTo' : 'moveTo'](p.x, p.y); });
+          ctx.setLineDash([6, 4]);
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = withAlpha(color, 0.8);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+        if (below) return;
+        var pts = c.getDatasetMeta(i).data;
+        sr.points.forEach(function (p, k) {
+          var el = pts[k];
+          if (viz === 'desvio') {
+            ctx.beginPath();
+            ctx.moveTo(el.x, el.y);
+            ctx.lineTo(el.x, ys.getPixelForValue(p[4]));
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = S.accuracyColor(p[3]);
+            ctx.stroke();
+          } else if (viz === 'rotulo') {
+            ctx.font = "11px 'Fira Code', monospace";
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.font = "bold 11px 'Fira Code', monospace";
+            ctx.fillStyle = S.accuracyColor(p[3]); // label color = accuracy
+            ctx.fillText(p[3] + '%', el.x, el.y - 7);
+          }
+        });
+      });
+      ctx.restore();
+    }
+
     var chart = new root.Chart(canvas, {
       type: 'line',
       data: {
-        datasets: series.map(function (s) {
+        datasets: series.map(function (s, i) {
           return {
             label: s.name,
-            data: s.points.map(function (p) { return { x: p[0], y: p[1], raw: p[2], acc: p[3] }; }),
+            data: s.points.map(function (p) { return { x: p[0], y: p[1], raw: p[2], acc: p[3], refY: p[4] }; }),
             unit: s.unit,
             parsing: false,
             normalized: true,
             tension: 0, // straight segments between table points
             showLine: true,
-            pointRadius: function (ctx) { return 1.5 + 3.5 * (ctx.raw.acc / 100); }, // bigger = more accurate
-            pointHoverRadius: function (ctx) { return 3 + 3.5 * (ctx.raw.acc / 100); },
-            pointBackgroundColor: s.color,
+            pointRadius: function (ctx) { return viz === 'tamanho' ? MoonSeries.markerSize(ctx.raw.acc) / 2 : viz === 'cor' ? 3.5 : 3; }, // tamanho: bigger = more accurate
+            pointHoverRadius: function (ctx) { return viz === 'tamanho' ? MoonSeries.markerSize(ctx.raw.acc) / 2 + 1.5 : 6; },
+            pointBackgroundColor: viz === 'cor' ? colorFill(i) : s.color,
             pointBorderColor: s.color,
             borderWidth: 2,
             borderColor: s.color,
@@ -64,6 +134,7 @@
           };
         })
       },
+      plugins: [decor],
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -102,10 +173,13 @@
               title: function () { return ''; },
               label: function (ctx) {
                 var acc = 'Assertividade: ' + ctx.raw.acc + '%';
+                var dev = ctx.raw.y - ctx.raw.refY;
+                var extra = [acc, 'Referência (' + ds.referenceLabel + '): ' + nf.format(ctx.raw.refY),
+                  'Desvio: ' + (dev > 0 ? '+' : '') + nf.format(dev)];
                 if (spurious) {
-                  return [ctx.dataset.label + ' (' + ctx.parsed.x + '): ' + nf.format(ctx.raw.raw) + ' ' + ctx.dataset.unit, acc];
+                  return [ctx.dataset.label + ' (' + ctx.parsed.x + '): ' + nf.format(ctx.raw.raw) + ' ' + ctx.dataset.unit].concat(extra);
                 }
-                return [ctx.dataset.label + ': x=' + ctx.parsed.x.toFixed(3) + ', y=' + ctx.parsed.y.toFixed(3), acc];
+                return [ctx.dataset.label + ': x=' + ctx.parsed.x.toFixed(3) + ', y=' + ctx.parsed.y.toFixed(3)].concat(extra);
               }
             }
           },
@@ -135,7 +209,7 @@
         var active = index === i;
         var c = index === null || active ? base : withAlpha(base, 0.15);
         ds.borderColor = c;
-        ds.pointBackgroundColor = c;
+        if (viz !== 'cor') ds.pointBackgroundColor = c;
         ds.pointBorderColor = c;
         ds.borderWidth = active ? 4 : 2;
         ds.order = active ? -1 : 0; // draw highlighted line on top

@@ -3,13 +3,16 @@
 (function (root) {
   'use strict';
 
-  // Point format (shared by table and charts): [x, y, realValue|null, accuracyPercent].
+  // Point format (shared by table and charts): [x, y, realValue|null, accuracyPercent, referenceY].
+  // referenceY = theoretical curve (curves) or a fake expected value (spurious); |y − referenceY| = (1 − acc/100)·MAX_DEV.
   var X_MIN = 0;
   var X_MAX = 10;
   var STEP = 0.5;
   var COUNT = Math.round((X_MAX - X_MIN) / STEP) + 1;
-  var NOISE = 0.4; // max |measured − theoretical| for the fake curve points
-  var SEED = 20261114;
+  var MAX_DEV = 2.5; // |measured − theoretical| at 0% accuracy (fake curve points)
+  var ACC_MIN = 5; // random accuracy range: ACC_MIN..100 %
+  var REFERENCE_COUNT = 201; // samples of the theoretical curve drawn as reference
+  var SEED = 20261114; // fixed seed outside the browser (tests); the page draws a new seed per load unless ?seed=N
   var EXP_NORM = Math.exp(2.5) - 1;
   var LOG_NORM = Math.log(11);
 
@@ -106,30 +109,43 @@
 
   function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
 
-  // Fake measured points: theoretical value + bounded noise; accuracy 100% = on the curve, 75% = worst noise.
+  // Theoretical point at step i of n (x uniform, or t uniform for the parametric cycloid).
+  function theoretical(def, i, n) {
+    if (def.parametric) {
+      var t = (2 * Math.PI * i) / (n - 1);
+      return [round((10 * (t - Math.sin(t))) / (2 * Math.PI), 3), 5 * (1 - Math.cos(t))];
+    }
+    var x = round(X_MIN + ((X_MAX - X_MIN) * i) / (n - 1), 3);
+    return [x, def.fn(x)];
+  }
+
+  function randomAccuracy(random) {
+    return ACC_MIN + Math.floor(random() * (101 - ACC_MIN));
+  }
+
+  // Fake measured points: random accuracy, and the point sits (1 − acc/100)·MAX_DEV away from the curve.
+  // Clamping to [0, 10] can shorten the deviation, so accuracy is recomputed from the final deviation.
   function curvePoints(def, random) {
     var points = new Array(COUNT);
     for (var i = 0; i < COUNT; i++) {
-      var x, y;
-      if (def.parametric) {
-        var t = (2 * Math.PI * i) / (COUNT - 1);
-        x = round((10 * (t - Math.sin(t))) / (2 * Math.PI), 3);
-        y = 5 * (1 - Math.cos(t));
-      } else {
-        x = round(X_MIN + i * STEP, 3);
-        y = def.fn(x);
-      }
-      var measured = clamp(y + (random() * 2 - 1) * NOISE, 0, 10);
-      points[i] = [x, round(measured, 3), null, Math.round(100 - (25 * Math.abs(measured - y)) / NOISE)];
+      var p = theoretical(def, i, COUNT);
+      var sign = random() < 0.5 ? -1 : 1;
+      var measured = round(clamp(p[1] + sign * (1 - randomAccuracy(random) / 100) * MAX_DEV, 0, 10), 3);
+      var acc = Math.round(100 * (1 - Math.abs(measured - p[1]) / MAX_DEV));
+      points[i] = [p[0], measured, null, acc, round(p[1], 4)];
     }
     return points;
   }
 
-  function buildCurves() {
+  function buildCurves(random) {
     var colors = palette(CURVES.length);
-    var random = prng(SEED);
     return CURVES.map(function (def, index) {
-      return { index: index, name: def.name, color: colors[index], points: curvePoints(def, random) };
+      var reference = [];
+      for (var i = 0; i < REFERENCE_COUNT; i++) {
+        var p = theoretical(def, i, REFERENCE_COUNT);
+        reference.push([p[0], round(p[1], 4)]);
+      }
+      return { index: index, name: def.name, color: colors[index], points: curvePoints(def, random), reference: reference };
     });
   }
 
@@ -140,16 +156,21 @@
     return values.map(function (v) { return (10 * (v - min)) / span; });
   }
 
-  // Accuracy per year = agreement of the two normalized series: 100% when they coincide.
-  function buildSpurious(item) {
-    var na = normalize(item.a.values);
-    var nb = normalize(item.b.values);
-    var accuracy = na.map(function (v, i) { return Math.round(100 * (1 - Math.abs(v - nb[i]) / 10)); });
-    return [[item.a, na], [item.b, nb]].map(function (pair, index) {
-      var v = pair[0];
+  // Real values with random accuracy (fake, for usability tests). The reference is a fake "expected value"
+  // placed (1 − acc/100)·MAX_DEV away from the real point, so distance, color and % tell the same story.
+  function buildSpurious(item, random) {
+    var norm = [normalize(item.a.values), normalize(item.b.values)];
+    return [item.a, item.b].map(function (v, index) {
+      var points = item.years.map(function (year, i) {
+        var y = round(norm[index][i], 4);
+        var sign = random() < 0.5 ? -1 : 1;
+        var ref = round(clamp(y + sign * (1 - randomAccuracy(random) / 100) * MAX_DEV, 0, 10), 4);
+        return [year, y, v.values[i], Math.round(100 * (1 - Math.abs(y - ref) / MAX_DEV)), ref];
+      });
       return {
         index: index, name: v.name, unit: v.unit, source: v.source, color: SPURIOUS_COLORS[index],
-        points: item.years.map(function (year, i) { return [year, round(pair[1][i], 4), v.values[i], accuracy[i]]; })
+        points: points,
+        reference: points.map(function (p) { return [p[0], p[4]]; })
       };
     });
   }
@@ -157,14 +178,16 @@
   var datasets = [{
     key: 'curvas', label: 'Curvas matemáticas (20)', kind: 'curves',
     xLabel: 'x', yLabel: 'y', xRange: [0, 10], yRange: [0, 10], xIsYear: false,
+    tolerance: MAX_DEV / 2, referenceLabel: 'curva teórica', // outside the band = accuracy < 50%
     build: buildCurves
   }].concat(SPURIOUS.map(function (item) {
     return {
       key: item.key, label: 'Correlação espúria: ' + item.title, kind: 'spurious',
       title: item.title, url: item.url, r: item.r,
       xLabel: 'Ano', yLabel: 'Índice normalizado (0–10)',
+      tolerance: MAX_DEV / 2, referenceLabel: 'valor esperado (fictício)', // outside the band = accuracy < 50%
       xRange: [item.years[0], item.years[item.years.length - 1]], yRange: [0, 10], xIsYear: true,
-      build: function () { return buildSpurious(item); }
+      build: function (random) { return buildSpurious(item, random); }
     };
   }));
 
@@ -182,16 +205,63 @@
     return datasets.filter(function (d) { return d.key === key; })[0] || datasets[0];
   }
 
-  var query = root.location && root.location.search ? new URLSearchParams(root.location.search).get('dataset') : null;
-  var active = findDataset(query);
-  var all = active.build();
+  // Ways to draw the point-to-curve accuracy; chosen with ?viz=<key> (header pills).
+  var VIZ_MODES = [
+    { key: 'tamanho', label: 'Tamanho', help: 'Tamanho do marcador proporcional à assertividade.' },
+    { key: 'desvio', label: 'Desvio', help: 'Referência tracejada e um traço de cada ponto até ela.' },
+    { key: 'cor', label: 'Cor', help: 'Cor do marcador pela assertividade.' },
+    { key: 'faixa', label: 'Faixa', help: 'Faixa de tolerância em volta da referência; ponto fora da faixa = assertividade baixa.' },
+    { key: 'rotulo', label: 'Rótulo', help: 'Percentual de assertividade escrito em cada ponto.' }
+  ];
+
+  // Green (100%) -> Neon Yellow (50%) -> red (0%).
+  var ACC_STOPS = ['#FF6A3D', '#EAFE07', '#3DDC84'];
+
+  function mix(a, b, t) {
+    var pa = parseInt(a.slice(1), 16);
+    var pb = parseInt(b.slice(1), 16);
+    var out = [16, 8, 0].map(function (shift) {
+      var ca = (pa >> shift) & 255;
+      var cb = (pb >> shift) & 255;
+      return Math.round(ca + (cb - ca) * t).toString(16).padStart(2, '0');
+    });
+    return ('#' + out.join('')).toUpperCase();
+  }
+
+  function makeAccuracyColor(domain) {
+    return function (acc) {
+      var t = clamp((acc - domain[0]) / (domain[1] - domain[0]), 0, 1);
+      return t < 0.5 ? mix(ACC_STOPS[0], ACC_STOPS[1], t * 2) : mix(ACC_STOPS[1], ACC_STOPS[2], (t - 0.5) * 2);
+    };
+  }
+
+  // Series that get reference/deviation/band/labels: only the filtered one, so every decoration
+  // clearly belongs to the selected series (drawing several at once overlapped and mixed them up).
+  function focus(activeIndex) {
+    return Number.isInteger(activeIndex) ? [activeIndex] : [];
+  }
+
+  var params = root.location && root.location.search ? new URLSearchParams(root.location.search) : new URLSearchParams('');
+  var active = findDataset(params.get('dataset'));
+  var seed = Number(params.get('seed')) || (root.document ? Date.now() % 2147483647 : SEED);
+  var all = active.build(prng(seed));
+  var viz = VIZ_MODES.filter(function (m) { return m.key === params.get('viz'); })[0] || VIZ_MODES[1];
+  var domain = [0, 100];
 
   var api = {
     datasets: datasets.map(function (d) { return { key: d.key, label: d.label, kind: d.kind }; }),
     dataset: active,
     all: all,
     colors: all.map(function (s) { return s.color; }),
-    load: function (key) { return findDataset(key).build(); },
+    vizModes: VIZ_MODES,
+    viz: viz.key,
+    accuracyDomain: domain,
+    accuracyStops: ACC_STOPS,
+    accuracyColor: makeAccuracyColor(domain),
+    focus: focus,
+    seed: seed,
+    markerSize: function (acc) { return 3 + (11 * acc) / 100; }, // px, shared by the 3 libraries
+    load: function (key) { return findDataset(key).build(prng(seed)); },
     filterRows: filterRows
   };
 

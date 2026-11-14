@@ -32,7 +32,15 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
   - `barco`, `milho`, `malta`, `sarah` — correlações espúrias reais de [Tyler Vigen](https://www.tylervigen.com/spurious-correlations) (CC BY 4.0). Cada série é normalizada para 0–10 no gráfico; a tabela mostra os valores reais, uma linha por ano, como no site original.
 - O gráfico é desenhado a partir dos pontos da tabela (marcadores ligados por retas). Cada ponto tem **assertividade** (0–100%), mostrada na tabela, no tooltip e no tamanho do marcador:
   - curvas: proximidade do ponto medido à curva teórica (ruído fixo por semente, 75–100%);
-  - correlações espúrias: concordância das duas séries normalizadas no ano, `100·(1 − |A − B|/10)`.
+  - aleatória neste protótipo (5–100%, novo sorteio a cada carga; `?seed=N` repete). O ponto fica a `(1 − acc/100)·2,5` da referência: 100% em cima dela.
+- Versões da visualização da assertividade no cabeçalho (`?viz=<modo>`), nas 3 bibliotecas:
+  - `tamanho` — tamanho do marcador;
+  - `desvio` (padrão) — referência tracejada + traço de cada ponto até ela, colorido pela assertividade;
+  - `cor` — cor do marcador (vermelho → amarelo → verde);
+  - `faixa` — faixa de tolerância em volta da referência;
+  - `rotulo` — `NN%` escrito em cada ponto.
+  Referência = curva teórica (curvas) ou valor esperado fictício (correlações espúrias). Desvio, faixa e rótulo aparecem só na série clicada, para não misturar séries.
+- E2E: `VIZ=desvio,cor DATASETS=curvas node tests/e2e.mjs` limita modos e conjuntos.
 - Bibliotecas ficam em `site/<versão>/vendor/`; funciona sem internet (só as fontes do Google caem para fontes do sistema).
 
 Estrutura: tudo que não é gráfico (dados, filtro, tabela, layout, CSS) fica em `site/shared/` e vale para as 3 versões. Cada versão só tem seu `chart.js` (adaptador da biblioteca). Plano e decisões: [`docs/PLAN.md`](docs/PLAN.md).
