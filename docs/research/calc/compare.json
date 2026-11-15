@@ -1,0 +1,72 @@
+[
+ {
+  "pt": "cr",
+  "lat": -89.4749,
+  "lon": -137.443,
+  "pgdaSun": 88.4,
+  "pgda3x3": "39.8..88.4",
+  "our2027": 86.9,
+  "ourCycleCenter": 86.6,
+  "ourCycleDisk": 86.4,
+  "dSun": -2,
+  "pgdaEarth": 58.1,
+  "ourCycleEarth": 53,
+  "dEarth": -5.1
+ },
+ {
+  "pt": "sh1",
+  "lat": -89.6864,
+  "lon": -162.937,
+  "pgdaSun": 87.1,
+  "pgda3x3": "38.9..87.1",
+  "our2027": 85.3,
+  "ourCycleCenter": 85.2,
+  "ourCycleDisk": 84.9,
+  "dSun": -2.2,
+  "pgdaEarth": 53.7,
+  "ourCycleEarth": 49.2,
+  "dEarth": -4.5
+ },
+ {
+  "pt": "dg",
+  "lat": -88.8089,
+  "lon": 123.756,
+  "pgdaSun": 86,
+  "pgda3x3": "17..86",
+  "our2027": 85.2,
+  "ourCycleCenter": 85.2,
+  "ourCycleDisk": 85.2,
+  "dSun": -0.8,
+  "pgdaEarth": 56.5,
+  "ourCycleEarth": 55.8,
+  "dEarth": -0.7
+ },
+ {
+  "pt": "mal",
+  "lat": -86.0011,
+  "lon": 2.055,
+  "pgdaSun": 81.9,
+  "pgda3x3": "20.6..81.9",
+  "our2027": 71.7,
+  "ourCycleCenter": 71.5,
+  "ourCycleDisk": 71.3,
+  "dSun": -10.6,
+  "pgdaEarth": 58.7,
+  "ourCycleEarth": 59,
+  "dEarth": 0.3
+ },
+ {
+  "pt": "cr_orig",
+  "lat": -89.45,
+  "lon": -137,
+  "pgdaSun": 45.4,
+  "pgda3x3": "0..86.4",
+  "our2027": 90.9,
+  "ourCycleCenter": 90.8,
+  "ourCycleDisk": 90.6,
+  "dSun": 45.2,
+  "pgdaEarth": 51.1,
+  "ourCycleEarth": 53.1,
+  "dEarth": 2
+ }
+]
