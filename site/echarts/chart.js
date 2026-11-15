@@ -296,9 +296,11 @@
       var gm = chart.getModel().getComponent('grid');
       if (!gm || !gm.coordinateSystem) return;
       var rect = gm.coordinateSystem.getRect();
-      var items = VL.list().map(function (l, n) {
+      var items = [];
+      VL.list().forEach(function (l, n) {
+        if (!core.vlineVisible(n)) return; // hidden series: draw nothing (old group is removed below)
         var px = chart.convertToPixel({ xAxisIndex: 0 }, l.value);
-        return { id: l.id, n: n, px: px, hidden: !isFinite(px) || px < rect.x - 0.5 || px > rect.x + rect.width + 0.5 };
+        items.push({ id: l.id, n: n, px: px, hidden: !isFinite(px) || px < rect.x - 0.5 || px > rect.x + rect.width + 0.5 });
       });
       var sig = [rect.x, rect.y, rect.width, rect.height].concat(items.map(function (it) { return it.id + ':' + it.px + ':' + it.n; })).join('|');
       if (sig === vSig) return;
@@ -340,6 +342,11 @@
     function drawAll() { drawLine(); drawVLines(); }
     LINE.onChange(function () { drawLine(); drawFills(); });
     VL.onChange(function () { drawVLines(); drawFills(); });
+    // Legend toggle -> shared visibility; the redraw happens in onVisibilityChange.
+    chart.on('legendselectchanged', function (e) {
+      series.forEach(function (s, k) { core.setVisible(k, e.selected[s.name] !== false); });
+    });
+    core.onVisibilityChange(function () { drawVLines(); drawFills(); });
     chart.on('datazoom', drawAll);
     // 'finished' can fire inside ECharts' main process, where setOption is silently ignored: defer it.
     chart.on('finished', function () { setTimeout(drawAll, 0); }); // signature checks prevent loops

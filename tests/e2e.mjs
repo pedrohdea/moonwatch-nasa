@@ -9,6 +9,12 @@ const VIZS = (process.env.VIZ || 'tamanho,desvio,cor,faixa,rotulo').split(',');
 // In-page helpers working on MoonSeries data (normalized to the dataset ranges), so any dataset can be tested.
 // Handle (arrow) center = right end of the plot area + HANDLE_DX px. Filled in from each adapter's report.
 const HANDLE_DX = { echarts: 8, plotly: 5, chartjs: 6 };
+// Toggle series k through each library's legend path (Chart.js needs a real click on the legend item).
+const LEGEND_TOGGLE = {
+  echarts: `(k)=>{const el=document.getElementById('chart');const c=echarts.getInstanceByDom(el)||echarts.getInstanceByDom(el.firstElementChild);c.dispatchAction({type:'legendToggleSelect',name:MoonSeries.all[k].name});return null;}`,
+  plotly: `(k)=>{const gd=document.querySelector('.js-plotly-plot');Plotly.restyle(gd,{visible:gd._fullData[k].visible===true?'legendonly':true},[k]);return null;}`,
+  chartjs: `(k)=>{const cv=document.querySelector('#chart canvas');const c=Chart.getChart(cv);const b=c.legend.legendHitBoxes[c.legend.legendItems.findIndex(it=>it.datasetIndex===k)];const r=cv.getBoundingClientRect();return [r.left+b.left+b.width/2,r.top+b.top+b.height/2];}`,
+};
 // Visible x range per library (to prove dragging the line did not zoom).
 const XVIEW = {
   echarts: `()=>{const el=document.getElementById('chart');const c=echarts.getInstanceByDom(el)||echarts.getInstanceByDom(el.firstElementChild);const r=c.getModel().getComponent('grid').coordinateSystem.getRect();return [c.convertFromPixel({xAxisIndex:0},r.x),c.convertFromPixel({xAxisIndex:0},r.x+r.width)];}`,
@@ -180,6 +186,19 @@ async function main() {
     const [vz0, vz1] = await evaluate(`(${XVIEW[lib]})()`);
     check('vertical drag does not zoom', Math.abs(vz0 - d.xRange[0]) < span * 0.01 && Math.abs(vz1 - d.xRange[1]) < span * 0.01, `${vz0}..${vz1}`);
     check('vertical drag leaves the horizontal line', (await evaluate(`MoonCore.line.get()`)) === hBefore);
+    // Legend toggle: hiding series 0 removes its vertical line, chip and area card; showing it brings them back.
+    const toggle = async () => {
+      // Legend sits above the plot: bring the chart's top edge just below the sticky top bar first.
+      await evaluate(`(()=>{const r=document.getElementById('chart').getBoundingClientRect();const bar=document.querySelector('.topbar').getBoundingClientRect().bottom;window.scrollTo({top:scrollY+r.top-bar-10,behavior:'instant'})})()`); await wait(200);
+      const pt = await evaluate(`(${LEGEND_TOGGLE[lib]})(0)`); if (pt) await click(pt[0], pt[1]); await wait(500);
+    };
+    const shownChips = () => evaluate(`[...document.querySelectorAll('#vlines-list .vline-chip')].filter(e=>!e.hidden).length`);
+    const cards = () => evaluate(`document.querySelectorAll('#fill-areas .fill-area').length`);
+    await toggle();
+    check('legend hide: series 0 reported hidden', (await evaluate(`MoonCore.isVisible(0)`)) === false);
+    check('legend hide: one vertical line less', (await shownChips()) === nSeries - 1 && (await cards()) === nSeries - 1, `${await shownChips()} chips, ${await cards()} cards`);
+    await toggle();
+    check('legend show: lines back', (await evaluate(`MoonCore.isVisible(0)`)) === true && (await shownChips()) === nSeries && (await cards()) === nSeries);
     const areasMatch = `(()=>{const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
     check('filled areas shown per vertical line', await evaluate(areasMatch));
     const areaBefore = await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`);

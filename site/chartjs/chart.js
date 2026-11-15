@@ -121,6 +121,7 @@
     function drawVLines(c) {
       var ctx = c.ctx, a = c.chartArea, cy = a.top - VH_OFFSET;
       root.MoonCore.vlines.list().forEach(function (l, i) {
+        if (!root.MoonCore.vlineVisible(i)) return; // series hidden in the legend
         var px = vlinePixel(c, l.value);
         if (px === null) return;
         ctx.save();
@@ -272,7 +273,15 @@
           }
         },
         plugins: {
-          legend: { labels: { color: TEXT, boxWidth: ls.box, font: { family: "'Overpass', sans-serif", size: ls.font } } },
+          legend: {
+            // Default toggle, then report every dataset's visibility to MoonCore.
+            onClick: function (e, item, legend) {
+              root.Chart.defaults.plugins.legend.onClick.call(this, e, item, legend);
+              chart.data.datasets.forEach(function (_, i) { root.MoonCore.setVisible(i, chart.isDatasetVisible(i)); });
+            },
+            // Stable legend order: datasets' `order` changes when a series is highlighted, legend must not jump.
+            labels: { color: TEXT, boxWidth: ls.box, font: { family: "'Overpass', sans-serif", size: ls.font }, sort: function (a, b) { return a.datasetIndex - b.datasetIndex; } }
+          },
           tooltip: {
             mode: 'nearest', intersect: false,
             bodyFont: { family: "'Fira Code', monospace" },
@@ -356,7 +365,8 @@
     // Id of the vertical line whose handle (<= 9 px) or body (<= 5 px, inside the plot) is under the pointer, or null.
     function vHit(e) {
       var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea, hit = null, best = Infinity;
-      root.MoonCore.vlines.list().forEach(function (l) {
+      root.MoonCore.vlines.list().forEach(function (l, k) {
+        if (!root.MoonCore.vlineVisible(k)) return; // hidden lines are not hit-testable
         var px = vlinePixel(chart, l.value);
         if (px === null) return;
         var d = Math.abs(pos.x - px);
@@ -399,6 +409,7 @@
     canvas.addEventListener('pointercancel', endDrag);
     root.MoonCore.line.onChange(function () { chart.draw(); });
     root.MoonCore.vlines.onChange(function () { chart.draw(); });
+    root.MoonCore.onVisibilityChange(function () { chart.draw(); });
 
     var down = null;
     canvas.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY }; });

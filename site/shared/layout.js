@@ -188,7 +188,8 @@
     if (source === 'input') return;
     vlList.innerHTML = lines.map(function (l, i) {
       var color = root.MoonCore.vlineColor(i);
-      return '<span class="vline-chip" data-id="' + l.id + '" style="border-color:' + color + '">' +
+      var hiddenAttr = root.MoonCore.vlineVisible(i) ? '' : ' hidden'; // series hidden in the legend
+      return '<span class="vline-chip" data-id="' + l.id + '" style="border-color:' + color + '"' + hiddenAttr + '>' +
         '<span class="vline-tag" style="color:' + color + '" title="' + root.MoonSeries.all[i % root.MoonSeries.all.length].name + '">V' + (i + 1) + '</span>' +
         '<input type="number" step="' + vlStep + '" min="' + vl.min + '" max="' + vl.max + '" value="' + l.value + '" aria-label="Posição da linha vertical V' + (i + 1) + '">' +
         '<button type="button" class="vline-remove" aria-label="Excluir linha vertical V' + (i + 1) + '" title="Excluir">×</button>' +
@@ -209,9 +210,6 @@
   vl.onChange(renderVLines);
   renderVLines(vl.list(), 'init');
 
-  // Switching dataset reloads the page so every chart adapter starts clean.
-  doc.getElementById('dataset-select').addEventListener('change', function (e) {
-    var url = new URL(root.location.href);
   // Filled area per vertical line (above the horizontal line, right of Vk), refreshed on any line move.
   var areasEl = doc.getElementById('fill-areas');
   var areaFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -231,7 +229,19 @@
     url.searchParams.set('dataset', e.target.value);
     url.hash = 'track';
     root.location.href = url.toString();
+  // Legend toggles change how many lines the chart shows: chips and area cards follow.
+  root.MoonCore.onVisibilityChange(function () {
+    renderVLines(vl.list(), 'visibility');
+    renderAreas();
   });
+
+  // Switching dataset reloads the page so every chart adapter starts clean.
+  doc.getElementById('dataset-select').addEventListener('change', function (e) {
+    var url = new URL(root.location.href);
+  });
+    // Line positions belong to the old dataset's axes and series count: start the new one from defaults.
+    url.searchParams.delete('vlinhas');
+    url.searchParams.delete('linha');
 
   root.MoonLayout = {
     lib: lib,

@@ -13,10 +13,26 @@
       listeners.forEach(function (cb) { cb(active); });
     }
 
+    // Series visibility (legend toggles reported by the chart adapters). Vertical lines, fills and
+    // area cards follow it, so their number always matches the lines shown in the chart.
+    var visible = [];
+    for (var i = 0; i < seriesCount; i++) visible.push(true);
+    var visibilityListeners = [];
+
+    function setVisible(index, value) {
+      if (!(index >= 0 && index < seriesCount) || visible[index] === !!value) return;
+      visible[index] = !!value;
+      visibilityListeners.forEach(function (cb) { cb(index, visible[index]); });
+    }
+
     return {
       setFilter: setFilter,
       getFilter: function () { return active; },
-      onFilterChange: function (cb) { listeners.push(cb); }
+      onFilterChange: function (cb) { listeners.push(cb); },
+      setVisible: setVisible,
+      isVisible: function (index) { return visible[index] !== false; },
+      visibleCount: function () { return visible.filter(Boolean).length; },
+      onVisibilityChange: function (cb) { visibilityListeners.push(cb); }
     };
   }
 
@@ -191,7 +207,7 @@
       var h = api.line.get();
       var active = api.getFilter();
       return root.MoonSeries.all
-        .filter(function (s) { return (active === null || s.index === active) && lines[s.index]; })
+        .filter(function (s) { return (active === null || s.index === active) && lines[s.index] && api.isVisible(s.index); })
         .map(function (s) {
           return { seriesIndex: s.index, color: s.color, polygons: fillRegions(s.points, h, lines[s.index].value) };
         });
@@ -204,7 +220,11 @@
         var s = root.MoonSeries.all[k];
         var area = fillRegions(s.points, h, l.value).reduce(function (sum, poly) { return sum + polygonArea(poly); }, 0);
         return { label: 'V' + (k + 1), seriesIndex: k, name: s.name, color: s.color, area: area };
-      });
+      }).filter(function (a) { return api.isVisible(a.seriesIndex); });
+    };
+    // Vertical line k is drawn only while series k is visible in the chart.
+    api.vlineVisible = function (k) {
+      return k < seriesCount && api.isVisible(k);
     };
     root.MoonCore = api;
   }

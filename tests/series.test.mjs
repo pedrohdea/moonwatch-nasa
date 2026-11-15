@@ -182,3 +182,17 @@ test('polygonArea: shoelace in data units', () => {
   const total = fillRegions(tri, 4, 3).reduce((s, p) => s + polygonArea(p), 0);
   assert.ok(Math.abs(total - 7) < 1e-9, `cut at x=3: ${total}`); // 8 minus the triangle (2,4)-(3,6)-(3,4) = 1
 });
+
+test('core visibility: legend toggles tracked per series', () => {
+  const core = createCore(3);
+  const seen = [];
+  core.onVisibilityChange((i, v) => seen.push([i, v]));
+  assert.equal(core.visibleCount(), 3);
+  core.setVisible(1, false);
+  core.setVisible(1, false);
+  core.setVisible(9, false);
+  assert.equal(core.isVisible(1), false);
+  assert.equal(core.visibleCount(), 2);
+  core.setVisible(1, true);
+  assert.deepEqual(seen, [[1, false], [1, true]]);
+});

@@ -175,7 +175,7 @@
           name: 'vline-' + l.id, type: 'line', xref: 'x', x0: l.value, x1: l.value, yref: 'paper', y0: 0, y1: 1,
           line: { color: core.vlineColor(i), width: 1.5, dash: 'dash' }, opacity: 0.85, layer: 'above'
         };
-      });
+      }).filter(function (sh, i) { return core.vlineVisible(i); }); // series hidden in the legend: no line
     }
     // Fill polygons (data units) below the traces; shapes are not hoverable or clickable and follow zoom.
     function fillShapes() {
@@ -287,6 +287,7 @@
         var lines = core.vlines.list();
         var live = {};
         lines.forEach(function (l, i) {
+          if (!core.vlineVisible(i)) return; // hidden series: handle removed below so it cannot catch events
           live[l.id] = true;
           var el = vHandles[l.id] || createVHandle(l.id);
           var r = L.xaxis.range;
@@ -340,6 +341,15 @@
       });
       container.on('plotly_afterplot', syncVHandles);
       syncVHandles();
+
+      // Legend toggles (click, double-click, Plotly.restyle) change trace.visible: report it to the core.
+      container.on('plotly_restyle', function () {
+        container._fullData.slice(0, mainCount).forEach(function (t, k) { core.setVisible(k, t.visible === true); });
+      });
+      core.onVisibilityChange(function () {
+        syncVHandles();
+        Plotly.relayout(container, { shapes: allShapes() });
+      });
 
       applyFilter(core.getFilter());
       core.onFilterChange(applyFilter);
