@@ -260,14 +260,16 @@
         }
       });
       // CSV points last: on top of mission dots (group 4 shares Apollo 14's coordinates)
+      var best = bestGroupKey();
       state.groups.forEach(function (g) {
         var sel = state.checked.indexOf(g.key) >= 0;
+        var top = g.key === best; // same green as the largest "Área preenchida" card
         g.points.forEach(function (r) {
           var s = latLonToScreen(r.lat, r.lon, view);
           if (!s.visible) return;
           ctx.beginPath();
-          ctx.arc(c + s.x * R, c - s.y * R, sel ? 4 : 3, 0, 2 * Math.PI);
-          ctx.fillStyle = sel ? '#EAFE07' : 'rgba(255,106,61,0.9)';
+          ctx.arc(c + s.x * R, c - s.y * R, top ? 6 : sel ? 4 : 3, 0, 2 * Math.PI);
+          ctx.fillStyle = top ? BEST_GREEN : sel ? '#EAFE07' : 'rgba(255,106,61,0.9)';
           ctx.fill();
           ctx.lineWidth = 1; ctx.strokeStyle = '#07173F'; ctx.stroke();
         });
@@ -333,10 +335,12 @@
           dot.material.color.setHex(sel ? 0xeafe07 : 0x2e96f5);
           dot.scale.setScalar((sel ? 1.8 : 1) * shrink);
         });
+        var best = bestGroupKey();
         csvMarkers.forEach(function (dot) {
           var sel = state.checked.indexOf(dot.userData.group.key) >= 0;
-          dot.material.color.setHex(sel ? 0xeafe07 : 0xff6a3d);
-          dot.scale.setScalar((sel ? 1.4 : 1) * shrink);
+          var top = dot.userData.group.key === best;
+          dot.material.color.setHex(top ? 0x3ddc84 : sel ? 0xeafe07 : 0xff6a3d);
+          dot.scale.setScalar((top ? 2 : sel ? 1.4 : 1) * shrink);
         });
         renderer.render(scene, camera);
       };
@@ -362,6 +366,12 @@
   function draw() {
     if (!renderers[state.tab]) renderers[state.tab] = factories[state.tab]();
     renderers[state.tab].draw(state.view);
+    // Mission label of the green group, same green as the largest "Área preenchida" card.
+    var best = bestGroupKey();
+    doc.querySelectorAll('#landing-group-list label').forEach(function (l) {
+      var cb = l.querySelector('input');
+      l.classList.toggle('is-best', !!cb && cb.value === best);
+    });
   }
 
   function animateTo(target) {
@@ -396,6 +406,16 @@
   }
 
   // Multi-select of CSV groups: highlights them, lists their points and autoscales the view to frame all of them.
+  // Group with the largest filled area (the green "Área preenchida" card), as 'csv-<missionID>'; null when none.
+  var BEST_GREEN = '#3DDC84';
+  function bestGroupKey() {
+    if (!root.MoonCore || !root.MoonCore.areas || !root.MoonSeries || root.MoonSeries.dataset.kind !== 'viability') return null;
+    var best = null;
+    root.MoonCore.areas().forEach(function (a) { if (a.area > 0 && (!best || a.area > best.area)) best = a; });
+    var s = best && root.MoonSeries.all[best.seriesIndex];
+    return s && s.group !== undefined ? 'csv-' + s.group : null;
+  }
+
   // Total VIABILITY of a site over every day of docs/fLandingSites_viability.csv (null when not loaded).
   var sumFmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
   function groupName(g) {
@@ -493,7 +513,9 @@
     root.MoonCore.onFilterChange(syncFromChart);
     root.MoonCore.onVisibilityChange(syncFromChart);
     syncFromChart();
+    // The largest area (green) can change when lines move: recolor the globe points.
+    [root.MoonCore.vlines, root.MoonCore.hlines, root.MoonCore.departure].forEach(function (set) { set.onChange(function () { draw(); }); });
   }
 
-  root.MoonLanding = { missions: MISSIONS, state: state, select: selectMission, setGroups: setGroups, setTab: setTab, math: math, ready: ready };
+  root.MoonLanding = { missions: MISSIONS, state: state, select: selectMission, setGroups: setGroups, bestGroupKey: bestGroupKey, setTab: setTab, math: math, ready: ready };
 })(typeof window !== 'undefined' ? window : globalThis);

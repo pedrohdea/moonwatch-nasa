@@ -215,6 +215,7 @@ th.sortable:hover { color: var(--neon-yellow); }
 .landing-groups legend { font-weight: 700; padding: 0 6px; }
 .landing-group-list { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 8px; font-size: 16px; }
 .landing-group-list label { white-space: nowrap; cursor: pointer; }
+.landing-group-list label.is-best { color: #3DDC84; font-weight: 700; } /* largest filled area */
 .landing-group-list .muted { color: var(--text-muted); }
 .landing-groups .btn { padding: 2px 12px; font-size: 14px; }
 .landing-sum strong { color: var(--neon-yellow); font-size: 1.15em; }

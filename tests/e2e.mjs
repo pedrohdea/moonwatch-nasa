@@ -295,6 +295,11 @@ async function main() {
     const checkedCount = () => evaluate(`MoonLanding.state.checked.length`);
     check('viability is the default dataset', (await evaluate(`(()=>{const u=new URL(location.href);return u.searchParams.get('dataset')})()`)) === 'viabilidade' || (await evaluate(`MoonSeries.dataset.key`)) === 'viabilidade');
     check('no filter: every visible group selected on the globe', (await checkedCount()) === 10);
+    // Green on the globe = the mission of the green (largest) "Área preenchida" card.
+    check('globe green group = largest area card', await evaluate(`(()=>{const card=document.querySelector('#fill-areas .fill-area.is-max .fill-area-name').textContent;const s=MoonSeries.all.find(x=>x.name===card);return MoonLanding.bestGroupKey()==='csv-'+s.group;})()`));
+    await evaluate(`MoonCore.departure.set(MoonCore.departure.list()[0].id, 600, 'input')`); await wait(300);
+    check('globe green follows the card when lines move', await evaluate(`(()=>{const card=document.querySelector('#fill-areas .fill-area.is-max .fill-area-name').textContent;const s=MoonSeries.all.find(x=>x.name===card);return MoonLanding.bestGroupKey()==='csv-'+s.group;})()`));
+    await evaluate(`MoonCore.departure.set(MoonCore.departure.list()[0].id, 0, 'input')`); await wait(300);
     await evaluate(`MoonCore.setFilter(2)`); await wait(800);
     check('filter Grupo 3 selects only group 3 on the globe', (await evaluate(`JSON.stringify(MoonLanding.state.checked)`)) === '["csv-3"]' &&
       (await evaluate(`document.querySelectorAll('#landing-points tbody tr').length`)) === 5);
