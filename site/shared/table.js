@@ -87,6 +87,8 @@
 
     var label = index === null ? 'Todas as séries' : 'Filtro: ' + series[index].name;
     badge.textContent = label + ' — ' + fmt.format(rows.length) + ' linhas';
+    var barTitle = doc.querySelector('.table-bar[data-for="table-box"] .table-bar-title');
+    if (barTitle) barTitle.textContent = 'Tabela de dados (' + fmt.format(rows.length) + ' linhas)';
     badge.classList.toggle('is-active', index !== null);
     if (index !== null) badge.style.setProperty('--series-color', root.MoonSeries.colors[index]);
     clearButton.disabled = index === null;

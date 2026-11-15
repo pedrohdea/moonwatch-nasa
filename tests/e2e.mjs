@@ -231,6 +231,10 @@ async function main() {
     check('areas follow the horizontal line', (await evaluate(areasMatch)) && (await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`)) !== areaBefore, String(areaBefore));
     await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
 
+    // Tables start minimized; "Maximizar" opens the data table (needed for its infinite scroll).
+    check('data table starts minimized', await evaluate(`getComputedStyle(document.getElementById('table-box')).display==='none'`));
+    await evaluate(`document.querySelector('.table-toggle[aria-controls=table-box]').click()`); await wait(300);
+    check('Maximizar opens the data table', await evaluate(`getComputedStyle(document.getElementById('table-box')).display!=='none' && document.querySelector('.table-toggle[aria-controls=table-box]').textContent==='Minimizar'`));
     const before = await evaluate(`document.querySelectorAll('#table-body tr').length`);
     for (let i = 0; i < 4; i++) { await evaluate(`(b=>b.scrollTop=b.scrollHeight)(document.getElementById('table-box'))`); await wait(250); }
     const after = await evaluate(`document.querySelectorAll('#table-body tr').length`);

@@ -103,7 +103,9 @@
             '<span class="vlines-label" title="Uma linha para todas as séries: o preenchimento fica acima dela">Viabilidade mínima</span>' +
             '<div id="hlines-list" class="vlines-list"></div>' +
           '</div>' +
-          '<div class="table-box" id="table-box" tabindex="0" aria-label="Dados do gráfico">' +
+          '<div class="table-bar" data-for="table-box"><span class="table-bar-title">Tabela de dados</span>' +
+            '<button type="button" class="btn btn-ghost table-toggle" aria-controls="table-box" aria-expanded="false">Maximizar</button></div>' +
+          '<div class="table-box is-min" id="table-box" tabindex="0" aria-label="Dados do gráfico">' +
             '<table class="data">' +
               '<thead id="table-head"></thead>' +
               '<tbody id="table-body"></tbody>' +
@@ -272,6 +274,16 @@
   root.MoonCore.onFilterChange(function () {
     refreshVChips();
     renderAreas();
+  });
+
+  // Tables start minimized; the bar button toggles Maximizar / Minimizar (any .table-bar on the page).
+  doc.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.table-toggle');
+    if (!btn) return;
+    var box = doc.getElementById(btn.getAttribute('aria-controls'));
+    var open = box.classList.toggle('is-min') === false;
+    btn.textContent = open ? 'Minimizar' : 'Maximizar';
+    btn.setAttribute('aria-expanded', String(open));
   });
 
   // Switching dataset reloads the page so every chart adapter starts clean.

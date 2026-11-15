@@ -164,8 +164,14 @@ section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + a
 .chart-error { padding: 24px; color: var(--text-muted); }
 
 /* Table with internal infinite scroll */
+/* Table bar: title + Maximizar/Minimizar; tables start minimized (.is-min). */
+.table-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.table-bar-title { font-weight: 700; font-size: 15px; }
+.table-bar + .table-box { margin-top: 8px; }
+.table-box.is-min { display: none; }
+.table-bar[hidden] { display: none; }
 .table-box {
-  margin-top: 20px; max-height: 420px; overflow: auto;
+  margin-top: 20px; max-height: 70vh; overflow: auto; /* maximized: tall box, still scrolls */
   border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel);
 }
 .data { width: 100%; border-collapse: collapse; font-size: 15px; }
