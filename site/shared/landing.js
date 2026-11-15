@@ -1,4 +1,4 @@
-// #pouso section: mission picker + animated Moon globe in 3 renderers (Canvas 2D, three.js, Moon3DMap iframe).
+// #sites section: mission picker + animated Moon globe in 3 renderers (Canvas 2D, three.js, Moon3DMap iframe).
 // Pure math is exported for node tests; the DOM part runs only in the browser, after layout.js.
 (function (root) {
   'use strict';
@@ -9,22 +9,22 @@
 
   // [slug, name, agency, year, kind, lat, lon] from moon3dmap.com links.
   var MISSIONS = [
-    ['apollo-11-landing-site', 'Apollo 11', 'NASA', 1969, 'pouso', 0.71, 23.63],
-    ['apollo-12-landing-site', 'Apollo 12', 'NASA', 1969, 'pouso', -3.01, -23.42],
-    ['apollo-14-landing-site', 'Apollo 14', 'NASA', 1971, 'pouso', -3.65, -17.47],
-    ['apollo-15-landing-site', 'Apollo 15', 'NASA', 1971, 'pouso', 26.13, 3.63],
-    ['apollo-16-landing-site', 'Apollo 16', 'NASA', 1972, 'pouso', -8.97, 15.5],
-    ['apollo-17-landing-site', 'Apollo 17', 'NASA', 1972, 'pouso', 20.19, 30.77],
-    ['ranger-7-impact-site', 'Ranger 7', 'NASA', 1964, 'impacto', -10.6, -20.7],
-    ['surveyor-1-landing-site', 'Surveyor 1', 'NASA', 1966, 'pouso', 2.45, -43.22],
-    ['surveyor-5-landing-site', 'Surveyor 5', 'NASA', 1967, 'pouso', 1.455, 23.194],
-    ['surveyor-6-landing-site', 'Surveyor 6', 'NASA', 1967, 'pouso', 0.49, -1.4],
-    ['surveyor-7-landing-site', 'Surveyor 7', 'NASA', 1968, 'pouso', -40.981, -11.516],
-    ['luna-2-impact-site', 'Luna 2', 'URSS', 1959, 'impacto', 29.1, 0],
-    ['luna-9-landing-site', 'Luna 9', 'URSS', 1966, 'pouso', -7.1, -64.4],
-    ['luna-16-landing-site', 'Luna 16', 'URSS', 1970, 'pouso', -0.5137, 56.3638],
-    ['luna-20-landing-site', 'Luna 20', 'URSS', 1972, 'pouso', 3.7863, 56.6242],
-    ['luna-24-landing-site', 'Luna 24', 'URSS', 1976, 'pouso', 12.7145, 62.2097]
+    ['apollo-11-landing-site', 'Apollo 11', 'NASA', 1969, 'landing', 0.71, 23.63],
+    ['apollo-12-landing-site', 'Apollo 12', 'NASA', 1969, 'landing', -3.01, -23.42],
+    ['apollo-14-landing-site', 'Apollo 14', 'NASA', 1971, 'landing', -3.65, -17.47],
+    ['apollo-15-landing-site', 'Apollo 15', 'NASA', 1971, 'landing', 26.13, 3.63],
+    ['apollo-16-landing-site', 'Apollo 16', 'NASA', 1972, 'landing', -8.97, 15.5],
+    ['apollo-17-landing-site', 'Apollo 17', 'NASA', 1972, 'landing', 20.19, 30.77],
+    ['ranger-7-impact-site', 'Ranger 7', 'NASA', 1964, 'impact', -10.6, -20.7],
+    ['surveyor-1-landing-site', 'Surveyor 1', 'NASA', 1966, 'landing', 2.45, -43.22],
+    ['surveyor-5-landing-site', 'Surveyor 5', 'NASA', 1967, 'landing', 1.455, 23.194],
+    ['surveyor-6-landing-site', 'Surveyor 6', 'NASA', 1967, 'landing', 0.49, -1.4],
+    ['surveyor-7-landing-site', 'Surveyor 7', 'NASA', 1968, 'landing', -40.981, -11.516],
+    ['luna-2-impact-site', 'Luna 2', 'USSR', 1959, 'impact', 29.1, 0],
+    ['luna-9-landing-site', 'Luna 9', 'USSR', 1966, 'landing', -7.1, -64.4],
+    ['luna-16-landing-site', 'Luna 16', 'USSR', 1970, 'landing', -0.5137, 56.3638],
+    ['luna-20-landing-site', 'Luna 20', 'USSR', 1972, 'landing', 3.7863, 56.6242],
+    ['luna-24-landing-site', 'Luna 24', 'USSR', 1976, 'landing', 12.7145, 62.2097]
   ].map(function (m) {
     return {
       key: m[0], name: m[1], agency: m[2], year: m[3], kind: m[4], lat: m[5], lon: m[6],
@@ -122,9 +122,9 @@
     var groups = {};
     rows.forEach(function (r) { (groups[r.group] = groups[r.group] || []).push(r); });
     return Object.keys(groups).map(Number).sort(function (a, b) { return a - b; }).map(function (g) {
-      // Group name = mission name from docs/dMission.csv (via viability.js), else "Grupo N".
+      // Group name = mission name from docs/dMission.csv (via viability.js), else "Group N".
       var mission = root.MoonViability && root.MoonViability.groups.filter(function (x) { return String(x.group) === String(g); })[0];
-      return { key: 'csv-' + g, name: mission && mission.name ? mission.name : 'Grupo ' + g, objectives: mission ? mission.objectives : '', points: groups[g] };
+      return { key: 'csv-' + g, name: mission && mission.name ? mission.name : 'Group ' + g, objectives: mission ? mission.objectives : '', points: groups[g] };
     });
   }
 
@@ -140,10 +140,10 @@
   var TEXTURE = 'shared/vendor/moon-2k.jpg';
   var SITES_CSV = 'shared/data/dLandingSites.csv';
   var reducedMotion = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var nf = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 });
+  var nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
 
   function coords(m) {
-    return nf.format(Math.abs(m.lat)) + '° ' + (m.lat >= 0 ? 'N' : 'S') + ', ' + nf.format(Math.abs(m.lon)) + '° ' + (m.lon >= 0 ? 'L' : 'O');
+    return nf.format(Math.abs(m.lat)) + '° ' + (m.lat >= 0 ? 'N' : 'S') + ', ' + nf.format(Math.abs(m.lon)) + '° ' + (m.lon >= 0 ? 'E' : 'W');
   }
 
   var options = MISSIONS.map(function (m) {
@@ -151,36 +151,36 @@
   }).join('');
   var TABS = [['canvas', 'Canvas'], ['three', 'three.js'], ['iframe', 'Moon3DMap']];
 
-  // Landing section goes right after the chart section; "Definições da missão" stays below the Moon map.
+  // Landing section goes right after the chart section; "Mission Definitions" stays below the Moon map.
   doc.getElementById('mission').insertAdjacentHTML('beforebegin',
-    '<section id="pouso" class="landing">' +
+    '<section id="sites" class="landing">' +
       '<div class="wrap">' +
-        '<h2>Sítios de pouso e impacto</h2>' +
-        '<p class="hint">Escolha uma missão ou marque grupos de pontos fictícios: o globo gira e enquadra as coordenadas. Três versões para comparar.</p>' +
+        '<h2>Landing &amp; Impact Sites</h2>' +
+        '<p class="hint">Choose a mission or check groups of simulated sites: the globe spins and frames the coordinates. Three versions to compare.</p>' +
         '<div class="landing-controls">' +
-          '<label class="dataset-picker">Missão <select id="landing-select"><option value="">Escolha…</option><optgroup label="Missões históricas">' + options + '</optgroup></select></label>' +
-          '<div class="variants landing-tabs" role="group" aria-label="Versão do globo">' +
+          '<label class="dataset-picker">Mission <select id="landing-select"><option value="">Choose…</option><optgroup label="Historic missions">' + options + '</optgroup></select></label>' +
+          '<div class="variants landing-tabs" role="group" aria-label="Globe version">' +
             TABS.map(function (t) { return '<button type="button" class="variant" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') +
           '</div>' +
         '</div>' +
-        '<fieldset id="landing-groups" class="landing-groups" hidden><legend>Pontos fictícios (CSV)</legend>' +
+        '<fieldset id="landing-groups" class="landing-groups" hidden><legend>Simulated sites (CSV)</legend>' +
           '<div id="landing-group-list" class="landing-group-list"></div>' +
-          '<button type="button" class="btn btn-ghost" data-all="1">Todos</button> <button type="button" class="btn btn-ghost" data-all="0">Nenhum</button>' +
+          '<button type="button" class="btn btn-ghost" data-all="1">All</button> <button type="button" class="btn btn-ghost" data-all="0">None</button>' +
         '</fieldset>' +
         '<div class="landing-stage">' +
-          '<canvas id="landing-canvas" class="landing-pane" data-pane="canvas" width="560" height="560" role="img" aria-label="Globo lunar"></canvas>' +
-          '<div class="landing-pane" data-pane="three" role="img" aria-label="Globo lunar 3D"></div>' +
-          '<iframe class="landing-pane" data-pane="iframe" title="Moon3DMap: sítio da missão" loading="lazy" referrerpolicy="no-referrer"></iframe>' +
+          '<canvas id="landing-canvas" class="landing-pane" data-pane="canvas" width="560" height="560" role="img" aria-label="Lunar globe"></canvas>' +
+          '<div class="landing-pane" data-pane="three" role="img" aria-label="3D lunar globe"></div>' +
+          '<iframe class="landing-pane" data-pane="iframe" title="Moon3DMap: mission site" loading="lazy" referrerpolicy="no-referrer"></iframe>' +
         '</div>' +
         '<p id="landing-info" class="dataset-info" aria-live="polite"></p>' +
-        '<div class="table-bar landing-points-bar" data-for="landing-points" hidden><span class="table-bar-title">Sítios selecionados</span>' +
-          '<input type="search" id="landing-search" class="table-search" placeholder="Filtrar sítios…" aria-label="Filtrar sítios selecionados">' +
-          '<button type="button" class="btn btn-ghost table-toggle" aria-controls="landing-points" aria-expanded="false">Maximizar</button></div>' +
+        '<div class="table-bar landing-points-bar" data-for="landing-points" hidden><span class="table-bar-title">Selected sites</span>' +
+          '<input type="search" id="landing-search" class="table-search" placeholder="Filter sites…" aria-label="Filter selected sites">' +
+          '<button type="button" class="btn btn-ghost table-toggle" aria-controls="landing-points" aria-expanded="false">Expand</button></div>' +
         '<div id="landing-points" class="table-box landing-points is-min" hidden></div>' +
-        '<p class="dataset-info">Textura: NASA Scientific Visualization Studio, CGI Moon Kit (LRO/LROC, domínio público). Coordenadas: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.</p>' +
+        '<p class="dataset-info">Texture: NASA Scientific Visualization Studio, CGI Moon Kit (LRO/LROC, public domain). Coordinates: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.</p>' +
       '</div>' +
     '</section>');
-  doc.querySelector('.nav a[href="#mission"]').insertAdjacentHTML('beforebegin', '<a href="#pouso">Pousos</a>');
+  doc.querySelector('.nav a[href="#mission"]').insertAdjacentHTML('beforebegin', '<a href="#sites">Sites</a>');
 
   var select = doc.getElementById('landing-select');
   var info = doc.getElementById('landing-info');
@@ -202,7 +202,7 @@
     var out32 = new Uint32Array(out.data.buffer);
     var hits = []; // screen positions of the drawn dots (canvas pixels), for the hover title
 
-    // Hover title: nearest dot within 10 px -> mission / site name and the group's "Área preenchida".
+    // Hover title: nearest dot within 10 px -> mission / site name and the group's "Viable area".
     canvas.addEventListener('mousemove', function (e) {
       var rect = canvas.getBoundingClientRect();
       var k = canvas.width / rect.width;
@@ -223,7 +223,7 @@
       tex = new Uint32Array(cx.getImageData(0, 0, tw, th).data.buffer);
       draw(state.view);
     };
-    img.onerror = function () { console.error('Textura da Lua não carregou: ' + TEXTURE); };
+    img.onerror = function () { console.error('Moon texture failed to load: ' + TEXTURE); };
     img.src = TEXTURE;
 
     function draw(view) {
@@ -276,11 +276,11 @@
       var best = bestGroupKey();
       state.groups.forEach(function (g) {
         var sel = state.checked.indexOf(g.key) >= 0;
-        var top = g.key === best; // same green as the largest "Área preenchida" card
+        var top = g.key === best; // same green as the largest "Viable area" card
         g.points.forEach(function (r) {
           var s = latLonToScreen(r.lat, r.lon, view);
           if (!s.visible) return;
-          hits.push({ x: c + s.x * R, y: c - s.y * R, title: function () { var t = siteTotal(r.id); return r.name + ' · ' + g.name + (t === null ? '' : '\nSoma de viabilidade: ' + sumFmt.format(t)) + '\n' + groupAreaText(g); } });
+          hits.push({ x: c + s.x * R, y: c - s.y * R, title: function () { var t = siteTotal(r.id); return r.name + ' · ' + g.name + (t === null ? '' : '\nViability sum: ' + sumFmt.format(t)) + '\n' + groupAreaText(g); } });
           ctx.beginPath();
           ctx.arc(c + s.x * R, c - s.y * R, top ? 6 : sel ? 4 : 3, 0, 2 * Math.PI);
           ctx.fillStyle = top ? BEST_GREEN : sel ? '#EAFE07' : 'rgba(255,106,61,0.9)';
@@ -298,7 +298,7 @@
     var api = { draw: function () {} };
     var script = doc.createElement('script');
     script.src = 'shared/vendor/three.min.js';
-    script.onerror = function () { el.textContent = 'Não foi possível carregar o three.js.'; };
+    script.onerror = function () { el.textContent = 'Could not load three.js.'; };
     script.onload = function () {
       var THREE = root.THREE;
       var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -380,7 +380,7 @@
   function draw() {
     if (!renderers[state.tab]) renderers[state.tab] = factories[state.tab]();
     renderers[state.tab].draw(state.view);
-    // Mission label of the green group, same green as the largest "Área preenchida" card.
+    // Mission label of the green group, same green as the largest "Viable area" card.
     var best = bestGroupKey();
     doc.querySelectorAll('#landing-group-list label').forEach(function (l) {
       var cb = l.querySelector('input');
@@ -413,25 +413,25 @@
     state.url = m ? m.url : null;
     select.value = m ? m.key : '';
     info.innerHTML = m
-      ? '<strong>' + escapeHtml(m.name) + '</strong> · ' + m.agency + ' · ' + m.year + ' · ' + (m.kind === 'impacto' ? 'sítio de impacto' : 'sítio de pouso') +
-        ' · <span class="mono">' + coords(m) + '</span> · <a href="' + m.url + '" target="_blank" rel="noopener">Ver no Moon3DMap</a>'
+      ? '<strong>' + escapeHtml(m.name) + '</strong> · ' + m.agency + ' · ' + m.year + ' · ' + (m.kind === 'impact' ? 'impact site' : 'landing site') +
+        ' · <span class="mono">' + coords(m) + '</span> · <a href="' + m.url + '" target="_blank" rel="noopener">View on Moon3DMap</a>'
       : '';
     animateTo(m ? { lat: m.lat, lon: m.lon, zoom: ZOOM_IN } : { lat: 0, lon: 0, zoom: 1 });
   }
 
   // Multi-select of CSV groups: highlights them, lists their points and autoscales the view to frame all of them.
-  // "Área preenchida: 1.234,56 (dias × ...)" of a landing group, from the same MoonCore.areas() as the cards.
-  var areaFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // "Viable area: 1,234.56 (days × ...)" of a landing group, from the same MoonCore.areas() as the cards.
+  var areaFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function groupAreaText(g) {
     if (!root.MoonCore || !root.MoonCore.areas || !root.MoonSeries || root.MoonSeries.dataset.kind !== 'viability') return '';
     var s = root.MoonSeries.all.filter(function (x) { return 'csv-' + x.group === g.key; })[0];
     var a = s && root.MoonCore.areas().filter(function (x) { return x.seriesIndex === s.index; })[0];
-    var unit = '(dias × ' + root.MoonSeries.dataset.yLabel + ')';
-    return a ? 'Área preenchida: ' + areaFmt.format(a.area) + ' ' + unit + (g.key === bestGroupKey() ? ' · maior área' : '')
-      : 'Área preenchida: — (missão oculta ou filtrada no gráfico)';
+    var unit = '(days × ' + String(root.MoonSeries.dataset.yLabel).toLowerCase() + ')';
+    return a ? 'Viable area: ' + areaFmt.format(a.area) + ' ' + unit + (g.key === bestGroupKey() ? ' · largest area' : '')
+      : 'Viable area: — (mission hidden or filtered in the chart)';
   }
 
-  // Group with the largest filled area (the green "Área preenchida" card), as 'csv-<missionID>'; null when none.
+  // Group with the largest filled area (the green "Viable area" card), as 'csv-<missionID>'; null when none.
   var BEST_GREEN = '#3DDC84';
   function bestGroupKey() {
     if (!root.MoonCore || !root.MoonCore.areas || !root.MoonSeries || root.MoonSeries.dataset.kind !== 'viability') return null;
@@ -442,7 +442,7 @@
   }
 
   // Total VIABILITY of a site over every day of docs/fLandingSites_viability.csv (null when not loaded).
-  var sumFmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
+  var sumFmt = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
   function groupName(g) {
     var hit = state.groups.filter(function (x) { return x.key === 'csv-' + g; })[0];
     return hit ? hit.name : String(g);
@@ -460,9 +460,9 @@
     pointsBox.hidden = !pts.length;
     doc.querySelector('.landing-points-bar').hidden = !pts.length;
     if (root.MoonTableKit) root.setTimeout(function () { root.MoonTableKit.apply(pointsBox); }, 0); // keep sort + filter after re-render
-    doc.querySelector('.landing-points-bar .table-bar-title').textContent = 'Sítios selecionados (' + pts.length + ')';
+    doc.querySelector('.landing-points-bar .table-bar-title').textContent = 'Selected sites (' + pts.length + ')';
     pointsBox.innerHTML = pts.length
-      ? '<table class="data"><thead><tr><th>ID</th><th>Missão</th><th>Nome</th><th>Latitude</th><th>Longitude</th><th>PRSID</th><th>NEARESTCOLD</th><th class="num">Soma de viabilidade</th></tr></thead><tbody>' +
+      ? '<table class="data"><thead><tr><th>ID</th><th>Mission</th><th>Name</th><th>Latitude</th><th>Longitude</th><th>PRSID</th><th>NEARESTCOLD</th><th class="num">Viability sum</th></tr></thead><tbody>' +
         pts.map(function (r) {
           var total = siteTotal(r.id);
           return '<tr><td>' + r.id + '</td><td class="mono">' + escapeHtml(groupName(r.group)) + '</td><td class="mono">' + escapeHtml(r.name) + '</td><td>' + nf.format(r.lat) + '</td><td>' + nf.format(r.lon) +
@@ -475,10 +475,10 @@
     var f = frameSites(pts);
     state.url = mapLink(f.lat, f.lon);
     var sum = pts.reduce(function (acc, r) { var t = siteTotal(r.id); return t === null ? acc : acc + t; }, 0);
-    info.innerHTML = '<strong>' + pts.length + ' pontos fictícios</strong> · ' + state.checked.length + ' grupo(s)' +
-      (root.MoonViability && root.MoonViability.siteTotals ? ' · <span class="landing-sum">soma de viabilidade <strong>' + sumFmt.format(sum) + '</strong></span>' : '') +
-      ' · centro <span class="mono">' + coords(f) +
-      '</span> · <a href="' + state.url + '" target="_blank" rel="noopener">Ver no Moon3DMap</a>';
+    info.innerHTML = '<strong>' + pts.length + ' simulated sites</strong> · ' + state.checked.length + ' mission(s)' +
+      (root.MoonViability && root.MoonViability.siteTotals ? ' · <span class="landing-sum">viability sum <strong>' + sumFmt.format(sum) + '</strong></span>' : '') +
+      ' · center <span class="mono">' + coords(f) +
+      '</span> · <a href="' + state.url + '" target="_blank" rel="noopener">View on Moon3DMap</a>';
     animateTo(f);
   }
 
@@ -517,7 +517,7 @@
     }).join('');
     doc.getElementById('landing-groups').hidden = false;
     draw();
-  }).catch(function (err) { console.error('Pontos fictícios não carregaram (' + SITES_CSV + '): ' + err.message); });
+  }).catch(function (err) { console.error('Simulated sites failed to load (' + SITES_CSV + '): ' + err.message); });
 
   function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, function (ch) { return '&#' + ch.charCodeAt(0) + ';'; });
@@ -525,8 +525,8 @@
 
   setTab('canvas');
 
-  // Viability chart -> landing groups, same rule as the "Área preenchida" cards (MoonCore.vlineVisible):
-  // every group visible in the chart (legend / "Todos os grupos"), or only the filtered one when a filter is active.
+  // Viability chart -> landing groups, same rule as the "Viable area" cards (MoonCore.vlineVisible):
+  // every group visible in the chart (legend / "All missions"), or only the filtered one when a filter is active.
   if (root.MoonCore && root.MoonSeries && root.MoonSeries.dataset.kind === 'viability') {
     var syncFromChart = function () {
       ready.then(function () {

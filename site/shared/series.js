@@ -19,56 +19,56 @@
   // All curves stay within y in [0, 10] for x in [0, 10]. `formula` documents the curve; it is not shown on the site.
   var CURVES = [
     { name: 'Linear', formula: 'y = x', fn: function (x) { return x; } },
-    { name: 'Quadrática', formula: 'y = x² / 10', fn: function (x) { return (x * x) / 10; } },
-    { name: 'Parabólica', formula: 'y = 10 − 0,4·(x − 5)²', fn: function (x) { return 10 - 0.4 * (x - 5) * (x - 5); } },
-    { name: 'Cúbica', formula: 'y = 5 + 0,04·(x − 5)³', fn: function (x) { return 5 + 0.04 * Math.pow(x - 5, 3); } },
-    { name: 'Quártica', formula: 'u = (x − 5)/2,5; y = 10 + 2,5·(u⁴ − 4u²)', fn: function (x) { var u = (x - 5) / 2.5; return 10 + 2.5 * (Math.pow(u, 4) - 4 * u * u); } },
-    { name: 'Polinomial', formula: 'u = (x − 5)/5; y = 5 + 5·(16u⁵ − 20u³ + 5u)', fn: function (x) { var u = (x - 5) / 5; return 5 + 5 * (16 * Math.pow(u, 5) - 20 * Math.pow(u, 3) + 5 * u); } },
-    { name: 'Exponencial', formula: 'y = 10·(e^(x/4) − 1) / (e^2,5 − 1)', fn: function (x) { return (10 * (Math.exp(x / 4) - 1)) / EXP_NORM; } },
-    { name: 'Logarítmica', formula: 'y = 10·ln(1 + x) / ln(11)', fn: function (x) { return (10 * Math.log(1 + x)) / LOG_NORM; } },
-    { name: 'Hiperbólica', formula: 'y = 5 + 5·tanh(x − 5)', fn: function (x) { return 5 + 5 * Math.tanh(x - 5); } },
-    { name: 'Racional', formula: 'y = 12x / (x + 2)', fn: function (x) { return (12 * x) / (x + 2); } },
-    { name: 'Modular', formula: 'y = 2·|x − 5|', fn: function (x) { return 2 * Math.abs(x - 5); } },
-    { name: 'Inversa', formula: 'y = 1 / (x + 0,1)', fn: function (x) { return 1 / (x + 0.1); } },
-    { name: 'Potência', formula: 'y = x^1,5 / √10', fn: function (x) { return Math.pow(x, 1.5) / Math.sqrt(10); } },
-    { name: 'Radical', formula: 'y = √(10x)', fn: function (x) { return Math.sqrt(10 * x); } },
-    { name: 'Por partes', formula: 'y = 2 (x < 3); 1,5x − 2,5 (3 ≤ x < 7); 9 (x ≥ 7)', fn: function (x) { return x < 3 ? 2 : x < 7 ? 1.5 * x - 2.5 : 9; } },
-    { name: 'Implícita', formula: '(x − 5)² + (y/2)² = 25, y ≥ 0', fn: function (x) { return 2 * Math.sqrt(Math.max(0, 25 - (x - 5) * (x - 5))); } },
-    { name: 'Paramétrica', formula: 'x = 10(t − sen t)/2π; y = 5(1 − cos t); t ∈ [0, 2π]', parametric: true },
-    { name: 'Trigonométrica', formula: 'y = 5 + 3·sen(x) + 2·cos(2x)', fn: function (x) { return 5 + 3 * Math.sin(x) + 2 * Math.cos(2 * x); } },
-    { name: 'Senoidal', formula: 'y = 5 + 5·sen(x)', fn: function (x) { return 5 + 5 * Math.sin(x); } },
-    { name: 'Cossenoidal', formula: 'y = 5 + 5·cos(x)', fn: function (x) { return 5 + 5 * Math.cos(x); } }
+    { name: 'Quadratic', formula: 'y = x² / 10', fn: function (x) { return (x * x) / 10; } },
+    { name: 'Parabolic', formula: 'y = 10 − 0.4·(x − 5)²', fn: function (x) { return 10 - 0.4 * (x - 5) * (x - 5); } },
+    { name: 'Cubic', formula: 'y = 5 + 0.04·(x − 5)³', fn: function (x) { return 5 + 0.04 * Math.pow(x - 5, 3); } },
+    { name: 'Quartic', formula: 'u = (x − 5)/2.5; y = 10 + 2.5·(u⁴ − 4u²)', fn: function (x) { var u = (x - 5) / 2.5; return 10 + 2.5 * (Math.pow(u, 4) - 4 * u * u); } },
+    { name: 'Polynomial', formula: 'u = (x − 5)/5; y = 5 + 5·(16u⁵ − 20u³ + 5u)', fn: function (x) { var u = (x - 5) / 5; return 5 + 5 * (16 * Math.pow(u, 5) - 20 * Math.pow(u, 3) + 5 * u); } },
+    { name: 'Exponential', formula: 'y = 10·(e^(x/4) − 1) / (e^2.5 − 1)', fn: function (x) { return (10 * (Math.exp(x / 4) - 1)) / EXP_NORM; } },
+    { name: 'Logarithmic', formula: 'y = 10·ln(1 + x) / ln(11)', fn: function (x) { return (10 * Math.log(1 + x)) / LOG_NORM; } },
+    { name: 'Hyperbolic', formula: 'y = 5 + 5·tanh(x − 5)', fn: function (x) { return 5 + 5 * Math.tanh(x - 5); } },
+    { name: 'Rational', formula: 'y = 12x / (x + 2)', fn: function (x) { return (12 * x) / (x + 2); } },
+    { name: 'Absolute value', formula: 'y = 2·|x − 5|', fn: function (x) { return 2 * Math.abs(x - 5); } },
+    { name: 'Inverse', formula: 'y = 1 / (x + 0.1)', fn: function (x) { return 1 / (x + 0.1); } },
+    { name: 'Power', formula: 'y = x^1.5 / √10', fn: function (x) { return Math.pow(x, 1.5) / Math.sqrt(10); } },
+    { name: 'Square root', formula: 'y = √(10x)', fn: function (x) { return Math.sqrt(10 * x); } },
+    { name: 'Piecewise', formula: 'y = 2 (x < 3); 1.5x − 2.5 (3 ≤ x < 7); 9 (x ≥ 7)', fn: function (x) { return x < 3 ? 2 : x < 7 ? 1.5 * x - 2.5 : 9; } },
+    { name: 'Implicit', formula: '(x − 5)² + (y/2)² = 25, y ≥ 0', fn: function (x) { return 2 * Math.sqrt(Math.max(0, 25 - (x - 5) * (x - 5))); } },
+    { name: 'Parametric', formula: 'x = 10(t − sin t)/2π; y = 5(1 − cos t); t ∈ [0, 2π]', parametric: true },
+    { name: 'Trigonometric', formula: 'y = 5 + 3·sin(x) + 2·cos(2x)', fn: function (x) { return 5 + 3 * Math.sin(x) + 2 * Math.cos(2 * x); } },
+    { name: 'Sine', formula: 'y = 5 + 5·sin(x)', fn: function (x) { return 5 + 5 * Math.sin(x); } },
+    { name: 'Cosine', formula: 'y = 5 + 5·cos(x)', fn: function (x) { return 5 + 5 * Math.cos(x); } }
   ];
 
   // Real data, copied from tylervigen.com (CC BY 4.0). Pearson r recomputed from these values matches each page.
   var SPURIOUS = [
     {
-      key: 'barco', url: 'https://www.tylervigen.com/spurious/correlation/5135_popularity-of-the-im-on-a-boat-meme_correlates-with_the-number-of-executive-administrative-assistants-in-alabama',
-      title: 'Popularidade do meme “I’m on a boat” × assistentes executivos no Alabama', r: 0.9885069,
+      key: 'boat', url: 'https://www.tylervigen.com/spurious/correlation/5135_popularity-of-the-im-on-a-boat-meme_correlates-with_the-number-of-executive-administrative-assistants-in-alabama',
+      title: 'Popularity of the “I’m on a boat” meme × executive administrative assistants in Alabama', r: 0.9885069,
       years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
-      a: { name: 'Meme “I’m on a boat”', unit: 'popularidade relativa', source: 'Google Trends', values: [15.8333, 10.1667, 3.33333, 2.16667, 1.5, 1.5, 1.5, 1.33333, 1.66667, 1.25, 1, 1, 1] },
-      b: { name: 'Assistentes executivos (AL)', unit: 'trabalhadores', source: 'Bureau of Labor Statistics', values: [6520, 5050, 4100, 3310, 3190, 3310, 3300, 3220, 3210, 3310, 3250, 2990, 3110] }
+      a: { name: '“I’m on a boat” meme', unit: 'relative popularity', source: 'Google Trends', values: [15.8333, 10.1667, 3.33333, 2.16667, 1.5, 1.5, 1.5, 1.33333, 1.66667, 1.25, 1, 1, 1] },
+      b: { name: 'Executive administrative assistants (AL)', unit: 'workers', source: 'Bureau of Labor Statistics', values: [6520, 5050, 4100, 3310, 3190, 3310, 3300, 3220, 3210, 3310, 3250, 2990, 3110] }
     },
     {
-      key: 'milho', url: 'https://www.tylervigen.com/spurious/correlation/2697_gmo-use-in-corn-grown-in-michigan_correlates-with_enbridges-stock-price',
-      title: 'Milho transgênico em Michigan × preço da ação da Enbridge (ENB)', r: 0.9202181,
+      key: 'corn', url: 'https://www.tylervigen.com/spurious/correlation/2697_gmo-use-in-corn-grown-in-michigan_correlates-with_enbridges-stock-price',
+      title: 'GMO corn in Michigan × Enbridge stock price (ENB)', r: 0.9202181,
       years: [2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023],
-      a: { name: 'Milho transgênico (MI)', unit: '% do milho plantado', source: 'USDA', values: [2, 3, 4, 5, 10, 19, 33, 42, 44, 52, 52, 71, 76, 74, 70, 71, 72, 75, 74, 76, 81, 81] },
-      b: { name: 'Ação ENB', unit: 'preço de abertura do ano', source: 'LSEG Analytics (Refinitiv)', values: [6.78, 6.84, 10.34, 12.35, 15.63, 17.18, 20.2, 16.28, 23.45, 28.38, 37.8, 44.05, 43.57, 51.03, 32.62, 42.52, 39.36, 30.74, 39.8, 32.35, 39.13, 38.91] }
+      a: { name: 'GMO corn (MI)', unit: '% of corn planted', source: 'USDA', values: [2, 3, 4, 5, 10, 19, 33, 42, 44, 52, 52, 71, 76, 74, 70, 71, 72, 75, 74, 76, 81, 81] },
+      b: { name: 'Enbridge stock (ENB)', unit: 'opening price of the year', source: 'LSEG Analytics (Refinitiv)', values: [6.78, 6.84, 10.34, 12.35, 15.63, 17.18, 20.2, 16.28, 23.45, 28.38, 37.8, 44.05, 43.57, 51.03, 32.62, 42.52, 39.36, 30.74, 39.8, 32.35, 39.13, 38.91] }
     },
     {
       key: 'malta', url: 'https://www.tylervigen.com/spurious/correlation/1874_masters-degrees-awarded-in-communication-journalism-and-related-programs_correlates-with_solar-power-generated-in-malta',
-      title: 'Mestrados em jornalismo (EUA) × energia solar gerada em Malta', r: 0.9873362,
+      title: 'Master’s degrees in journalism (US) × solar power generated in Malta', r: 0.9873362,
       years: [2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021],
-      a: { name: 'Mestrados em jornalismo', unit: 'diplomas', source: 'National Center for Education Statistics', values: [9005, 8760, 9353, 9581, 9676, 10119, 10241, 10463, 10588, 10805] },
-      b: { name: 'Energia solar em Malta', unit: 'bilhões de kWh', source: 'Energy Information Administration', values: [0.02, 0.03, 0.068, 0.09499, 0.127886, 0.162261, 0.188818, 0.195557, 0.237074, 0.256] }
+      a: { name: 'Master’s degrees in journalism', unit: 'degrees', source: 'National Center for Education Statistics', values: [9005, 8760, 9353, 9581, 9676, 10119, 10241, 10463, 10588, 10805] },
+      b: { name: 'Solar power in Malta', unit: 'billion kWh', source: 'Energy Information Administration', values: [0.02, 0.03, 0.068, 0.09499, 0.127886, 0.162261, 0.188818, 0.195557, 0.237074, 0.256] }
     },
     {
       key: 'sarah', url: 'https://www.tylervigen.com/spurious/correlation/4241_popularity-of-the-first-name-sarah_correlates-with_remaining-forest-cover-in-the-brazilian-amazon',
-      title: 'Bebês chamados Sarah (EUA) × floresta restante na Amazônia brasileira', r: 0.9943754,
+      title: 'Babies named Sarah (US) × remaining forest in the Brazilian Amazon', r: 0.9943754,
       years: [1987, 1988, 1989, 1990, 1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022],
-      a: { name: 'Bebês chamados Sarah', unit: 'nascimentos', source: 'US Social Security Administration', values: [28004, 28460, 27938, 25879, 25265, 24689, 24300, 22339, 21426, 21074, 20731, 19918, 19128, 17738, 15942, 14793, 13805, 12804, 11565, 11174, 10016, 9065, 7798, 6343, 5570, 5207, 4715, 4710, 4539, 4432, 4039, 3774, 3316, 3068, 2855, 2780] },
-      b: { name: 'Floresta na Amazônia', unit: 'km²', source: 'Mongabay', values: [3744570, 3723520, 3705750, 3692020, 3680990, 3667200, 3652310, 3637410, 3608350, 3590190, 3576960, 3559580, 3542320, 3524100, 3505930, 3484280, 3458880, 3431110, 3412100, 3397810, 3386160, 3373250, 3365790, 3358790, 3352370, 3347800, 3341910, 3336900, 3330690, 3322800, 3315850, 3308310, 3298550, 3290120, 3279650, 3268050] }
+      a: { name: 'Babies named Sarah', unit: 'births', source: 'US Social Security Administration', values: [28004, 28460, 27938, 25879, 25265, 24689, 24300, 22339, 21426, 21074, 20731, 19918, 19128, 17738, 15942, 14793, 13805, 12804, 11565, 11174, 10016, 9065, 7798, 6343, 5570, 5207, 4715, 4710, 4539, 4432, 4039, 3774, 3316, 3068, 2855, 2780] },
+      b: { name: 'Amazon forest', unit: 'km²', source: 'Mongabay', values: [3744570, 3723520, 3705750, 3692020, 3680990, 3667200, 3652310, 3637410, 3608350, 3590190, 3576960, 3559580, 3542320, 3524100, 3505930, 3484280, 3458880, 3431110, 3412100, 3397810, 3386160, 3373250, 3365790, 3358790, 3352370, 3347800, 3341910, 3336900, 3330690, 3322800, 3315850, 3308310, 3298550, 3290120, 3279650, 3268050] }
     }
   ];
 
@@ -188,36 +188,36 @@
         return [day, v, v, Math.round(100 * (1 - Math.abs(v - ref) / VIAB_DEV)), ref];
       });
       return {
-        index: index, name: g.name || 'Grupo ' + g.group, objectives: g.objectives || '', group: g.group, color: colors[index], sites: g.sites, points: points,
+        index: index, name: g.name || 'Mission ' + g.group, objectives: g.objectives || '', group: g.group, color: colors[index], sites: g.sites, points: points,
         reference: points.map(function (p) { return [p[0], p[4]]; })
       };
     });
   }
 
-  // Day index -> 'dd/mm/aaaa' (UTC, so no timezone shift).
+  // Day index -> 'YYYY-MM-DD' (UTC, so no timezone shift).
   function dayToDate(start, day) {
-    return new Date(Date.parse(start + 'T00:00:00Z') + Math.round(day) * 86400000).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+    return new Date(Date.parse(start + 'T00:00:00Z') + Math.round(day) * 86400000).toISOString().slice(0, 10);
   }
 
   var datasets = [{
-    key: 'curvas', label: 'Curvas matemáticas (20)', kind: 'curves',
+    key: 'curves', label: 'Math curves (20)', kind: 'curves',
     xLabel: 'x', yLabel: 'y', xRange: [0, 10], yRange: [0, 10], xIsYear: false,
-    tolerance: MAX_DEV / 2, referenceLabel: 'curva teórica', // outside the band = accuracy < 50%
+    tolerance: MAX_DEV / 2, referenceLabel: 'theoretical curve', // outside the band = accuracy < 50%
     build: buildCurves
   }].concat(SPURIOUS.map(function (item) {
     return {
-      key: item.key, label: 'Correlação espúria: ' + item.title, kind: 'spurious',
+      key: item.key, label: 'Spurious correlation: ' + item.title, kind: 'spurious',
       title: item.title, url: item.url, r: item.r,
-      xLabel: 'Ano', yLabel: 'Índice normalizado (0–10)',
-      tolerance: MAX_DEV / 2, referenceLabel: 'valor esperado (fictício)', // outside the band = accuracy < 50%
+      xLabel: 'Year', yLabel: 'Normalized index (0–10)',
+      tolerance: MAX_DEV / 2, referenceLabel: 'expected value (simulated)', // outside the band = accuracy < 50%
       xRange: [item.years[0], item.years[item.years.length - 1]], yRange: [0, 10], xIsYear: true,
       build: function (random) { return buildSpurious(item, random); }
     };
   })).concat(root.MoonViability ? [{
-    key: 'viabilidade', label: 'Viabilidade dos sítios fictícios (10 grupos)', kind: 'viability',
-    xLabel: 'Data', yLabel: 'Viabilidade (média do grupo)',
+    key: 'viability', label: 'Simulated site viability (10 missions)', kind: 'viability',
+    xLabel: 'Date', yLabel: 'Mean viability',
     xRange: [0, root.MoonViability.days - 1], yRange: [0, 200], xIsYear: false,
-    tolerance: VIAB_DEV / 2, referenceLabel: 'valor esperado (fictício)',
+    tolerance: VIAB_DEV / 2, referenceLabel: 'expected value (simulated)',
     xDate: function (day) { return dayToDate(root.MoonViability.start, day); },
     build: function (random) { return buildViability(root.MoonViability, random); }
   }] : []);
@@ -235,14 +235,14 @@
   // Default: the landing-site viability (when its data file is loaded), otherwise the math curves.
   function findDataset(key) {
     var byKey = function (k) { return datasets.filter(function (d) { return d.key === k; })[0]; };
-    return byKey(key) || byKey('viabilidade') || datasets[0];
+    return byKey(key) || byKey('viability') || datasets[0];
   }
 
   // Ways to draw the point-to-curve accuracy; chosen with ?viz=<key> (header pills).
   var VIZ_MODES = [
-    { key: 'cor', label: 'Cor', help: 'Cor do marcador pela assertividade.' },
-    { key: 'faixa', label: 'Faixa', help: 'Faixa de tolerância em volta da referência; ponto fora da faixa = assertividade baixa.' },
-    { key: 'rotulo', label: 'Rótulo', help: 'Percentual de assertividade escrito em cada ponto.' }
+    { key: 'color', label: 'Color', help: 'Marker color by confidence.' },
+    { key: 'band', label: 'Band', help: 'Tolerance band around the reference; point outside the band = low confidence.' },
+    { key: 'label', label: 'Label', help: 'Confidence percentage written on each point.' }
   ];
 
   // Green (100%) -> Neon Yellow (50%) -> red (0%).
@@ -276,7 +276,7 @@
   var active = findDataset(params.get('dataset'));
   var seed = Number(params.get('seed')) || (root.document ? Date.now() % 2147483647 : SEED);
   var all = active.build(prng(seed));
-  var viz = VIZ_MODES.filter(function (m) { return m.key === params.get('viz'); })[0] || VIZ_MODES[1]; // default: faixa
+  var viz = VIZ_MODES.filter(function (m) { return m.key === params.get('viz'); })[0] || VIZ_MODES[1]; // default: band
   var domain = [0, 100];
 
   var api = {

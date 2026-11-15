@@ -1,4 +1,4 @@
-// Pure math of the #pouso globe (site/shared/landing.js).
+// Pure math of the #sites globe (site/shared/landing.js).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';

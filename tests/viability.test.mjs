@@ -24,9 +24,9 @@ test('generated data: 10 groups x 731 days, mean matches the raw CSV', () => {
 });
 
 test('viability series: 10 x 731 points following the point contract', () => {
-  const ds = MoonSeries.datasets.find((d) => d.key === 'viabilidade');
+  const ds = MoonSeries.datasets.find((d) => d.key === 'viability');
   assert.ok(ds);
-  const series = MoonSeries.load('viabilidade');
+  const series = MoonSeries.load('viability');
   assert.equal(series.length, 10);
   for (const s of series) {
     assert.equal(s.points.length, 731);
@@ -53,5 +53,5 @@ test('group names come from docs/dMission.csv (ID = missionID)', () => {
   const V = globalThis.MoonViability;
   const missions = readFileSync(new URL('../docs/dMission.csv', import.meta.url), 'utf8').trim().split('\n').slice(1).map((l) => l.split(','));
   for (const [id, name] of missions) assert.equal(V.groups.find((g) => g.group === Number(id)).name, name, `mission ${id}`);
-  assert.equal(MoonSeries.load('viabilidade')[0].name, 'silent-voyage');
+  assert.equal(MoonSeries.load('viability')[0].name, 'silent-voyage');
 });

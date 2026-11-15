@@ -21,9 +21,9 @@
   // Integer ticks only (no locale thousands separator on years).
   function yearTick(v) { return Number.isInteger(v) ? String(v) : ''; }
 
-  // Date axis (x = day index from MoonViability.start): ticks on month starts ("abr/24"), or every few days
-  // ("10/04") when zoomed into less than ~2 months. Keeps at most ~10 labels.
-  var MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  // Date axis (x = day index from MoonViability.start): ticks on month starts ("Apr '24"), or every few days
+  // ("04-10") when zoomed into less than ~2 months. Keeps at most ~10 labels.
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   var DAY_MS = 864e5;
   function startMs() { return Date.parse(root.MoonViability.start + 'T00:00:00Z'); }
   function dayToUtc(day) { return new Date(startMs() + day * DAY_MS); }
@@ -46,8 +46,8 @@
   }
   function dateTick(v) {
     var d = dayToUtc(v);
-    if (dateTickMode === 'day') return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0');
-    return MONTHS[d.getUTCMonth()] + '/' + String(d.getUTCFullYear()).slice(2);
+    if (dateTickMode === 'day') return String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
+    return MONTHS[d.getUTCMonth()] + " '" + String(d.getUTCFullYear()).slice(2);
   }
 
   function distToSegment(px, py, a, b) {
@@ -57,7 +57,7 @@
     return Math.hypot(px - (a.x + t * dx), py - (a.y + t * dy));
   }
 
-  var nf = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 3 });
+  var nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 });
 
   // Smaller legend on narrow canvases so 20 entries do not eat the plot.
   function legendSize(width) {
@@ -76,7 +76,7 @@
     var canvas = root.document.createElement('canvas');
     container.appendChild(canvas);
 
-    // 'cor' mode: marker fill = accuracy color, dimmed like its series when another is active.
+    // 'color' mode: marker fill = accuracy color, dimmed like its series when another is active.
     function colorFill(i) {
       return function (ctx) {
         var f = root.MoonCore.getFilter();
@@ -184,7 +184,7 @@
       });
     }
 
-    // Departure ("Partida"): solid white line + ▼ handle labelled "Partida"; every travel-time line is measured from it.
+    // Departure: solid white line + ▼ handle labelled "Departure"; every travel-time line is measured from it.
     function drawDeparture(c) {
       var ctx = c.ctx, a = c.chartArea, cy = a.top - VH_OFFSET;
       root.MoonCore.departure.list().forEach(function (l) {
@@ -207,9 +207,9 @@
         ctx.font = "bold 11px 'Fira Code', monospace";
         ctx.textBaseline = 'middle';
         // Label left of the arrow; flip to the right when it would cover the y axis.
-        var left = px - VH_W / 2 - 3 - ctx.measureText('Partida').width >= a.left;
+        var left = px - VH_W / 2 - 3 - ctx.measureText('Departure').width >= a.left;
         ctx.textAlign = left ? 'right' : 'left';
-        ctx.fillText('Partida', left ? px - VH_W / 2 - 3 : px + VH_W / 2 + 3, cy);
+        ctx.fillText('Departure', left ? px - VH_W / 2 - 3 : px + VH_W / 2 + 3, cy);
         ctx.restore();
       });
     }
@@ -235,7 +235,7 @@
     }
 
     function drawDecor(c, below) {
-      if (viz === 'cor') return;
+      if (viz === 'color') return;
       var ctx = c.ctx, xs = c.scales.x, ys = c.scales.y, a = c.chartArea;
       ctx.save();
       ctx.beginPath();
@@ -245,7 +245,7 @@
         if (!c.isDatasetVisible(i)) return;
         var sr = series[i], color = sr.color, tol = ds.tolerance;
         var ref = sr.reference.map(function (r) { return { x: xs.getPixelForValue(r[0]), y: ys.getPixelForValue(r[1]) }; });
-        if (below && viz === 'faixa') {
+        if (below && viz === 'band') {
           ctx.beginPath();
           sr.reference.forEach(function (r, k) { ctx[k ? 'lineTo' : 'moveTo'](xs.getPixelForValue(r[0]), ys.getPixelForValue(r[1] + tol)); });
           for (var k = sr.reference.length - 1; k >= 0; k--) ctx.lineTo(xs.getPixelForValue(sr.reference[k][0]), ys.getPixelForValue(sr.reference[k][1] - tol));
@@ -253,7 +253,7 @@
           ctx.fillStyle = withAlpha(color, 0.15);
           ctx.fill();
         }
-        if (below && viz === 'faixa') {
+        if (below && viz === 'band') {
           ctx.beginPath();
           ref.forEach(function (p, k) { ctx[k ? 'lineTo' : 'moveTo'](p.x, p.y); });
           ctx.setLineDash([6, 4]);
@@ -266,7 +266,7 @@
         var pts = c.getDatasetMeta(i).data;
         sr.points.forEach(function (p, k) {
           var el = pts[k];
-          if (viz === 'rotulo') {
+          if (viz === 'label') {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
             ctx.font = "bold 11px 'Fira Code', monospace";
@@ -290,9 +290,9 @@
             normalized: true,
             tension: 0, // straight segments between table points
             showLine: true,
-            pointRadius: viz === 'cor' ? 3.5 : 0, // lines only; 'cor' needs markers to show accuracy
+            pointRadius: viz === 'color' ? 3.5 : 0, // lines only; 'color' needs markers to show accuracy
             pointHoverRadius: 4,
-            pointBackgroundColor: viz === 'cor' ? colorFill(i) : s.color,
+            pointBackgroundColor: viz === 'color' ? colorFill(i) : s.color,
             pointBorderColor: s.color,
             borderWidth: 2,
             borderColor: s.color,
@@ -350,10 +350,10 @@
             callbacks: {
               title: function () { return ''; },
               label: function (ctx) {
-                var acc = 'Assertividade: ' + ctx.raw.acc + '%';
+                var acc = 'Confidence: ' + ctx.raw.acc + '%';
                 var dev = ctx.raw.y - ctx.raw.refY;
-                var extra = [acc, 'Referência (' + ds.referenceLabel + '): ' + nf.format(ctx.raw.refY),
-                  'Desvio: ' + (dev > 0 ? '+' : '') + nf.format(dev)];
+                var extra = [acc, 'Reference (' + ds.referenceLabel + '): ' + nf.format(ctx.raw.refY),
+                  'Deviation: ' + (dev > 0 ? '+' : '') + nf.format(dev)];
                 if (spurious) {
                   return [ctx.dataset.label + ' (' + ctx.parsed.x + '): ' + nf.format(ctx.raw.raw) + ' ' + ctx.dataset.unit].concat(extra);
                 }
@@ -388,14 +388,14 @@
         var active = index === i;
         var c = index === null || active ? base : withAlpha(base, 0.15);
         ds.borderColor = c;
-        if (viz !== 'cor') ds.pointBackgroundColor = c;
+        if (viz !== 'color') ds.pointBackgroundColor = c;
         ds.pointBorderColor = c;
         ds.borderWidth = active ? 4 : 2;
         ds.order = active ? -1 : 0; // draw highlighted line on top
       });
       chart.update('none');
     }
-    // Rebuilt charts start from the current legend / "Todos os grupos" state.
+    // Rebuilt charts start from the current legend / "All missions" state.
     series.forEach(function (_, k) { if (!root.MoonCore.isVisible(k)) chart.setDatasetVisibility(k, false); });
     applyFilter(root.MoonCore.getFilter());
     root.MoonCore.onFilterChange(live(applyFilter));
@@ -492,7 +492,7 @@
     root.MoonCore.hlines.onChange(live(function () { chart.draw(); }));
     root.MoonCore.vlines.onChange(live(function () { chart.draw(); }));
     root.MoonCore.departure.onChange(live(function () { chart.draw(); }));
-    // Visibility can also change outside the legend ("Todos os grupos" checkbox): mirror it on the datasets.
+    // Visibility can also change outside the legend ("All missions" checkbox): mirror it on the datasets.
     root.MoonCore.onVisibilityChange(live(function (k, visible) {
       if (chart.isDatasetVisible(k) !== visible) { chart.setDatasetVisibility(k, visible); chart.update('none'); }
       else chart.draw();

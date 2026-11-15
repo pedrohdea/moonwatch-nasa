@@ -7,12 +7,12 @@
 
   function normalize(text) { return String(text).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 
-  // Sort key of a cell: dd/mm/aaaa -> aaaammdd, pt-BR numbers ("1.234,5", "98%") -> number, else text.
+  // Sort key of a cell: YYYY-MM-DD -> YYYYMMDD, en-US numbers ("1,234.5", "98%") -> number, else text.
   function key(text) {
     var t = text.trim();
-    var d = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(t);
-    if (d) return Number(d[3] + d[2] + d[1]);
-    var n = t.replace(/%$/, '').replace(/\./g, '').replace(',', '.');
+    var d = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+    if (d) return Number(d[1] + d[2] + d[3]);
+    var n = t.replace(/%$/, '').replace(/,/g, '');
     return n !== '' && isFinite(Number(n)) ? Number(n) : normalize(t);
   }
 
@@ -25,7 +25,7 @@
     if (s.col !== null) {
       rows.sort(function (a, b) {
         var x = key(a.cells[s.col].textContent), y = key(b.cells[s.col].textContent);
-        var cmp = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'pt-BR', { numeric: true });
+        var cmp = typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'en-US', { numeric: true });
         return cmp * s.dir;
       });
       rows.forEach(function (r) { tbody.appendChild(r); });
@@ -34,7 +34,7 @@
     rows.forEach(function (r) { r.hidden = q !== '' && normalize(r.textContent).indexOf(q) < 0; });
     Array.prototype.forEach.call(table.tHead.rows[0].cells, function (th, i) {
       th.classList.add('sortable');
-      th.title = 'Ordenar';
+      th.title = 'Sort';
       th.setAttribute('aria-sort', s.col === i ? (s.dir > 0 ? 'ascending' : 'descending') : 'none');
       var mark = th.querySelector('.sort-mark') || th.appendChild(root.document.createElement('span'));
       mark.className = 'sort-mark';

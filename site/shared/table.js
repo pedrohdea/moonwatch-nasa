@@ -13,9 +13,9 @@
   var badge = doc.getElementById('filter-badge');
   var clearButton = doc.getElementById('clear-filter');
   var search = doc.getElementById('table-search');
-  var fmt = new Intl.NumberFormat('pt-BR');
-  var num = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 4 });
-  var real = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 6 });
+  var fmt = new Intl.NumberFormat('en-US');
+  var num = new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 4 });
+  var real = new Intl.NumberFormat('en-US', { maximumFractionDigits: 6 });
   var series = root.MoonSeries.all;
   var isSpurious = root.MoonSeries.dataset.kind === 'spurious';
 
@@ -41,24 +41,24 @@
     var xDate = root.MoonSeries.dataset.xDate; // viability: x is a day index, shown as a date
     var c = [
       { label: '#', cls: 'num', html: function (r) { return cell('num', r.n); }, text: function (r) { return String(r.n); }, sort: function (r) { return r.n; } },
-      { label: xDate ? 'Série' : 'Curva', cls: '', html: function (r) { return '<td>' + swatch(r.seriesIndex) + r.name + '</td>'; }, text: function (r) { return r.name; }, sort: function (r) { return r.name; } }
+      { label: xDate ? 'Series' : 'Curve', cls: '', html: function (r) { return '<td>' + swatch(r.seriesIndex) + r.name + '</td>'; }, text: function (r) { return r.name; }, sort: function (r) { return r.name; } }
     ];
     if (xDate) {
-      c.push({ label: 'Data', cls: 'num', html: function (r) { return cell('num mono', xDate(r.x)); }, text: function (r) { return xDate(r.x); }, sort: function (r) { return r.x; } });
-      c.push({ label: 'Dia', cls: 'num', html: function (r) { return cell('num mono', r.x); }, text: function (r) { return String(r.x); }, sort: function (r) { return r.x; } });
-      c.push({ label: 'Viabilidade', cls: 'num', html: function (r) { return cell('num mono', real.format(r.y)); }, text: function (r) { return real.format(r.y); }, sort: function (r) { return r.y; } });
+      c.push({ label: 'Date', cls: 'num', html: function (r) { return cell('num mono', xDate(r.x)); }, text: function (r) { return xDate(r.x); }, sort: function (r) { return r.x; } });
+      c.push({ label: 'Day', cls: 'num', html: function (r) { return cell('num mono', r.x); }, text: function (r) { return String(r.x); }, sort: function (r) { return r.x; } });
+      c.push({ label: 'Viability', cls: 'num', html: function (r) { return cell('num mono', real.format(r.y)); }, text: function (r) { return real.format(r.y); }, sort: function (r) { return r.y; } });
     } else {
       c.push({ label: 'x', cls: 'num', html: function (r) { return cell('num mono', num.format(r.x)); }, text: function (r) { return num.format(r.x); }, sort: function (r) { return r.x; } });
       c.push({ label: 'y', cls: 'num', html: function (r) { return cell('num mono', num.format(r.y)); }, text: function (r) { return num.format(r.y); }, sort: function (r) { return r.y; } });
     }
-    c.push({ label: 'Assertividade', cls: 'num', html: function (r) { return accuracyCell(r.accuracy); }, text: function (r) { return r.accuracy + '%'; }, sort: function (r) { return r.accuracy; } });
+    c.push({ label: 'Confidence', cls: 'num', html: function (r) { return accuracyCell(r.accuracy); }, text: function (r) { return r.accuracy + '%'; }, sort: function (r) { return r.accuracy; } });
     return c;
   }
 
   // Wide format: year + (real value, accuracy) per visible series — accuracy belongs to each series' own point.
   function wideColumns(index) {
     var shown = index === null ? series : [series[index]];
-    var c = [{ label: 'Ano', cls: 'num', html: function (r) { return cell('num mono', r.year); }, text: function (r) { return String(r.year); }, sort: function (r) { return r.year; } }];
+    var c = [{ label: 'Year', cls: 'num', html: function (r) { return cell('num mono', r.year); }, text: function (r) { return String(r.year); }, sort: function (r) { return r.year; } }];
     shown.forEach(function (s) {
       c.push({
         label: swatch(s.index) + s.name + ' <span class="unit">(' + s.unit + ')</span>', cls: 'num',
@@ -66,7 +66,7 @@
         text: function (r) { return real.format(s.points[r.k][2]); }, sort: function (r) { return s.points[r.k][2]; }
       });
       c.push({
-        label: swatch(s.index) + 'Assertividade', cls: 'num',
+        label: swatch(s.index) + 'Confidence', cls: 'num',
         html: function (r) { return accuracyCell(s.points[r.k][3]); },
         text: function (r) { return s.points[r.k][3] + '%'; }, sort: function (r) { return s.points[r.k][3]; }
       });
@@ -78,7 +78,7 @@
     head.innerHTML = '<tr>' + cols.map(function (c, i) {
       var state = sortCol === i ? (sortDir > 0 ? 'ascending' : 'descending') : 'none';
       var mark = sortCol === i ? (sortDir > 0 ? ' ▲' : ' ▼') : '';
-      return '<th class="sortable ' + c.cls + '" data-col="' + i + '" aria-sort="' + state + '" title="Ordenar">' + c.label + '<span class="sort-mark">' + mark + '</span></th>';
+      return '<th class="sortable ' + c.cls + '" data-col="' + i + '" aria-sort="' + state + '" title="Sort">' + c.label + '<span class="sort-mark">' + mark + '</span></th>';
     }).join('') + '</tr>';
   }
 
@@ -105,7 +105,7 @@
       var key = cols[sortCol].sort;
       rows.sort(function (a, b) {
         var x = key(a), y = key(b);
-        return (typeof x === 'string' ? x.localeCompare(y, 'pt-BR', { numeric: true }) : x - y) * sortDir;
+        return (typeof x === 'string' ? x.localeCompare(y, 'en-US', { numeric: true }) : x - y) * sortDir;
       });
     }
     renderHead();
@@ -117,7 +117,7 @@
     observer.unobserve(sentinel);
     observer.observe(sentinel);
     var barTitle = doc.querySelector('.table-bar[data-for="table-box"] .table-bar-title');
-    if (barTitle) barTitle.textContent = 'Tabela de dados (' + (q ? fmt.format(rows.length) + ' de ' : '') + fmt.format(allRows.length) + ' linhas)';
+    if (barTitle) barTitle.textContent = 'Data table (' + (q ? fmt.format(rows.length) + ' of ' : '') + fmt.format(allRows.length) + ' rows)';
   }
 
   function load(index) {
@@ -131,8 +131,8 @@
     if (sortCol !== null && sortCol >= cols.length) sortCol = null; // wide table lost columns
     refresh();
 
-    var label = index === null ? 'Todas as séries' : 'Filtro: ' + series[index].name;
-    badge.textContent = label + ' — ' + fmt.format(allRows.length) + ' linhas';
+    var label = index === null ? 'All series' : 'Filter: ' + series[index].name;
+    badge.textContent = label + ' — ' + fmt.format(allRows.length) + ' rows';
     badge.classList.toggle('is-active', index !== null);
     if (index !== null) badge.style.setProperty('--series-color', root.MoonSeries.colors[index]);
     clearButton.disabled = index === null;

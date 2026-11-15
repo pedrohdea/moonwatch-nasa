@@ -8,12 +8,12 @@
 
   function start() {
     try {
-      if (!root.MoonChart || typeof root.MoonChart.render !== 'function') throw new Error('MoonChart.render ausente');
+      if (!root.MoonChart || typeof root.MoonChart.render !== 'function') throw new Error('MoonChart.render missing');
       if (current && current.destroy) current.destroy();
       current = root.MoonChart.render(el, root.MoonSeries.all);
     } catch (err) {
       console.error(err);
-      el.innerHTML = '<p class="chart-error">Não foi possível carregar o gráfico (' + root.MoonLayout.lib + '). A tabela abaixo continua disponível.</p>';
+      el.innerHTML = '<p class="chart-error">Could not load the chart (' + root.MoonLayout.lib + '). The table below is still available.</p>';
     }
   }
 

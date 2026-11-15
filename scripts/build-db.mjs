@@ -47,12 +47,12 @@ function readCsv(path, expectedHeader) {
   const lines = readFileSync(path, 'utf-8').replace(/^﻿/, '').split(/\r?\n/).filter((l) => l.trim() !== '');
   const header = lines[0].split(',').map((h) => h.trim());
   if (header.join(',') !== expectedHeader.join(',')) {
-    throw new Error(`${path}: cabeçalho inesperado "${header.join(',')}", esperado "${expectedHeader.join(',')}"`);
+    throw new Error(`${path}: unexpected header "${header.join(',')}", expected "${expectedHeader.join(',')}"`);
   }
   return lines.slice(1).map((line, i) => {
-    if (line.includes('"')) throw new Error(`${path}:${i + 2}: campos com aspas não são suportados`);
+    if (line.includes('"')) throw new Error(`${path}:${i + 2}: quoted fields are not supported`);
     const cells = line.split(',').map((c) => c.trim());
-    if (cells.length !== header.length) throw new Error(`${path}:${i + 2}: ${cells.length} colunas, esperado ${header.length}`);
+    if (cells.length !== header.length) throw new Error(`${path}:${i + 2}: ${cells.length} colunas, expected ${header.length}`);
     return { line: i + 2, cells };
   });
 }
@@ -60,7 +60,7 @@ function readCsv(path, expectedHeader) {
 function num(path, row, value, integer) {
   const n = Number(value);
   if (value === '' || !Number.isFinite(n) || (integer && !Number.isInteger(n))) {
-    throw new Error(`${path}:${row.line}: valor numérico inválido "${value}"`);
+    throw new Error(`${path}:${row.line}: invalid numeric value "${value}"`);
   }
   return n;
 }
@@ -98,7 +98,7 @@ export function buildDb(out) {
   }
 
   const fkErrors = db.prepare('PRAGMA foreign_key_check').all();
-  if (fkErrors.length) throw new Error(`chaves estrangeiras inválidas: ${JSON.stringify(fkErrors.slice(0, 5))}`);
+  if (fkErrors.length) throw new Error(`invalid foreign keys: ${JSON.stringify(fkErrors.slice(0, 5))}`);
   const summary = {
     sites: db.prepare('SELECT COUNT(*) n FROM d_landing_sites').get().n,
     missions: db.prepare('SELECT COUNT(DISTINCT mission_id) n FROM d_landing_sites').get().n,
@@ -114,5 +114,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const i = process.argv.indexOf('--out');
   const out = resolve(ROOT, i > 0 ? process.argv[i + 1] : 'data/moonwatch.sqlite');
   const s = buildDb(out);
-  console.log(`${out}: ${s.sites} sítios em ${s.missions} missões, ${s.facts} linhas de viabilidade (${s.from} a ${s.to})`);
+  console.log(`${out}: ${s.sites} sites in ${s.missions} missions, ${s.facts} viability rows (${s.from} to ${s.to})`);
 }

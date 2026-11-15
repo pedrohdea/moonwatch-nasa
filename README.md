@@ -6,66 +6,66 @@ https://www.spaceappschallenge.org/2026/find-a-team/myr_battlesphere/
 
 NASA’s Commercial Lunar Payload Services (CLPS) program and other lunar missions depend on careful selection of landing sites and dates that balance the needs of both science and engineering teams. One of the most significant challenges in this process is understanding the local lighting and communication environment at a potential landing site. 
 
-## Rodar local
+## Run locally
 
-Site em http://localhost:8003/, gráficos com Chart.js 4.4.1 + chartjs-plugin-zoom 2.0.1 (bibliotecas locais).
+Site at http://localhost:8003/, charts with Chart.js 4.4.1 + chartjs-plugin-zoom 2.0.1 (local libraries).
 
 ```bash
-./scripts/serve.sh   # sobe o site na porta 8003 (Node, sem cache do navegador); Ctrl+C para
-node --test          # testes do núcleo (tests/*.test.mjs)
-# E2E (clique na linha, área vazia, arrastes, legenda, scroll infinito):
+./scripts/serve.sh   # serves the site on port 8003 (Node, no browser cache); Ctrl+C to stop
+node --test          # core tests (tests/*.test.mjs)
+# E2E (line click, empty area, drags, legend, infinite scroll):
 google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir=/tmp/mw-e2e about:blank &
-node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
+node tests/e2e.mjs   # W=390 node tests/e2e.mjs for phone width
 ```
 
-- Página única com âncoras `#home`, `#track`, `#pouso` (Sítios de pouso e impacto), `#mission` (Definições da missão, abaixo do mapa da Lua), `#about`.
-- Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
-- Tabelas minimizadas por padrão (Maximizar/Minimizar), com filtro de texto e ordenação por coluna (clique no título; de novo inverte).
-- Cartões de "Área preenchida" ordenados da maior para a menor área; a maior fica em verde.
-- Tabela equivalente ao gráfico logo abaixo dele, com scroll infinito (50 linhas por vez) dentro da própria caixa.
-- Tempo de percurso (linhas verticais arrastáveis): uma por série do gráfico (V1…Vn, com a cor da série n), cada uma com setinha ▼ na borda de cima do gráfico. Arraste a seta para mudar a posição, digite no chip da linha, "×" exclui e "+ Tempo de percurso" adiciona de volta (máximo = número de séries). Posições na URL (`?vlinhas=`).
-- Partida: linha vertical branca com ▼ "Partida" (arrastável) e um campo (data no conjunto de viabilidade; `?partida=`). Cada tempo de percurso é medido a partir dela: Vk = Partida + tempo k. Mover a Partida leva todas as linhas de tempo de percurso juntas; os chips de tempo de percurso mostram a duração.
-- Com uma série filtrada, "Tempo de percurso" e os cartões de área mostram só a série escolhida.
-- Viabilidade mínima: uma única linha horizontal amarela, comum a todas as séries, com setinha ◀ na borda direita do gráfico para arrastar e um campo para digitar. Valor na URL (`?minima=`).
-- Tempo de percurso segue a legenda: esconder uma série esconde a linha vertical dela, o preenchimento e o cartão de área dela.
-- O gráfico mostra só as linhas, sem pontos (exceto no modo de assertividade "Cor", que precisa dos marcadores).
-- Preenchimento: cada curva é pintada (cor da série, translúcida) entre ela e a viabilidade mínima, só onde a curva está acima dessa linha e à direita da linha vertical da série (Vk). Com filtro, só a série escolhida. Acompanha o arrasto das linhas.
-- Seletor "Conjunto de dados" (`?dataset=<chave>`):
-  - `curvas` — 20 tipos de curva matemática, dados fictícios, 21 pontos medidos por curva (linear, quadrática, parabólica, cúbica, quártica, polinomial, exponencial, logarítmica, hiperbólica, racional, modular, inversa, potência, radical, por partes, implícita, paramétrica, trigonométrica, senoidal, cossenoidal).
-  - `barco`, `milho`, `malta`, `sarah` — correlações espúrias reais de [Tyler Vigen](https://www.tylervigen.com/spurious-correlations) (CC BY 4.0). Cada série é normalizada para 0–10 no gráfico; a tabela mostra os valores reais, uma linha por ano, como no site original.
-- O gráfico é desenhado a partir dos pontos da tabela (retas ligando os pontos). Cada ponto tem **assertividade** (0–100%), mostrada na tabela e no tooltip:
-  - curvas: proximidade do ponto medido à curva teórica (ruído fixo por semente, 75–100%);
-  - aleatória neste protótipo (5–100%, novo sorteio a cada carga; `?seed=N` repete). O ponto fica a `(1 − acc/100)·2,5` da referência: 100% em cima dela.
-- Versões da visualização da assertividade no cabeçalho (`?viz=<modo>`), trocadas sem recarregar a página (filtro, legenda, linhas e tabelas ficam; só o gráfico é redesenhado):
-  - `cor` — cor do marcador (vermelho → amarelo → verde);
-  - `faixa` (padrão) — faixa de tolerância em volta da referência;
-  - `rotulo` — `NN%` escrito em cada ponto.
-  Referência = curva teórica (curvas) ou valor esperado fictício (correlações espúrias). Faixa e rótulo aparecem só na série clicada, para não misturar séries.
-- E2E: `VIZ=faixa,cor DATASETS=curvas node tests/e2e.mjs` limita modos e conjuntos.
-- `viabilidade` — viabilidade fictícia dos 50 sítios (`docs/fLandingSites_viability.csv`), uma série por grupo (média diária dos 5 sítios), 731 dias. Eixo x em dias (data na tabela). Nomes dos grupos = missões de `docs/dMission.csv` (`ID` = `missionID`; o objetivo aparece como dica). Se algum CSV mudar: `node scripts/build-viability.mjs`.
-- `viabilidade` é o conjunto padrão. Os grupos marcados em "Sítios de pouso e impacto" seguem a mesma regra dos cartões de "Área preenchida": todos os grupos visíveis no gráfico (legenda / "Todos os grupos"), ou só o filtrado quando há filtro; o globo enquadra os sítios marcados.
-- No globo (aba Canvas), passar o mouse num ponto mostra sítio, missão, a soma de viabilidade do sítio e a "Área preenchida" da missão (mesmo valor do cartão). A missão de maior área fica verde no globo (Canvas e three.js) e no checkbox.
-- Em "Sítios de pouso e impacto": soma de viabilidade (soma do `VIABILITY` diário de 01/01/2024 a 31/12/2025) por sítio na tabela e total dos sítios marcados abaixo do globo. Vem de `siteTotals`, gerado por `node scripts/build-viability.mjs`.
-- Seção `#pouso` (menu "Pousos"): escolha uma missão (16 sítios de pouso/impacto) ou marque grupos de pontos fictícios (`site/shared/data/dLandingSites.csv`, múltipla escolha) e o globo gira e enquadra todos os pontos (autoscale). Três versões em abas: Canvas (sem dependência), three.js (carregado só ao abrir a aba) e Moon3DMap (iframe, precisa de internet). Textura NASA SVS CGI Moon Kit (LROC, domínio público).
-- Bibliotecas ficam em `site/chartjs/vendor/`; funciona sem internet (só as fontes do Google caem para fontes do sistema).
+- Single page with anchors `#home`, `#track`, `#sites` (Landing & Impact Sites), `#mission` (Mission Definitions, below the Moon map), `#about`.
+- Click a chart line: the table below shows only that series. Click an empty area or "Clear filter" to see everything.
+- Tables are collapsed by default (Expand/Collapse), with a text filter and column sorting (click the header; click again to reverse).
+- "Viable area" cards sorted from the largest to the smallest area; the largest is green.
+- Table equivalent to the chart right below it, with infinite scroll (50 rows at a time) inside its own box.
+- Transit time (draggable vertical lines): one per chart series (V1...Vn, in the color of series n), each with a small arrow ▼ on the top edge of the chart. Drag the arrow to move the line, type in the line chip, "×" removes it and "+ Transit time" adds it back (maximum = number of series). Positions in the URL (`?transit=`).
+- Departure: white vertical line with a draggable ▼ "Departure" and an input field (a date in the viability dataset; `?departure=`). Each transit time is measured from it: Vk = Departure + time k. Moving the Departure moves all transit-time lines together; the transit-time chips show the duration.
+- With a filtered series, "Transit time" and the area cards show only the chosen series.
+- Minimum viability: a single yellow horizontal line, shared by all series, with a ◀ arrow on the right edge of the chart to drag and an input field to type in. Value in the URL (`?threshold=`).
+- Transit time follows the legend: hiding a series hides its vertical line, its fill and its area card.
+- The chart shows only lines, without points (except in the "Color" confidence mode, which needs the markers).
+- Fill: each curve is painted (series color, translucent) between it and the minimum viability, only where the curve is above that line and to the right of the series' vertical line (Vk). With a filter, only the chosen series. Follows the dragging of the lines.
+- "Dataset" selector (`?dataset=<key>`):
+  - `curves` - 20 types of math curves, simulated data, 21 measured points per curve (linear, quadratic, parabolic, cubic, quartic, polynomial, exponential, logarithmic, hyperbolic, rational, absolute value, inverse, power, square root, piecewise, implicit, parametric, trigonometric, sine, cosine).
+  - `boat`, `corn`, `malta`, `sarah` - real spurious correlations from [Tyler Vigen](https://www.tylervigen.com/spurious-correlations) (CC BY 4.0). Each series is normalized to 0-10 in the chart; the table shows the real values, one row per year, as on the original site.
+- The chart is drawn from the table points (straight lines joining the points). Each point has a **confidence** (0-100%), shown in the table and the tooltip:
+  - curves: closeness of the measured point to the theoretical curve (fixed noise per seed, 75-100%);
+  - random in this prototype (5-100%, new draw on every load; `?seed=N` repeats it). The point sits at `(1 - acc/100)·2.5` from the reference: 100% is right on it.
+- Confidence visualization versions in the header (`?viz=<mode>`), switched without reloading the page (filter, legend, lines and tables stay; only the chart is redrawn):
+  - `color` - marker color (red → yellow → green);
+  - `band` (default) - tolerance band around the reference;
+  - `label` - `NN%` written on each point.
+  Reference = theoretical curve (curves) or simulated expected value (spurious correlations). Band and label appear only on the clicked series, to avoid mixing series.
+- E2E: `VIZ=band,color DATASETS=curves node tests/e2e.mjs` limits modes and datasets.
+- `viability` - simulated viability of the 50 sites (`docs/fLandingSites_viability.csv`), one series per mission (daily mean of its 5 sites), 731 days. X axis in days (date in the table). Mission names = missions in `docs/dMission.csv` (`ID` = `missionID`; the objective shows as a hint). If any CSV changes: `node scripts/build-viability.mjs`.
+- `viability` is the default dataset. The missions checked in "Landing & Impact Sites" follow the same rule as the "Viable area" cards: all missions visible in the chart (legend / "All missions"), or only the filtered one when a filter is active; the globe frames the checked sites.
+- On the globe (Canvas tab), hovering a point shows the site, the mission, the site's viability sum and the mission's "Viable area" (same value as the card). The mission with the largest area is green on the globe (Canvas and three.js) and in its checkbox.
+- In "Landing & Impact Sites": viability sum (sum of the daily `VIABILITY` from 2024-01-01 to 2025-12-31) per site in the table and the total of the checked sites below the globe. It comes from `siteTotals`, generated by `node scripts/build-viability.mjs`.
+- Section `#sites` (menu "Sites"): choose a mission (16 landing/impact sites) or check groups of simulated sites (`site/shared/data/dLandingSites.csv`, multiple choice) and the globe spins and frames all the points (autoscale). Three versions in tabs: Canvas (no dependency), three.js (loaded only when the tab opens) and Moon3DMap (iframe, needs internet). Texture: NASA SVS CGI Moon Kit (LROC, public domain).
+- Libraries live in `site/chartjs/vendor/`; works offline (only the Moon3DMap tab needs internet; Google Fonts fall back to system fonts).
 
-### Banco de dados (SQLite)
+### Database (SQLite)
 
 ```bash
-node scripts/build-db.mjs   # gera data/moonwatch.sqlite (git-ignored) a partir dos 2 CSVs
+node scripts/build-db.mjs   # builds data/moonwatch.sqlite (git-ignored) from the 2 CSVs
 ```
 
-Esquema estrela, montado com o `node:sqlite` nativo do Node 22 (sem dependência):
+Star schema, built with Node 22 native `node:sqlite` (no dependency):
 
-| Tabela/view | Origem | Chave |
+| Table/view | Source | Key |
 |---|---|---|
 | `d_landing_sites` (id, name, lat, long, mission_id, prs_id, nearest_cold) | `site/shared/data/dLandingSites.csv` | `id` |
 | `f_viability` (landing_site_id, date, viability) | `docs/fLandingSites_viability.csv` | (`landing_site_id`, `date`); `landing_site_id` → `d_landing_sites.id` |
-| `v_viability` | join das duas | — |
+| `v_viability` | join of the two | — |
 
-O build valida cabeçalhos, números, datas e chaves estrangeiras, e carrega tudo numa transação (se algo falhar, não sobra banco pela metade).
+The build validates headers, numbers, dates and foreign keys, and loads everything in one transaction (if anything fails, no half-built database is left).
 
-Estrutura: tudo que não é gráfico (dados, filtro, tabela, linhas-guia, layout, CSS) fica em `site/shared/`; `site/chartjs/chart.js` é o adaptador do Chart.js. Plano e decisões: [`docs/PLAN.md`](docs/PLAN.md).
+Structure: everything that is not chart-specific (data, filter, table, guide lines, layout, CSS) lives in `site/shared/`; `site/chartjs/chart.js` is the Chart.js adapter. Plan and decisions: [`docs/PLAN.md`](docs/PLAN.md).
 
 About the Challenge
 https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/

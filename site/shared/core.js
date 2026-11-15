@@ -30,7 +30,7 @@
       getFilter: function () { return active; },
       onFilterChange: function (cb) { listeners.push(cb); },
       setVisible: setVisible,
-      // Show or hide every series at once ("Todos os grupos" checkbox); the chart adapter mirrors it.
+      // Show or hide every series at once ("All missions" checkbox); the chart adapter mirrors it.
       setAllVisible: function (value) { for (var k = 0; k < seriesCount; k++) setVisible(k, value); },
       isVisible: function (index) { return visible[index] !== false; },
       visibleCount: function () { return visible.filter(Boolean).length; },
@@ -169,14 +169,14 @@
     }
     api.createCore = createCore;
     var xStep = ds.xIsYear ? 1 : 0.01;
-    // Departure ("Partida"): one vertical line; each travel-time line Vk sits at departure + travelTime[k].
+    // Departure ("Departure"): one vertical line; each travel-time line Vk sits at departure + travelTime[k].
     // Moving the departure shifts every Vk by the same amount (travel times kept, even past the axis edges);
     // dragging or typing a Vk changes only its own travel time.
-    var partidaParam = params.get('partida');
+    var departureParam = params.get('departure');
     api.departure = createVLines(ds.xRange[0], ds.xRange[1], xStep,
-      [partidaParam !== null && partidaParam !== '' ? partidaParam : ds.xRange[0]], 1);
+      [departureParam !== null && departureParam !== '' ? departureParam : ds.xRange[0]], 1);
     // Default travel-time lines are spread between the departure and the end of the x axis.
-    api.vlines = createVLines(ds.xRange[0], ds.xRange[1], xStep, initialLines('vlinhas', api.departure.list()[0].value, ds.xRange[1]), seriesCount);
+    api.vlines = createVLines(ds.xRange[0], ds.xRange[1], xStep, initialLines('transit', api.departure.list()[0].value, ds.xRange[1]), seriesCount);
     var travel = {}; // vline id -> travel time (x units)
     function departureValue() { var d = api.departure.list()[0]; return d ? d.value : ds.xRange[0]; }
     function syncTravel() {
@@ -199,13 +199,13 @@
       api.vlines.set(id, departureValue() + n, source);
     };
     // Minimum viability: ONE horizontal line shared by every series (default: middle of the y range).
-    var minimaParam = params.get('minima');
+    var thresholdParam = params.get('threshold');
     api.hlines = createVLines(ds.yRange[0], ds.yRange[1], 0.01,
-      [minimaParam !== null && minimaParam !== '' ? minimaParam : (ds.yRange[0] + ds.yRange[1]) / 2], 1);
+      [thresholdParam !== null && thresholdParam !== '' ? thresholdParam : (ds.yRange[0] + ds.yRange[1]) / 2], 1);
     // Vertical line k takes the color of series k; the minimum-viability line is Neon Yellow.
     api.vlineColor = function (k) { return root.MoonSeries.colors[k % seriesCount]; };
     api.hlineColor = function () { return '#EAFE07'; };
-    api.hlineLabel = function () { return 'Mín.'; };
+    api.hlineLabel = function () { return 'Min.'; };
 
     // Series k is filled/measured with its vertical line Vk and the shared minimum-viability line.
     function pairFor(k) {

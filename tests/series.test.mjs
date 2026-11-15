@@ -10,7 +10,7 @@ const { createCore, createVLines, defaultVLines, fillRegions } = require('../sit
 const near = (a, b) => Math.abs(a - b) < 1e-3;
 
 test('default dataset: 20 curves, 21 measured points, x and y within [0, 10], random accuracy 0–100', () => {
-  assert.equal(MoonSeries.dataset.key, 'curvas');
+  assert.equal(MoonSeries.dataset.key, 'curves');
   assert.equal(MoonSeries.all.length, 20);
   for (const s of MoonSeries.all) {
     assert.equal(s.points.length, 21, s.name);
@@ -26,7 +26,7 @@ test('default dataset: 20 curves, 21 measured points, x and y within [0, 10], ra
 });
 
 test('same seed gives the same points; distance to the curve matches accuracy', () => {
-  const again = MoonSeries.load('curvas');
+  const again = MoonSeries.load('curves');
   assert.deepEqual(again.map((s) => s.points), MoonSeries.all.map((s) => s.points));
   for (const s of MoonSeries.all) {
     // |measured − theoretical| = (1 − acc/100) · 2.5, up to rounding.
@@ -50,12 +50,12 @@ test('x is non-decreasing in every curve (Chart.js decimation needs sorted x)', 
 test('known theoretical values (reference field)', () => {
   const ref = (name, x) => MoonSeries.all.find((s) => s.name === name).points.find((p) => near(p[0], x))[4];
   assert.equal(ref('Linear', 5), 5);
-  assert.equal(ref('Parabólica', 5), 10);
-  assert.equal(ref('Modular', 5), 0);
-  assert.equal(ref('Implícita', 5), 10);
-  assert.equal(ref('Senoidal', 0), 5);
-  assert.equal(ref('Cossenoidal', 0), 10);
-  assert.equal(ref('Quártica', 5), 10);
+  assert.equal(ref('Parabolic', 5), 10);
+  assert.equal(ref('Absolute value', 5), 0);
+  assert.equal(ref('Implicit', 5), 10);
+  assert.equal(ref('Sine', 0), 5);
+  assert.equal(ref('Cosine', 0), 10);
+  assert.equal(ref('Quartic', 5), 10);
 });
 
 test('spurious datasets: two series, yearly x, normalized y, real value kept', () => {
@@ -78,7 +78,7 @@ test('filterRows: null returns all rows, index returns one series, raw only for 
   assert.equal(MoonSeries.filterRows(MoonSeries.all, null).length, 20 * 21);
   const rows = MoonSeries.filterRows(MoonSeries.all, 18);
   assert.equal(rows.length, 21);
-  assert.ok(rows.every((r) => r.seriesIndex === 18 && r.name === 'Senoidal' && r.raw === null && r.accuracy >= 0));
+  assert.ok(rows.every((r) => r.seriesIndex === 18 && r.name === 'Sine' && r.raw === null && r.accuracy >= 0));
   const sarah = MoonSeries.filterRows(MoonSeries.load('sarah'), 0);
   assert.equal(sarah[0].raw, 28004);
   assert.equal(sarah[0].x, 1987);
@@ -113,8 +113,8 @@ test('reference value per point and reference curve', () => {
 });
 
 test('viz modes, accuracy colors and focus', () => {
-  assert.deepEqual(MoonSeries.vizModes.map((m) => m.key), ['cor', 'faixa', 'rotulo']);
-  assert.equal(MoonSeries.viz, 'faixa');
+  assert.deepEqual(MoonSeries.vizModes.map((m) => m.key), ['color', 'band', 'label']);
+  assert.equal(MoonSeries.viz, 'band');
   assert.equal(MoonSeries.accuracyColor(100), '#3DDC84');
   assert.equal(MoonSeries.accuracyColor(0), '#FF6A3D');
   assert.equal(MoonSeries.accuracyColor(50), '#EAFE07');

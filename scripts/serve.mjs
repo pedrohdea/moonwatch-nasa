@@ -21,7 +21,7 @@ for (const [dir, port] of Object.entries(VARIANTS)) {
       if (statSync(file).isDirectory()) file = join(file, 'index.html');
       statSync(file);
     } catch {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Não encontrado');
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Not found');
       return;
     }
     res.writeHead(200, { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });

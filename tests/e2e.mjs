@@ -2,9 +2,9 @@
 // Usage: ./scripts/serve.sh &  google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir=/tmp/mw-e2e about:blank &  node tests/e2e.mjs   (W=390 for mobile width)
 const PORTS = { chartjs: 8003 };
 const WIDTH = Number(process.env.W || 1280);
-const DATASETS = (process.env.DATASETS || 'curvas,sarah').split(',');
+const DATASETS = (process.env.DATASETS || 'curves,sarah').split(',');
 const SEED = process.env.SEED || 424242; // fixed random accuracy so runs are reproducible
-const VIZS = (process.env.VIZ || 'cor,faixa,rotulo').split(',');
+const VIZS = (process.env.VIZ || 'color,band,label').split(',');
 
 // In-page helpers working on MoonSeries data (normalized to the dataset ranges), so any dataset can be tested.
 // Handle (arrow) center = right end of the plot area + HANDLE_DX px. Filled in from each adapter's report.
@@ -79,7 +79,7 @@ async function main() {
     const emptySpot = async () => { const e = await evaluate(`(${EMPTY})()`); return e ? px(0, e[0], e[1]) : null; };
 
     check('no chart error', !(await evaluate(`!!document.querySelector('.chart-error')`)));
-    check('initial badge', (await badge()).startsWith('Todas'), await badge());
+    check('initial badge', (await badge()).startsWith('All'), await badge());
 
     if (await isolation(first) < AMBIGUOUS) {
       skip(`click line filters ${series[first]}`, 'lines overlap; filtering through MoonCore');
@@ -114,7 +114,7 @@ async function main() {
     } else {
       const [ex2, ey2] = await emptySpot();
       await click(ex2, ey2);
-      check('empty click clears', (await badge()).startsWith('Todas'), await badge());
+      check('empty click clears', (await badge()).startsWith('All'), await badge());
     }
 
     if (await isolation(second) < AMBIGUOUS) skip(`click ${series[second]}`, 'lines overlap');
@@ -124,7 +124,7 @@ async function main() {
       check(`click ${series[second]}`, (await badge()).includes(series[second]), await badge());
     }
     await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
-    check('clear button', (await badge()).startsWith('Todas'));
+    check('clear button', (await badge()).startsWith('All'));
 
     // Draggable horizontal line: press on the arrow handle, drag to y=2, release.
     await evaluate(`MoonCore.setFilter(${first})`); await wait(300);
@@ -199,7 +199,7 @@ async function main() {
     for (let k = 1; k <= 6; k++) await mouse('mouseMoved', dx + ((dtx - dx) * k) / 6, dtop - 8);
     await mouse('mouseReleased', dtx, dtop - 8); await wait(400);
     const depAfter = await evaluate(`MoonCore.departure.list()[0].value`);
-    check('drag Partida moves the departure', Math.abs(depAfter - depTarget) <= Math.max(span * 0.02, 1), `${depValue} -> ${depAfter}`);
+    check('drag Departure moves the departure', Math.abs(depAfter - depTarget) <= Math.max(span * 0.02, 1), `${depValue} -> ${depAfter}`);
     check('travel times unchanged after moving the departure', (await evaluate(`JSON.stringify(MoonCore.vlines.list().map(l=>MoonCore.travelTime(l.id)))`)) === travelBefore);
     const posAfter = await evaluate(`MoonCore.vlines.list().map(l=>l.value)`);
     const shift = depAfter - depValue;
@@ -223,9 +223,9 @@ async function main() {
     check('uncheck all: nothing visible', (await evaluate(`MoonCore.visibleCount()`)) === 0 && (await shownChips()) === 0 && (await cards()) === 0 && (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === 0);
     await setAll(true); await wait(400);
     check('check all: everything back', (await evaluate(`MoonCore.visibleCount()`)) === nSeries && (await shownChips()) === nSeries && (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === nSeries);
-    const areasMatch = `(()=>{const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().slice().sort((a,b)=>b.area-a.area).map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
+    const areasMatch = `(()=>{const f=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().slice().sort((a,b)=>b.area-a.area).map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
     check('filled areas shown per vertical line', await evaluate(areasMatch));
-    check('largest area card is green', await evaluate(`(()=>{const max=Math.max(...MoonCore.areas().map(a=>a.area));const g=[...document.querySelectorAll('#fill-areas .fill-area.is-max')];const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});return max<=0?g.length===0:g.length>=1&&g.every(e=>e.querySelector('strong').textContent===f.format(max))&&getComputedStyle(g[0].querySelector('strong')).color==='rgb(61, 220, 132)';})()`));
+    check('largest area card is green', await evaluate(`(()=>{const max=Math.max(...MoonCore.areas().map(a=>a.area));const g=[...document.querySelectorAll('#fill-areas .fill-area.is-max')];const f=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});return max<=0?g.length===0:g.length>=1&&g.every(e=>e.querySelector('strong').textContent===f.format(max))&&getComputedStyle(g[0].querySelector('strong')).color==='rgb(61, 220, 132)';})()`));
     const areaBefore = await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`);
     await evaluate(`MoonCore.hlines.set(MoonCore.hlines.list()[0].id, MoonCore.hlines.min + (MoonCore.hlines.max - MoonCore.hlines.min) * 0.1, 'input')`); await wait(200);
     check('areas follow the horizontal line', (await evaluate(areasMatch)) && (await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`)) !== areaBefore, String(areaBefore));
@@ -234,7 +234,7 @@ async function main() {
     // Tables start minimized; "Maximizar" opens the data table (needed for its infinite scroll).
     check('data table starts minimized', await evaluate(`getComputedStyle(document.getElementById('table-box')).display==='none'`));
     await evaluate(`document.querySelector('.table-toggle[aria-controls=table-box]').click()`); await wait(300);
-    check('Maximizar opens the data table', await evaluate(`getComputedStyle(document.getElementById('table-box')).display!=='none' && document.querySelector('.table-toggle[aria-controls=table-box]').textContent==='Minimizar'`));
+    check('Expand opens the data table', await evaluate(`getComputedStyle(document.getElementById('table-box')).display!=='none' && document.querySelector('.table-toggle[aria-controls=table-box]').textContent==='Collapse'`));
     // Sort: clicking the last-but-one header twice sorts it descending (whole data set, not only the rendered batch).
     const sortedDesc = `(()=>{const ths=document.querySelectorAll('#table-head th');const i=ths.length-2;const v=[...document.querySelectorAll('#table-body tr')].slice(0,20).map(tr=>MoonTableKit.key(tr.cells[i].textContent));return v.every((x,k)=>k===0||v[k-1]>=x)&&ths[i].getAttribute('aria-sort')==='descending';})()`;
     const clickSortHeader = `(()=>{const ths=document.querySelectorAll('#table-head th');ths[ths.length-2].click();})()`; // header is re-rendered on each click
@@ -242,42 +242,42 @@ async function main() {
     check('header click sorts the data table (descending)', await evaluate(sortedDesc));
     // Filter: typing a series name keeps only its rows.
     await evaluate(`(i=>{i.value=MoonSeries.all[0].name;i.dispatchEvent(new Event('input'))})(document.getElementById('table-search'))`); await wait(300);
-    check('text filter keeps only matching rows', await evaluate(`[...document.querySelectorAll('#table-body tr')].every(tr=>tr.textContent.toLowerCase().includes(MoonSeries.all[0].name.toLowerCase()))&&document.querySelector('.table-bar[data-for=table-box] .table-bar-title').textContent.includes(' de ')`));
+    check('text filter keeps only matching rows', await evaluate(`[...document.querySelectorAll('#table-body tr')].every(tr=>tr.textContent.toLowerCase().includes(MoonSeries.all[0].name.toLowerCase()))&&document.querySelector('.table-bar[data-for=table-box] .table-bar-title').textContent.includes(' of ')`));
     await evaluate(`(i=>{i.value='';i.dispatchEvent(new Event('input'))})(document.getElementById('table-search'))`); await wait(300);
     const before = await evaluate(`document.querySelectorAll('#table-body tr').length`);
     for (let i = 0; i < 4; i++) { await evaluate(`(b=>b.scrollTop=b.scrollHeight)(document.getElementById('table-box'))`); await wait(250); }
     const after = await evaluate(`document.querySelectorAll('#table-body tr').length`);
-    const totalRows = await evaluate(`MoonSeriesTotal=document.getElementById('filter-badge').textContent.match(/([\\d.]+) linhas/)[1].replace(/\\./g,'')*1`);
+    const totalRows = await evaluate(`MoonSeriesTotal=document.getElementById('filter-badge').textContent.match(/([\\d,]+) rows/)[1].replace(/,/g,'')*1`);
     check('infinite scroll loads more (or all rows fit)', after > before || after === totalRows, `${before} -> ${after} of ${totalRows}`);
     check('no horizontal page scroll', await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`));
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }
 
-  // Switching dataset must drop the old ?vlinhas=/?linha= so the new dataset starts with one line per series.
+  // Switching dataset must drop the old ?transit=/?linha= so the new dataset starts with one line per series.
   for (const [lib, port] of Object.entries(PORTS)) {
     console.log(`${lib} (:${port}) dataset switch width=${WIDTH}`);
-    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=sarah&vlinhas=1990,2000&minima=3&seed=${SEED}#track` });
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=sarah&transit=1990,2000&threshold=3&seed=${SEED}#track` });
     await wait(2000);
-    await evaluate(`(s=>{s.value='curvas';s.dispatchEvent(new Event('change'))})(document.getElementById('dataset-select'))`);
+    await evaluate(`(s=>{s.value='curves';s.dispatchEvent(new Event('change'))})(document.getElementById('dataset-select'))`);
     await wait(3000);
     const n = await evaluate(`MoonSeries.all.length`);
-    check('switch to curvas: one vertical line per series', (await evaluate(`MoonCore.vlines.list().length`)) === n, `${await evaluate(`MoonCore.vlines.list().length`)} of ${n}`);
-    check('switch to curvas: one minimum-viability line, back to the middle', (await evaluate(`MoonCore.hlines.list().length`)) === 1 && (await evaluate(`MoonCore.hlines.list()[0].value`)) === 5);
+    check('switch to curves: one vertical line per series', (await evaluate(`MoonCore.vlines.list().length`)) === n, `${await evaluate(`MoonCore.vlines.list().length`)} of ${n}`);
+    check('switch to curves: one minimum-viability line, back to the middle', (await evaluate(`MoonCore.hlines.list().length`)) === 1 && (await evaluate(`MoonCore.hlines.list()[0].value`)) === 5);
   }
 
   // Switching the accuracy visualization keeps the page state (no reload): only the chart is rebuilt.
   for (const [lib, port] of Object.entries(PORTS)) {
     errors.length = 0;
     console.log(`${lib} (:${port}) viz switch keeps state width=${WIDTH}`);
-    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=sarah&viz=faixa&seed=${SEED}#track` });
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=sarah&viz=band&seed=${SEED}#track` });
     await wait(2500);
     await evaluate(`window.__noReload = 1; MoonCore.setFilter(1); MoonCore.setVisible(0, false); MoonCore.departure.set(MoonCore.departure.list()[0].id, 1990, 'input');
       (i=>{i.value='20';i.dispatchEvent(new Event('input'))})(document.getElementById('table-search'))`); await wait(400);
     const oldCanvas = await evaluate(`(window.__oldCanvas = document.querySelector('#chart canvas'), 1)`);
-    await evaluate(`document.querySelector('.viz-pill[data-viz=cor]').click()`); await wait(800);
+    await evaluate(`document.querySelector('.viz-pill[data-viz=color]').click()`); await wait(800);
     check('viz switch: no page reload', (await evaluate(`window.__noReload`)) === 1 && oldCanvas === 1);
-    check('viz switch: mode and URL updated', (await evaluate(`MoonSeries.viz`)) === 'cor' && (await evaluate(`new URL(location.href).searchParams.get('viz')`)) === 'cor' &&
-      (await evaluate(`document.querySelector('.viz-pill[aria-current]').getAttribute('data-viz')`)) === 'cor');
+    check('viz switch: mode and URL updated', (await evaluate(`MoonSeries.viz`)) === 'color' && (await evaluate(`new URL(location.href).searchParams.get('viz')`)) === 'color' &&
+      (await evaluate(`document.querySelector('.viz-pill[aria-current]').getAttribute('data-viz')`)) === 'color');
     check('viz switch: chart rebuilt', await evaluate(`document.querySelector('#chart canvas') !== window.__oldCanvas && document.querySelectorAll('#chart canvas').length === 1`));
     check('viz switch: filter, legend, departure and table search kept', (await evaluate(`MoonCore.getFilter()`)) === 1 && (await evaluate(`MoonCore.isVisible(0)`)) === false &&
       (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === 1 && (await evaluate(`MoonCore.departure.list()[0].value`)) === 1990 && (await evaluate(`document.getElementById('table-search').value`)) === '20');
@@ -285,27 +285,27 @@ async function main() {
     check('viz switch: old chart listeners are inert (no errors after filter change)', errors.length === 0, errors.join(' | '));
   }
 
-  // Viability chart filter -> "Sítios de pouso e impacto": filtering Grupo N selects only group N on the globe.
+  // Viability chart filter -> "Landing & Impact Sites": filtering mission N selects only group N on the globe.
   for (const [lib, port] of Object.entries(PORTS)) {
     errors.length = 0;
     console.log(`${lib} (:${port}) filter -> landing groups width=${WIDTH}`);
-    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=viabilidade&seed=${SEED}#track` });
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=viability&seed=${SEED}#track` });
     await wait(3000);
     await evaluate(`MoonLanding.ready`); await wait(300);
     const checkedCount = () => evaluate(`MoonLanding.state.checked.length`);
-    check('viability is the default dataset', (await evaluate(`(()=>{const u=new URL(location.href);return u.searchParams.get('dataset')})()`)) === 'viabilidade' || (await evaluate(`MoonSeries.dataset.key`)) === 'viabilidade');
+    check('viability is the default dataset', (await evaluate(`(()=>{const u=new URL(location.href);return u.searchParams.get('dataset')})()`)) === 'viability' || (await evaluate(`MoonSeries.dataset.key`)) === 'viability');
     check('no filter: every visible group selected on the globe', (await checkedCount()) === 10);
-    // Green on the globe = the mission of the green (largest) "Área preenchida" card.
+    // Green on the globe = the mission of the green (largest) "Viable area" card.
     check('globe green group = largest area card', await evaluate(`(()=>{const card=document.querySelector('#fill-areas .fill-area.is-max .fill-area-name').textContent;const s=MoonSeries.all.find(x=>x.name===card);return MoonLanding.bestGroupKey()==='csv-'+s.group;})()`));
     await evaluate(`MoonCore.departure.set(MoonCore.departure.list()[0].id, 600, 'input')`); await wait(300);
-    // Hover title on a Canvas globe point = its mission's "Área preenchida" value (same number as the card).
-    await evaluate(`document.getElementById('pouso').scrollIntoView({behavior:'instant'})`); await wait(2500);
-    const hp = await evaluate(`(()=>{const cv=document.querySelector('[data-pane=canvas]');const r=cv.getBoundingClientRect();const k=r.width/cv.width;const h=MoonLanding.canvasHits().find(h=>h.title.includes('Área preenchida:')&&!h.title.includes('—'));if(!h)return null;const name=h.title.split(' · ')[1].split('\\n')[0];return {x:r.left+h.x*k,y:r.top+h.y*k,name};})()`);
+    // Hover title on a Canvas globe point = its mission's "Viable area" value (same number as the card).
+    await evaluate(`document.getElementById('sites').scrollIntoView({behavior:'instant'})`); await wait(2500);
+    const hp = await evaluate(`(()=>{const cv=document.querySelector('[data-pane=canvas]');const r=cv.getBoundingClientRect();const k=r.width/cv.width;const h=MoonLanding.canvasHits().find(h=>h.title.includes('Viable area:')&&!h.title.includes('—'));if(!h)return null;const name=h.title.split(' · ')[1].split('\\n')[0];return {x:r.left+h.x*k,y:r.top+h.y*k,name};})()`);
     if (hp) {
       await mouse('mouseMoved', hp.x, hp.y); await wait(300);
-      const want = await evaluate(`(()=>{const s=MoonSeries.all.find(x=>x.name===${JSON.stringify(hp.name)});const a=MoonCore.areas().find(a=>a.seriesIndex===s.index);return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(a.area);})()`);
-      check('hover a globe point shows its filled area', (await evaluate(`document.querySelector('[data-pane=canvas]').title`)).includes('Área preenchida: ' + want), want);
-      check('hover title also shows the site viability sum', /Soma de viabilidade: [\d.]+/.test(await evaluate(`document.querySelector('[data-pane=canvas]').title`)));
+      const want = await evaluate(`(()=>{const s=MoonSeries.all.find(x=>x.name===${JSON.stringify(hp.name)});const a=MoonCore.areas().find(a=>a.seriesIndex===s.index);return new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}).format(a.area);})()`);
+      check('hover a globe point shows its filled area', (await evaluate(`document.querySelector('[data-pane=canvas]').title`)).includes('Viable area: ' + want), want);
+      check('hover title also shows the site viability sum', /Viability sum: [\d,]+/.test(await evaluate(`document.querySelector('[data-pane=canvas]').title`)));
     } else skip('hover a globe point shows its filled area', 'no CSV point visible on the Canvas');
     await evaluate(`document.getElementById('track').scrollIntoView({behavior:'instant'})`); await wait(300);
     check('globe green follows the card when lines move', await evaluate(`(()=>{const card=document.querySelector('#fill-areas .fill-area.is-max .fill-area-name').textContent;const s=MoonSeries.all.find(x=>x.name===card);return MoonLanding.bestGroupKey()==='csv-'+s.group;})()`));
@@ -313,11 +313,11 @@ async function main() {
     await evaluate(`MoonCore.setFilter(2)`); await wait(800);
     check('filter Grupo 3 selects only group 3 on the globe', (await evaluate(`JSON.stringify(MoonLanding.state.checked)`)) === '["csv-3"]' &&
       (await evaluate(`document.querySelectorAll('#landing-points tbody tr').length`)) === 5);
-    const wantSum = await evaluate(`new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(MoonSeries.all[2].sites.reduce((a,id)=>a+MoonViability.siteTotals[id],0))`);
+    const wantSum = await evaluate(`new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(MoonSeries.all[2].sites.reduce((a,id)=>a+MoonViability.siteTotals[id],0))`);
     await evaluate(`(t=>{t.click();t.click();})([...document.querySelectorAll('#landing-points thead th')].pop())`); await wait(300);
     check('landing table sorts by viability sum (descending)', await evaluate(`(()=>{const v=[...document.querySelectorAll('#landing-points tbody tr')].map(tr=>MoonTableKit.key(tr.cells[tr.cells.length-1].textContent));return v.length===5&&v.every((x,k)=>k===0||v[k-1]>=x);})()`));
     check('globe shows the viability sum of the selected sites', (await evaluate(`document.querySelector('.landing-sum strong')?.textContent`)) === wantSum &&
-      (await evaluate(`document.querySelector('#landing-points thead').textContent.includes('Soma de viabilidade')`)), wantSum);
+      (await evaluate(`document.querySelector('#landing-points thead').textContent.includes('Viability sum')`)), wantSum);
     await evaluate(`MoonCore.setFilter(null)`); await wait(500);
     check('clearing the filter selects all visible groups again', (await checkedCount()) === 10);
     await evaluate(`(b=>{b.checked=false;b.dispatchEvent(new Event('change'))})(document.getElementById('all-series'))`); await wait(500);
@@ -325,11 +325,11 @@ async function main() {
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }
 
-  // #pouso globe: after picking a mission, Canvas and three.js views end centered on it (far side included).
+  // #sites globe: after picking a mission, Canvas and three.js views end centered on it (far side included).
   for (const [lib, port] of Object.entries(PORTS)) {
     errors.length = 0;
-    console.log(`${lib} (:${port}) #pouso width=${WIDTH}`);
-    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=curvas&seed=${SEED}#pouso` });
+    console.log(`${lib} (:${port}) #sites width=${WIDTH}`);
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=curves&seed=${SEED}#sites` });
     await wait(2500);
     await evaluate(`MoonLanding.ready`);
     const centered = (key) => evaluate(`(()=>{const m=MoonLanding.missions.find(x=>x.key==='${key}'),v=MoonLanding.state.view;return Math.abs(v.lat-m.lat)<1&&Math.abs(((v.lon-m.lon+540)%360)-180)<1})()`);

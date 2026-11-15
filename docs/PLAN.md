@@ -208,3 +208,7 @@ Decisões:
 - "Linhas verticais" renomeadas para "Tempo de percurso". Nova linha "Partida" (branca, `?partida=`, campo de data no conjunto de viabilidade): Vk = Partida + tempo k; mover a Partida desloca todas as Vk mantendo os tempos (guardados mesmo se a linha bater na borda do eixo); arrastar/digitar uma Vk muda só o tempo dela. Padrão: tempos distribuídos entre a Partida e o fim do eixo.
 - Filtro de série também filtra o tempo de percurso (linha, chip) e os cartões de área.
 - 3 missões removidas da lista do globo, da documentação e dos testes a pedido (16 missões).
+
+## Update: English site and code (2026-11-15)
+
+User request: whole site and code in English, NASA-style mission wording. Keys renamed (datasets `curves`/`boat`/`corn`/`malta`/`sarah`/`viability`; confidence modes `color`/`band`/`label`; URL params `transit`/`threshold`/`departure`; anchor `#sites`), en-US numbers, ISO 8601 dates. Glossary: Confidence, Departure, Transit time, Minimum viability, Viable area, Landing & Impact Sites, Mission Definitions, Direct-to-Earth (DTE). This plan file keeps its earlier sections in Portuguese as the decision log.
