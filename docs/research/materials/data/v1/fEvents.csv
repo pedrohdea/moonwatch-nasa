@@ -1,0 +1,101 @@
+ID,EVENTTYPE,DATE,SEVERITY
+1,Calm Stratosphere,2024-01-14,0.4525
+2,Exceptionally Stable Weather,2024-01-21,0.8886
+3,Favorable Tailwind Profile,2024-01-25,0.4873
+4,Microburst,2024-02-03,-0.8155
+5,Moderate Rain,2024-02-08,-0.1638
+6,Severe Hurricane,2024-02-13,-0.8723
+7,Unstable Atmospheric Pressure,2024-02-16,-0.2285
+8,Class X Solar Flare,2024-02-25,-0.8329
+9,Perfect Clear Skies,2024-03-03,0.8691
+10,Perfect Clear Skies,2024-03-13,0.7443
+11,Heavy Lightning Storm,2024-03-14,-0.7714
+12,Severe Hurricane,2024-03-15,-0.9184
+13,Optimal Jet Stream Alignment,2024-03-16,0.5064
+14,Extreme Geomagnetic Storm,2024-03-25,-0.8861
+15,Ideal Atmospheric Density,2024-03-26,0.8367
+16,Class X Solar Flare,2024-03-29,-0.8704
+17,Calm Stratosphere,2024-03-30,0.5261
+18,Severe Hurricane,2024-04-07,-0.8545
+19,Ideal Atmospheric Density,2024-04-08,0.6466
+20,Dense Fog (Zero Visibility),2024-04-26,-0.4066
+21,Unstable Atmospheric Pressure,2024-05-03,-0.2943
+22,Optimal Jet Stream Alignment,2024-05-05,0.896
+23,Optimal Jet Stream Alignment,2024-05-15,0.8356
+24,Class X Solar Flare,2024-05-31,-0.8429
+25,Class X Solar Flare,2024-06-03,-0.6455
+26,Calm Stratosphere,2024-06-17,0.5693
+27,Exceptionally Stable Weather,2024-07-01,0.9757
+28,Microburst,2024-07-11,-0.7809
+29,Exceptionally Stable Weather,2024-07-21,0.8711
+30,Calm Stratosphere,2024-07-30,0.3164
+31,Microburst,2024-08-08,-0.6942
+32,Optimal Jet Stream Alignment,2024-08-09,0.5905
+33,Heavy Lightning Storm,2024-08-16,-0.8647
+34,Heavy Freezing Rain,2024-08-17,-0.7712
+35,Optimal Jet Stream Alignment,2024-08-21,0.5375
+36,Calm Stratosphere,2024-08-26,0.3335
+37,Calm Stratosphere,2024-09-04,0.5837
+38,Class X Solar Flare,2024-09-17,-0.6714
+39,Calm Stratosphere,2024-09-27,0.4042
+40,Calm Stratosphere,2024-10-01,0.3904
+41,Optimal Jet Stream Alignment,2024-10-10,0.7598
+42,Favorable Tailwind Profile,2024-10-15,0.7762
+43,Class X Solar Flare,2024-10-17,-0.7283
+44,Microburst,2024-10-20,-0.8079
+45,Favorable Tailwind Profile,2024-10-31,0.6716
+46,Extreme Geomagnetic Storm,2024-11-05,-0.8056
+47,Heavy Freezing Rain,2024-11-08,-0.8838
+48,Heavy Lightning Storm,2024-11-09,-0.8856
+49,Moderate Rain,2024-11-12,-0.276
+50,Moderate Rain,2024-11-21,-0.2409
+51,Class X Solar Flare,2024-11-24,-0.6076
+52,Severe Hurricane,2024-11-26,-0.9044
+53,Dense Fog (Zero Visibility),2024-12-04,-0.5867
+54,Microburst,2024-12-07,-0.6335
+55,Severe Hurricane,2024-12-08,-0.9335
+56,Unstable Atmospheric Pressure,2024-12-17,-0.1948
+57,Dense Fog (Zero Visibility),2024-12-22,-0.5132
+58,Exceptionally Stable Weather,2024-12-26,0.954
+59,Severe Hurricane,2024-12-27,-0.8566
+60,Favorable Tailwind Profile,2025-01-22,0.4018
+61,Class X Solar Flare,2025-01-24,-0.8503
+62,Heavy Freezing Rain,2025-02-16,-0.8415
+63,High Altitude Wind Shear,2025-03-10,-0.5932
+64,Favorable Tailwind Profile,2025-03-31,0.6946
+65,Microburst,2025-04-02,-0.7584
+66,Favorable Tailwind Profile,2025-04-04,0.5486
+67,Heavy Freezing Rain,2025-04-06,-0.8042
+68,Heavy Lightning Storm,2025-04-22,-0.7772
+69,Moderate Rain,2025-04-26,-0.3772
+70,Exceptionally Stable Weather,2025-04-30,0.9822
+71,Extreme Geomagnetic Storm,2025-05-14,-0.9341
+72,Microburst,2025-05-19,-0.7068
+73,Heavy Lightning Storm,2025-05-23,-0.7644
+74,Severe Hurricane,2025-05-25,-0.8601
+75,Dense Fog (Zero Visibility),2025-05-27,-0.5973
+76,Perfect Clear Skies,2025-06-02,0.9184
+77,Class X Solar Flare,2025-07-01,-0.8474
+78,Heavy Lightning Storm,2025-07-28,-0.9398
+79,Dense Fog (Zero Visibility),2025-08-06,-0.6468
+80,Calm Stratosphere,2025-08-16,0.3848
+81,Extreme Geomagnetic Storm,2025-08-23,-0.8028
+82,High Altitude Wind Shear,2025-08-24,-0.7507
+83,Moderate Rain,2025-09-28,-0.2081
+84,Heavy Freezing Rain,2025-10-02,-0.8653
+85,Heavy Lightning Storm,2025-10-07,-0.9496
+86,Moderate Rain,2025-10-12,-0.1988
+87,Ideal Atmospheric Density,2025-10-18,0.8544
+88,Heavy Lightning Storm,2025-10-19,-0.8376
+89,Optimal Jet Stream Alignment,2025-10-26,0.7531
+90,Heavy Freezing Rain,2025-11-04,-0.702
+91,Heavy Lightning Storm,2025-12-02,-0.8332
+92,Heavy Freezing Rain,2025-12-04,-0.8991
+93,Severe Hurricane,2025-12-05,-0.8968
+94,Severe Hurricane,2025-12-06,-0.9996
+95,Unstable Atmospheric Pressure,2025-12-11,-0.1135
+96,Moderate Rain,2025-12-18,-0.2833
+97,Exceptionally Stable Weather,2025-12-22,0.9403
+98,Favorable Tailwind Profile,2025-12-26,0.4056
+99,Ideal Atmospheric Density,2025-12-30,0.7499
+100,Optimal Jet Stream Alignment,2025-12-31,0.8286

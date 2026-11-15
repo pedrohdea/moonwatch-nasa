@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MoonWatch — polar sky prototype</title>
+<style>
+  :root { --bg:#07173f; --fg:#e9eef8; --muted:#9fb0d0; --sun:#E69F00; --earth:#56B4E9; --both:#009E73; --terrain:#5b5f6b; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px system-ui,sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:16px; }
+  .bar { display:flex; flex-wrap:wrap; gap:12px; align-items:end; margin-bottom:12px; }
+  label { display:flex; flex-direction:column; gap:4px; color:var(--muted); font-size:12px; }
+  input, select { background:#0e2257; color:var(--fg); border:1px solid #2a3f7a; border-radius:6px; padding:6px; }
+  .grid { display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:16px; }
+  @media (max-width:760px) { .grid { grid-template-columns:1fr; } }
+  canvas { width:100%; background:#0a1c4c; border-radius:8px; display:block; }
+  table { width:100%; border-collapse:collapse; }
+  td, th { padding:6px 4px; border-bottom:1px solid #1e3370; text-align:left; }
+  td:last-child { text-align:right; font-variant-numeric:tabular-nums; }
+  .legend span { margin-right:12px; } .legend i { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+  small { color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>MoonWatch — Sun and Earth on the horizon</h1>
+  <div class="bar">
+    <label>Site <select id="site"></select></label>
+    <label>Start (UTC) <input id="start" type="date" value="2027-01-01"></label>
+    <label>Days <input id="days" type="number" min="1" max="120" value="30"></label>
+    <label>Min. DTE elevation (°) <input id="dte" type="number" step="0.5" value="5"></label>
+  </div>
+  <div class="grid">
+    <div>
+      <canvas id="sky" width="700" height="700" aria-label="Polar sky plot: horizon, Sun and Earth tracks"></canvas>
+      <p class="legend"><span><i style="background:var(--sun)"></i>Sun</span><span><i style="background:var(--earth)"></i>Earth</span><span><i style="background:var(--terrain)"></i>Terrain (LOLA 80 m)</span><span>Faded dot = hidden</span></p>
+    </div>
+    <div>
+      <h3>Window metrics</h3>
+      <table id="metrics"></table>
+      <p><small>Center of the solar disc vs. 1° mask. Ephemeris: astronomy-engine (error ≤ 0.0035° vs JPL Horizons). Approximate mask (80 m DEM, 150 km radius).</small></p>
+    </div>
+  </div>
+  <h3>Site comparison (Gantt)</h3>
+  <canvas id="gantt" width="1100" height="220" aria-label="Timeline of Sun, Earth and both, per site"></canvas>
+  <p class="legend"><span><i style="background:var(--sun)"></i>Sun visible</span><span><i style="background:var(--earth)"></i>Earth visible (DTE)</span><span><i style="background:var(--both)"></i>Both</span></p>
+</main>
+<script src="astronomy.browser.min.js"></script>
+<script src="moonAzEl.js"></script>
+<script src="metrics.js"></script>
+<script src="sites.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const NAMES = { connecting_ridge: 'Connecting Ridge (approx.)', im2_mons_mouton: 'IM-2 Athena (Mons Mouton)', mons_mouton: 'Mons Mouton (IAU center)' };
+for (const k of Object.keys(SITES)) $('site').add(new Option(NAMES[k] || k, k));
+$('site').value = 'im2_mons_mouton';
+
+function series(site, start, days) {
+  const out = [], t0 = Date.parse(start + 'T00:00:00Z');
+  for (let h = 0; h < days * 24; h++) out.push(sunEarthAzEl(site.lat, site.lon, new Date(t0 + h * 3600e3)));
+  return out;
+}
+
+// Polar plot zoomed on the horizon: radius maps elevation EL_MAX (center) .. EL_MIN (edge).
+const EL_MAX = 15, EL_MIN = -10;
+function drawSky(site, samples, m) {
+  const c = $('sky'), g = c.getContext('2d'), W = c.width, cx = W / 2, R = W / 2 - 30;
+  const xy = (az, el) => { const r = R * (EL_MAX - el) / (EL_MAX - EL_MIN), a = az * Math.PI / 180; return [cx + r * Math.sin(a), cx - r * Math.cos(a)]; };
+  g.clearRect(0, 0, W, W);
+  g.strokeStyle = '#1e3370'; g.fillStyle = '#9fb0d0'; g.font = '12px system-ui';
+  for (const el of [-10, -5, 0, 5, 10]) { g.beginPath(); g.arc(cx, cx, R * (EL_MAX - el) / (EL_MAX - EL_MIN), 0, 2 * Math.PI); g.lineWidth = el === 0 ? 2 : 1; g.stroke(); g.fillText(el + '°', cx + 4, cx - R * (EL_MAX - el) / (EL_MAX - EL_MIN) + 12); }
+  [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([t, az]) => { const [x, y] = xy(az, EL_MIN - 1.5); g.fillText(t, x - 4, y + 4); });
+  // terrain: fill from mask outward to the edge
+  g.beginPath();
+  for (let az = 0; az <= 360; az++) { const [x, y] = xy(az, site.h[az % 360]); az ? g.lineTo(x, y) : g.moveTo(x, y); }
+  g.arc(cx, cx, R, -Math.PI / 2 + 2 * Math.PI, -Math.PI / 2, true);
+  g.fillStyle = 'rgba(91,95,107,.75)'; g.fill();
+  const dot = (az, el, color, on) => { const [x, y] = xy(az, Math.max(el, EL_MIN)); g.globalAlpha = on ? 1 : 0.18; g.fillStyle = color; g.beginPath(); g.arc(x, y, 2.2, 0, 2 * Math.PI); g.fill(); };
+  samples.forEach((s, i) => { dot(s.sun.az, s.sun.el, '#E69F00', m.flags.sun[i]); dot(s.earth.az, s.earth.el, '#56B4E9', m.flags.earth[i]); });
+  g.globalAlpha = 1;
+}
+
+function drawGantt(rows) {
+  const c = $('gantt'), g = c.getContext('2d'), W = c.width, L = 200, laneH = 18;
+  c.height = rows.length * (laneH * 3 + 14) + 10;
+  g.clearRect(0, 0, W, c.height); g.font = '12px system-ui';
+  rows.forEach(({ name, m }, r) => {
+    const y0 = 8 + r * (laneH * 3 + 14), n = m.flags.sun.length, dx = (W - L - 8) / n;
+    g.fillStyle = '#e9eef8'; g.fillText(name, 4, y0 + laneH * 1.6);
+    [['sun', '#E69F00'], ['earth', '#56B4E9'], ['both', '#009E73']].forEach(([k, col], j) => {
+      g.fillStyle = '#0e2257'; g.fillRect(L, y0 + j * laneH, W - L - 8, laneH - 3);
+      g.fillStyle = col; m.flags[k].forEach((f, i) => f && g.fillRect(L + i * dx, y0 + j * laneH, Math.ceil(dx), laneH - 3));
+    });
+  });
+}
+
+function render() {
+  const start = $('start').value, days = +$('days').value, dte = +$('dte').value;
+  const rows = Object.entries(SITES).map(([k, s]) => { const smp = series(s, start, days); return { k, name: NAMES[k] || k, s, smp, m: siteMetrics(smp, s.h, dte, 1) }; });
+  const cur = rows.find((r) => r.k === $('site').value);
+  drawSky(cur.s, cur.smp, cur.m);
+  drawGantt(rows);
+  const f = (x) => x.toFixed(1);
+  $('metrics').innerHTML = [
+    ['Illuminated fraction', f(cur.m.sunlitPct) + '%'],
+    ['Longest continuous darkness', cur.m.longestDarkH + ' h'],
+    ['DTE fraction (Earth visible)', f(cur.m.dtePct) + '%'],
+    ['Longest communication blackout', cur.m.longestBlackoutH + ' h'],
+    ['Sun + Earth (useful window)', f(cur.m.bothPct) + '%'],
+  ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
+}
+['site', 'start', 'days', 'dte'].forEach((id) => $(id).addEventListener('change', render));
+render();
+</script>
+</body>
+</html>

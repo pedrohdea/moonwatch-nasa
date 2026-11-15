@@ -1,0 +1,86 @@
+[
+ {
+  "site": "equator",
+  "lat": 0,
+  "lon": 0,
+  "body": "sun",
+  "n": 745,
+  "maxErrEl": 0.003,
+  "maxErrAz": 0.1003,
+  "maxSep": 0.0033,
+  "horizonsElRange": [
+   -89.085614807,
+   89.499538451
+  ]
+ },
+ {
+  "site": "equator",
+  "lat": 0,
+  "lon": 0,
+  "body": "earth",
+  "n": 745,
+  "maxErrEl": 0.0018,
+  "maxErrAz": 0.0232,
+  "maxSep": 0.0025,
+  "horizonsElRange": [
+   79.99575538,
+   87.406037467
+  ]
+ },
+ {
+  "site": "connecting_ridge",
+  "lat": -89.45,
+  "lon": -137,
+  "body": "sun",
+  "n": 745,
+  "maxErrEl": 0.0021,
+  "maxErrAz": 0.003,
+  "maxSep": 0.0033,
+  "horizonsElRange": [
+   0.049404545,
+   1.518065381
+  ]
+ },
+ {
+  "site": "connecting_ridge",
+  "lat": -89.45,
+  "lon": -137,
+  "body": "earth",
+  "n": 745,
+  "maxErrEl": 0.0019,
+  "maxErrAz": 0.0025,
+  "maxSep": 0.0025,
+  "horizonsElRange": [
+   -7.535661505,
+   6.15099617
+  ]
+ },
+ {
+  "site": "mons_mouton",
+  "lat": -84.6,
+  "lon": 31,
+  "body": "sun",
+  "n": 745,
+  "maxErrEl": 0.0019,
+  "maxErrAz": 0.0031,
+  "maxSep": 0.0033,
+  "horizonsElRange": [
+   -4.451724675,
+   5.992403873
+  ]
+ },
+ {
+  "site": "mons_mouton",
+  "lat": -84.6,
+  "lon": 31,
+  "body": "earth",
+  "n": 745,
+  "maxErrEl": 0.002,
+  "maxErrAz": 0.0025,
+  "maxSep": 0.0025,
+  "horizonsElRange": [
+   -2.188743314,
+   10.769490464
+  ]
+ }
+]
