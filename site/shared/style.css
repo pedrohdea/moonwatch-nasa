@@ -177,6 +177,26 @@ section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + a
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
 .sentinel { padding: 12px; text-align: center; color: var(--text-muted); font-size: 14px; }
 
+/* Landing sites: mission picker + globe (Canvas / three.js / Moon3DMap) */
+.landing { padding: 72px 0; border-top: 1px solid var(--line); }
+.landing-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.landing-controls .dataset-picker { margin-top: 0; }
+.landing-tabs { margin-left: 0; }
+.landing-tabs .variant { background: transparent; font-family: inherit; cursor: pointer; }
+.landing-tabs .variant[aria-pressed="true"] { color: var(--deep-blue); background: var(--neon-yellow); border-color: var(--neon-yellow); }
+.landing-stage { margin-top: 16px; width: 100%; max-width: 560px; aspect-ratio: 1; }
+.landing-stage[data-tab="iframe"] { max-width: none; aspect-ratio: 16 / 10; min-height: 480px; }
+.landing-groups { margin: 16px 0 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius); max-width: 760px; }
+.landing-groups legend { font-weight: 700; padding: 0 6px; }
+.landing-group-list { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 8px; font-size: 16px; }
+.landing-group-list label { white-space: nowrap; cursor: pointer; }
+.landing-group-list .muted { color: var(--text-muted); }
+.landing-groups .btn { padding: 2px 12px; font-size: 14px; }
+.landing-points { max-width: 760px; max-height: none; }
+.landing-pane { display: block; width: 100%; height: 100%; border: 0; border-radius: var(--radius); background: var(--panel); }
+.landing-pane[hidden] { display: none; }
+.landing-pane canvas { display: block; width: 100% !important; height: 100% !important; }
+
 .footer { border-top: 1px solid var(--line); padding: 24px 0; color: var(--text-muted); font-size: 14px; }
 
 @media (max-width: 640px) {
@@ -184,6 +204,6 @@ section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + a
   .variants { margin-left: 0; }
   section { scroll-margin-top: 170px; } /* top bar wraps to three rows */
   .hero { padding: 56px 0 48px; }
-  .track, .mission, .about { padding: 48px 0; }
+  .track, .mission, .landing, .about { padding: 48px 0; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

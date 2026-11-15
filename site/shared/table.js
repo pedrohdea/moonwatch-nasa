@@ -31,13 +31,17 @@
 
   // Long format: one row per chart point.
   function longTable(index) {
-    head.innerHTML = '<tr><th>#</th><th>Curva</th><th class="num">x</th><th class="num">y</th><th class="num">Assertividade</th></tr>';
+    var xDate = root.MoonSeries.dataset.xDate; // viability: x is a day index, shown as a date
+    head.innerHTML = '<tr><th>#</th><th>' + (xDate ? 'Série' : 'Curva') + '</th>' +
+      (xDate ? '<th class="num">Data</th><th class="num">Dia</th><th class="num">Viabilidade</th>' : '<th class="num">x</th><th class="num">y</th>') +
+      '<th class="num">Assertividade</th></tr>';
     rows = root.MoonSeries.filterRows(series, index);
     renderRow = function (r, i) {
       return '<tr><td class="num">' + (i + 1) + '</td>' +
         '<td>' + swatch(r.seriesIndex) + r.name + '</td>' +
-        '<td class="num mono">' + num.format(r.x) + '</td>' +
-        '<td class="num mono">' + num.format(r.y) + '</td>' +
+        (xDate ? '<td class="num mono">' + xDate(r.x) + '</td>' : '') +
+        '<td class="num mono">' + (xDate ? r.x : num.format(r.x)) + '</td>' +
+        '<td class="num mono">' + (xDate ? real.format(r.y) : num.format(r.y)) + '</td>' +
         accuracyCell(r.accuracy) + '</tr>';
     };
   }

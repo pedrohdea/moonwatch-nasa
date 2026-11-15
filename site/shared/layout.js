@@ -43,6 +43,9 @@
   var datasetInfo = data.kind === 'spurious'
     ? '<p class="dataset-info">' + escapeHtml(data.title) + ' · r = ' + data.r.toFixed(4).replace('.', ',') +
       ' · cada série normalizada para 0–10; valores reais na tabela; assertividade aleatória (teste de usabilidade). Fonte: <a href="' + data.url + '" target="_blank" rel="noopener">Tyler Vigen, Spurious Correlations</a> (CC BY 4.0).</p>'
+    : data.kind === 'viability'
+    ? '<p class="dataset-info">Viabilidade fictícia dos 50 sítios de <code>dLandingSites.csv</code>, de ' + data.xDate(0) + ' a ' + data.xDate(data.xRange[1]) +
+      ': uma série por grupo (missionID) = média diária dos 5 sítios. Eixo x em dias; a data está na tabela. Assertividade aleatória (teste de usabilidade).</p>'
     : '<p class="dataset-info">20 tipos de curvas matemáticas, dados fictícios: 21 pontos medidos por curva (x de 0 a 10), com assertividade aleatória: quanto menor, mais longe o ponto fica da curva teórica.</p>';
 
   var sharedQuery = (function () {

@@ -46,6 +46,8 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
   - `rotulo` — `NN%` escrito em cada ponto.
   Referência = curva teórica (curvas) ou valor esperado fictício (correlações espúrias). Desvio, faixa e rótulo aparecem só na série clicada, para não misturar séries.
 - E2E: `VIZ=desvio,cor DATASETS=curvas node tests/e2e.mjs` limita modos e conjuntos.
+- `viabilidade` — viabilidade fictícia dos 50 sítios (`docs/fLandingSites_viability.csv`), uma série por grupo (média diária dos 5 sítios), 731 dias. Eixo x em dias (data na tabela). Se o CSV mudar: `node scripts/build-viability.mjs`.
+- Seção `#pouso` (menu "Pousos"): escolha uma missão (19 sítios de pouso/impacto) ou marque grupos de pontos fictícios (`site/shared/data/dLandingSites.csv`, múltipla escolha) e o globo gira e enquadra todos os pontos (autoscale). Três versões em abas: Canvas (sem dependência), three.js (carregado só ao abrir a aba) e Moon3DMap (iframe, precisa de internet). Textura NASA SVS CGI Moon Kit (LROC, domínio público).
 - Bibliotecas ficam em `site/<versão>/vendor/`; funciona sem internet (só as fontes do Google caem para fontes do sistema).
 
 ### Banco de dados (SQLite)

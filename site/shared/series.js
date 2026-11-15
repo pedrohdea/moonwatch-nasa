@@ -175,6 +175,30 @@
     });
   }
 
+  // Fictional landing-site viability (docs/fLandingSites_viability.csv via scripts/build-viability.mjs):
+  // one series per missionID group = daily mean of its 5 sites; x = day index from data.start.
+  // Accuracy is random like the spurious datasets; reference sits (1 − acc/100)·VIAB_DEV away (0–200 scale).
+  var VIAB_DEV = 50; // = MAX_DEV scaled from the 0–10 axis to 0–200
+  function buildViability(data, random) {
+    var colors = palette(data.groups.length);
+    return data.groups.map(function (g, index) {
+      var points = g.mean.map(function (v, day) {
+        var sign = random() < 0.5 ? -1 : 1;
+        var ref = round(clamp(v + sign * (1 - randomAccuracy(random) / 100) * VIAB_DEV, 0, 200), 2);
+        return [day, v, v, Math.round(100 * (1 - Math.abs(v - ref) / VIAB_DEV)), ref];
+      });
+      return {
+        index: index, name: 'Grupo ' + g.group, color: colors[index], sites: g.sites, points: points,
+        reference: points.map(function (p) { return [p[0], p[4]]; })
+      };
+    });
+  }
+
+  // Day index -> 'dd/mm/aaaa' (UTC, so no timezone shift).
+  function dayToDate(start, day) {
+    return new Date(Date.parse(start + 'T00:00:00Z') + Math.round(day) * 86400000).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+  }
+
   var datasets = [{
     key: 'curvas', label: 'Curvas matemáticas (20)', kind: 'curves',
     xLabel: 'x', yLabel: 'y', xRange: [0, 10], yRange: [0, 10], xIsYear: false,
@@ -189,7 +213,14 @@
       xRange: [item.years[0], item.years[item.years.length - 1]], yRange: [0, 10], xIsYear: true,
       build: function (random) { return buildSpurious(item, random); }
     };
-  }));
+  })).concat(root.MoonViability ? [{
+    key: 'viabilidade', label: 'Viabilidade dos sítios fictícios (10 grupos)', kind: 'viability',
+    xLabel: 'Dia (0 = ' + dayToDate(root.MoonViability.start, 0) + ')', yLabel: 'Viabilidade (média do grupo)',
+    xRange: [0, root.MoonViability.days - 1], yRange: [0, 200], xIsYear: false,
+    tolerance: VIAB_DEV / 2, referenceLabel: 'valor esperado (fictício)',
+    xDate: function (day) { return dayToDate(root.MoonViability.start, day); },
+    build: function (random) { return buildViability(root.MoonViability, random); }
+  }] : []);
 
   // Table rows; seriesIndex null means all series of the dataset.
   function filterRows(series, seriesIndex) {

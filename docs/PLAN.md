@@ -159,3 +159,40 @@ Decisões:
 - Plotly: hover só mede distância até pontos; clique entre marcadores agora testa a distância ao segmento (12 px), como no Chart.js.
 - E2E: `seed` fixo; ambiguidade de clique medida em pixels (16 px).
 - Correlações reais: referência deixou de ser "a outra série" e virou um valor esperado fictício a `(1 − acc/100)·2,5` do ponto real. Assim, em todos os conjuntos, distância até a referência, cor e % contam a mesma coisa (antes um traço longo podia sair verde).
+
+## Atualização: sítios de pouso com globo animado (2026-11-14)
+
+Pedido do Pedro: ao selecionar uma missão, animação que leva até as coordenadas dela na Lua (lista de links do moon3dmap.com com lat/long). Quiz: "Nova seção" + "Fazer as 3 versões para eu comparar depois".
+
+Decisões:
+- Nova seção `#pouso` ("Sítios de pouso e impacto") em `site/shared/landing.js`, logo após `#mission`; vale para as 3 portas. Link "Pousos" no menu.
+- 19 missões (Chang'e 4 veio duplicada na lista). Agência correta por missão (NASA, URSS, CNSA); Luna 2 e Ranger 7 são sítios de impacto. URL do Moon3DMap montada de slug + lat/long (`toFixed(4)`, igual aos links colados).
+- Seletor de missão único, compartilhado pelas 3 abas de renderização (troca de aba mantém a missão):
+  - **Canvas**: globo ortográfico desenhado pixel a pixel em canvas 2D; zero dependência.
+  - **three.js**: esfera WebGL com luz; `three.min.js` r158 (último UMD) em `site/shared/vendor/`, carregado só ao abrir a aba (não pesa nas páginas de gráfico).
+  - **Moon3DMap**: iframe do moon3dmap.com com a URL da missão; `src` só é definido com a aba aberta (resto do site segue offline); link de fallback sempre visível.
+- Animação (Canvas e three.js usam o mesmo estado `{lat, lon, zoom}`): afasta, gira pelo caminho mais curto em longitude (ex.: Chang'e 4 → Luna 9 cruza 180°) e aproxima até o sítio, ~2,6 s, easing cúbico. `prefers-reduced-motion` pula direto. `requestAnimationFrame` só roda durante a animação.
+- Textura: NASA SVS CGI Moon Kit, LROC color 2k (domínio público), convertida de TIF para JPG (378 KB) em `site/shared/vendor/moon-2k.jpg`. Crédito ao lado do globo.
+- Matemática pura (projeção ortográfica, caminho mais curto, interpolação, rotação do three.js) exportada via `module.exports` e testada em `tests/landing.test.mjs`. Gancho `window.MoonLanding` para o E2E.
+- Pontos fictícios (pedido do Pedro: "salvei um csv com pontos fictícios na Lua; mostrar na animação"): `dLandingSites.csv` movido de `docs/` para `site/shared/data/` (o site precisa servi-lo). 50 pontos, 10 grupos de 5 por `missionID`; os IDs não correspondem às 19 missões, então viram o grupo "Pontos fictícios (CSV)" no seletor.
+  - Centro do grupo = média dos vetores unitários (correto perto do polo e de 180°); zoom calculado para separar os 5 pontos (até 120×). Acima de ~10× a textura 2k só desfoca: Canvas passou a amostrar com filtro bilinear (antes, vizinho mais próximo pixelava).
+  - Pontos de todos os grupos aparecem em laranja no globo; o grupo escolhido fica amarelo e ganha tabela (ID, nome, lat, long, PRSID, NEARESTCOLD).
+  - Moon3DMap: sem slug para ponto fictício, usa `https://moon3dmap.com/pt/?lat=…&long=…`.
+  - Zoom interpolado em escala log (1,8× → 120× fica uniforme). Linha inválida no CSV é descartada.
+- Revisão (Pedro: "ficou muito zoom; seletor de múltipla escolha; enquadrar autoscale todos os pontos"):
+  - Grupos do CSV saíram do `<select>` de missão e viraram checkboxes ("Pontos fictícios (CSV)", com Todos/Nenhum). `MoonLanding.setGroups(keys)`.
+  - Autoscale (`frameSites`): centro = média dos vetores unitários dos pontos marcados; zoom para o ponto mais distante ficar a ~80% da metade da vista; mínimo 1× (disco inteiro), máximo 6× (antes 120×). Um grupo sozinho (5 pontos a < 0,2°) fica num único aglomerado; os valores estão na tabela.
+  - Tabela lista os pontos de todos os grupos marcados (com coluna Grupo). Missão e grupos: o último escolhido define a vista.
+  - Pontos do CSV desenhados por cima dos marcadores das missões (grupo 4 tem as mesmas coordenadas do Apollo 14).
+
+## Atualização: conjunto "Viabilidade" no gráfico (2026-11-14)
+
+Pedido do Pedro: usar `docs/fLandingSites_viability.csv` (LANDINGSITEID, DATE, VIABILITY; 50 sítios × 731 dias, 2024-01-01 a 2025-12-31, valores 0–200). Quiz: "Viabilidade em gráfico", "10 grupos, média diária", "Só dados agora".
+
+Decisões:
+- `?dataset=viabilidade`: uma série por grupo (missionID de `dLandingSites.csv`) = média diária dos 5 sítios; 10 séries × 731 pontos.
+- Dados: `scripts/build-viability.mjs` gera `site/shared/data/viability.js` (39 KB) a partir dos 2 CSVs; valida dia consecutivo e linha inválida. O CSV de origem fica em `docs/` (estava aberto no LibreOffice). Rodar o script de novo se o CSV mudar.
+- `viability.js` carregado antes de `series.js` nas 3 páginas; sem ele o conjunto simplesmente não aparece.
+- Eixo x = índice do dia (0 = 01/01/2024), porque mostrar data no eixo exige mexer nos 3 `chart.js`, que outra sessão estava editando (preenchimento entre curva e linhas). A tabela mostra Data + Dia + Viabilidade. **Pendente:** formatar o eixo x e o tooltip como data nos 3 adaptadores (`MoonSeries.dataset.xDate(day)` já existe).
+- Assertividade aleatória como nas correlações espúrias; referência a `(1 − acc/100)·50` (desvio máximo escalado de 0–10 para 0–200); faixa ±25.
+- Teste: `tests/viability.test.mjs` (média recalculada do CSV bruto; contrato do ponto).
