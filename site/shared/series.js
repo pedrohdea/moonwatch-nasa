@@ -292,8 +292,16 @@
     focus: focus,
     seed: seed,
     load: function (key) { return findDataset(key).build(prng(seed)); },
-    filterRows: filterRows
+    filterRows: filterRows,
+    // Switch the accuracy visualization in place (no page reload): listeners redraw only the chart.
+    setViz: function (key) {
+      if (key === api.viz || !VIZ_MODES.some(function (m) { return m.key === key; })) return;
+      api.viz = key;
+      vizListeners.forEach(function (cb) { cb(key); });
+    },
+    onVizChange: function (cb) { vizListeners.push(cb); }
   };
+  var vizListeners = [];
 
   root.MoonSeries = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

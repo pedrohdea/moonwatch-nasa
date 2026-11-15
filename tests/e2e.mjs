@@ -223,7 +223,7 @@ async function main() {
     check('uncheck all: nothing visible', (await evaluate(`MoonCore.visibleCount()`)) === 0 && (await shownChips()) === 0 && (await cards()) === 0 && (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === 0);
     await setAll(true); await wait(400);
     check('check all: everything back', (await evaluate(`MoonCore.visibleCount()`)) === nSeries && (await shownChips()) === nSeries && (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === nSeries);
-    const areasMatch = `(()=>{const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
+    const areasMatch = `(()=>{const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().slice().sort((a,b)=>b.area-a.area).map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
     check('filled areas shown per vertical line', await evaluate(areasMatch));
     check('largest area card is green', await evaluate(`(()=>{const max=Math.max(...MoonCore.areas().map(a=>a.area));const g=[...document.querySelectorAll('#fill-areas .fill-area.is-max')];const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});return max<=0?g.length===0:g.length>=1&&g.every(e=>e.querySelector('strong').textContent===f.format(max))&&getComputedStyle(g[0].querySelector('strong')).color==='rgb(61, 220, 132)';})()`));
     const areaBefore = await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`);
@@ -263,6 +263,26 @@ async function main() {
     const n = await evaluate(`MoonSeries.all.length`);
     check('switch to curvas: one vertical line per series', (await evaluate(`MoonCore.vlines.list().length`)) === n, `${await evaluate(`MoonCore.vlines.list().length`)} of ${n}`);
     check('switch to curvas: one minimum-viability line, back to the middle', (await evaluate(`MoonCore.hlines.list().length`)) === 1 && (await evaluate(`MoonCore.hlines.list()[0].value`)) === 5);
+  }
+
+  // Switching the accuracy visualization keeps the page state (no reload): only the chart is rebuilt.
+  for (const [lib, port] of Object.entries(PORTS)) {
+    errors.length = 0;
+    console.log(`${lib} (:${port}) viz switch keeps state width=${WIDTH}`);
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=sarah&viz=faixa&seed=${SEED}#track` });
+    await wait(2500);
+    await evaluate(`window.__noReload = 1; MoonCore.setFilter(1); MoonCore.setVisible(0, false); MoonCore.departure.set(MoonCore.departure.list()[0].id, 1990, 'input');
+      (i=>{i.value='20';i.dispatchEvent(new Event('input'))})(document.getElementById('table-search'))`); await wait(400);
+    const oldCanvas = await evaluate(`(window.__oldCanvas = document.querySelector('#chart canvas'), 1)`);
+    await evaluate(`document.querySelector('.viz-pill[data-viz=cor]').click()`); await wait(800);
+    check('viz switch: no page reload', (await evaluate(`window.__noReload`)) === 1 && oldCanvas === 1);
+    check('viz switch: mode and URL updated', (await evaluate(`MoonSeries.viz`)) === 'cor' && (await evaluate(`new URL(location.href).searchParams.get('viz')`)) === 'cor' &&
+      (await evaluate(`document.querySelector('.viz-pill[aria-current]').getAttribute('data-viz')`)) === 'cor');
+    check('viz switch: chart rebuilt', await evaluate(`document.querySelector('#chart canvas') !== window.__oldCanvas && document.querySelectorAll('#chart canvas').length === 1`));
+    check('viz switch: filter, legend, departure and table search kept', (await evaluate(`MoonCore.getFilter()`)) === 1 && (await evaluate(`MoonCore.isVisible(0)`)) === false &&
+      (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === 1 && (await evaluate(`MoonCore.departure.list()[0].value`)) === 1990 && (await evaluate(`document.getElementById('table-search').value`)) === '20');
+    await evaluate(`MoonCore.setFilter(null)`); await wait(300);
+    check('viz switch: old chart listeners are inert (no errors after filter change)', errors.length === 0, errors.join(' | '));
   }
 
   // Viability chart filter -> "Sítios de pouso e impacto": filtering Grupo N selects only group N on the globe.

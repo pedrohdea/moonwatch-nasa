@@ -19,7 +19,7 @@
     url.searchParams.set('seed', root.MoonSeries.seed); // same random points in every version
     url.hash = 'track';
     var current = m.key === root.MoonSeries.viz ? ' aria-current="page"' : '';
-    return '<a class="variant" href="' + url.search + url.hash + '"' + current + '>' + m.label + '</a>';
+    return '<a class="variant viz-pill" data-viz="' + m.key + '" href="' + url.search + url.hash + '"' + current + '>' + m.label + '</a>';
   }).join('');
   var rerollHref = (function () {
     var url = new URL(root.location.href);
@@ -30,6 +30,15 @@
   var vizMode = root.MoonSeries.vizModes.filter(function (m) { return m.key === root.MoonSeries.viz; })[0];
   var stops = root.MoonSeries.accuracyStops;
   var accDomain = root.MoonSeries.accuracyDomain;
+  function vizInfoHtml(mode) {
+    return '<strong>Assertividade · ' + mode.label + ':</strong> ' + mode.help +
+      ' Referência = ' + root.MoonSeries.dataset.referenceLabel + '.' +
+      (mode.key === 'cor'
+        ? ' <span class="acc-scale" style="background:linear-gradient(90deg,' + stops.join(',') + ')"></span> <span class="mono">' + accDomain[0] + '% → 100%</span>'
+        : '') +
+      ' <span id="viz-hint" class="viz-hint"></span>' +
+      ' <a class="reroll" href="' + rerollHref + '">Sortear de novo</a>';
+  }
 
   var datasetOptions = root.MoonSeries.datasets.map(function (d) {
     return '<option value="' + d.key + '"' + (d.key === data.key ? ' selected' : '') + '>' + escapeHtml(d.label) + '</option>';
@@ -77,13 +86,7 @@
           datasetInfo +
           '<label class="all-series"><input type="checkbox" id="all-series" checked> ' + (data.kind === 'viability' ? 'Todos os grupos' : 'Todas as séries') + '</label>' +
           '<div id="chart" class="chart" role="img" aria-label="Gráfico de linhas das séries do conjunto de dados"></div>' +
-          '<p class="viz-info"><strong>Assertividade · ' + vizMode.label + ':</strong> ' + vizMode.help +
-            ' Referência = ' + root.MoonSeries.dataset.referenceLabel + '.' +
-            (vizMode.key === 'cor'
-              ? ' <span class="acc-scale" style="background:linear-gradient(90deg,' + stops.join(',') + ')"></span> <span class="mono">' + accDomain[0] + '% → 100%</span>'
-              : '') +
-            ' <span id="viz-hint" class="viz-hint"></span>' +
-            ' <a class="reroll" href="' + rerollHref + '">Sortear de novo</a></p>' +
+          '<p class="viz-info">' + vizInfoHtml(vizMode) + '</p>' +
           '<div class="toolbar">' +
             '<span id="filter-badge" class="badge" role="status" aria-live="polite"></span>' +
             '<button id="clear-filter" class="btn btn-ghost" type="button">Limpar filtro</button>' +
@@ -154,6 +157,27 @@
   }
   root.MoonCore.onFilterChange(updateHint);
   updateHint(root.MoonCore.getFilter());
+
+  // Accuracy pills switch the visualization in place: filter, legend, lines, tables and scroll stay; only the chart redraws.
+  doc.addEventListener('click', function (e) {
+    var pill = e.target.closest && e.target.closest('.viz-pill');
+    if (!pill || e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return; // let "open in new tab" work
+    e.preventDefault();
+    root.MoonSeries.setViz(pill.getAttribute('data-viz'));
+  });
+  root.MoonSeries.onVizChange(function (key) {
+    doc.querySelectorAll('.viz-pill').forEach(function (p) {
+      if (p.getAttribute('data-viz') === key) p.setAttribute('aria-current', 'page'); else p.removeAttribute('aria-current');
+    });
+    var mode = root.MoonSeries.vizModes.filter(function (m) { return m.key === key; })[0];
+    doc.querySelector('.viz-info').innerHTML = vizInfoHtml(mode);
+    hint = doc.getElementById('viz-hint');
+    updateHint(root.MoonCore.getFilter());
+    var url = new URL(root.location.href);
+    url.searchParams.set('viz', key);
+    url.searchParams.set('seed', root.MoonSeries.seed);
+    root.history.replaceState(null, '', url);
+  });
 
   // Line chips (vertical and horizontal share the pattern): one chip per line with a number input and ×,
   // plus an add button; values kept in the URL (replaceState, no reload). Line k <-> series k (color, visibility).
@@ -239,7 +263,8 @@
   var areasEl = doc.getElementById('fill-areas');
   var areaFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function renderAreas() {
-    var items = root.MoonCore.areas();
+    // Sorted best -> worst (largest filled area first), refreshed on every line move.
+    var items = root.MoonCore.areas().slice().sort(function (a, b) { return b.area - a.area; });
     // Largest filled area is highlighted in green (ties: all of them); nothing when every area is 0.
     var maxArea = items.reduce(function (m, a) { return Math.max(m, a.area); }, 0);
     areasEl.innerHTML = '<span class="fill-areas-label">Área preenchida <span class="unit">(' + (data.xDate ? 'dias' : data.xLabel) + ' × ' + data.yLabel + ')</span></span>' +

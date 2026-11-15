@@ -69,6 +69,9 @@
     var spurious = ds.kind === 'spurious';
     var S = root.MoonSeries;
     var viz = S.viz;
+    // The chart can be destroyed and rebuilt (accuracy pill switch); listeners of a dead chart must do nothing.
+    var alive = true;
+    function live(fn) { return function () { if (alive) return fn.apply(this, arguments); }; }
     var ls = legendSize(container.clientWidth || root.innerWidth);
     var canvas = root.document.createElement('canvas');
     container.appendChild(canvas);
@@ -392,8 +395,10 @@
       });
       chart.update('none');
     }
+    // Rebuilt charts start from the current legend / "Todos os grupos" state.
+    series.forEach(function (_, k) { if (!root.MoonCore.isVisible(k)) chart.setDatasetVisibility(k, false); });
     applyFilter(root.MoonCore.getFilter());
-    root.MoonCore.onFilterChange(applyFilter);
+    root.MoonCore.onFilterChange(live(applyFilter));
 
     // Nearest visible line within PICK_RADIUS px of the event, or null.
     // Scans every segment of every visible dataset (few points, so no need for chart's nearest-element shortcut).
@@ -484,14 +489,14 @@
     }
     canvas.addEventListener('pointerup', endDrag);
     canvas.addEventListener('pointercancel', endDrag);
-    root.MoonCore.hlines.onChange(function () { chart.draw(); });
-    root.MoonCore.vlines.onChange(function () { chart.draw(); });
-    root.MoonCore.departure.onChange(function () { chart.draw(); });
+    root.MoonCore.hlines.onChange(live(function () { chart.draw(); }));
+    root.MoonCore.vlines.onChange(live(function () { chart.draw(); }));
+    root.MoonCore.departure.onChange(live(function () { chart.draw(); }));
     // Visibility can also change outside the legend ("Todos os grupos" checkbox): mirror it on the datasets.
-    root.MoonCore.onVisibilityChange(function (k, visible) {
+    root.MoonCore.onVisibilityChange(live(function (k, visible) {
       if (chart.isDatasetVisible(k) !== visible) { chart.setDatasetVisibility(k, visible); chart.update('none'); }
       else chart.draw();
-    });
+    }));
 
     var down = null;
     canvas.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY }; });
@@ -507,8 +512,11 @@
       root.MoonCore.setFilter(idx === null ? null : idx);
     });
 
-    root.MoonLayout.resetZoomButton.addEventListener('click', function () { chart.resetZoom(); });
-    return chart;
+    root.MoonLayout.resetZoomButton.addEventListener('click', live(function () { chart.resetZoom(); }));
+    return {
+      chart: chart,
+      destroy: function () { alive = false; chart.destroy(); canvas.remove(); }
+    };
   }
 
   root.MoonChart = { render: render };

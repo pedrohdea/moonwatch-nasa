@@ -20,6 +20,8 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 
 - Página única com âncoras `#home`, `#track`, `#mission` (Definições da missão), `#about`.
 - Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
+- Tabelas minimizadas por padrão (Maximizar/Minimizar), com filtro de texto e ordenação por coluna (clique no título; de novo inverte).
+- Cartões de "Área preenchida" ordenados da maior para a menor área; a maior fica em verde.
 - Tabela equivalente ao gráfico logo abaixo dele, com scroll infinito (50 linhas por vez) dentro da própria caixa.
 - Tempo de percurso (linhas verticais arrastáveis): uma por série do gráfico (V1…Vn, com a cor da série n), cada uma com setinha ▼ na borda de cima do gráfico. Arraste a seta para mudar a posição, digite no chip da linha, "×" exclui e "+ Tempo de percurso" adiciona de volta (máximo = número de séries). Posições na URL (`?vlinhas=`).
 - Partida: linha vertical branca com ▼ "Partida" (arrastável) e um campo (data no conjunto de viabilidade; `?partida=`). Cada tempo de percurso é medido a partir dela: Vk = Partida + tempo k. Mover a Partida leva todas as linhas de tempo de percurso juntas; os chips de tempo de percurso mostram a duração.
@@ -34,7 +36,7 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - O gráfico é desenhado a partir dos pontos da tabela (retas ligando os pontos). Cada ponto tem **assertividade** (0–100%), mostrada na tabela e no tooltip:
   - curvas: proximidade do ponto medido à curva teórica (ruído fixo por semente, 75–100%);
   - aleatória neste protótipo (5–100%, novo sorteio a cada carga; `?seed=N` repete). O ponto fica a `(1 − acc/100)·2,5` da referência: 100% em cima dela.
-- Versões da visualização da assertividade no cabeçalho (`?viz=<modo>`):
+- Versões da visualização da assertividade no cabeçalho (`?viz=<modo>`), trocadas sem recarregar a página (filtro, legenda, linhas e tabelas ficam; só o gráfico é redesenhado):
   - `cor` — cor do marcador (vermelho → amarelo → verde);
   - `faixa` (padrão) — faixa de tolerância em volta da referência;
   - `rotulo` — `NN%` escrito em cada ponto.
