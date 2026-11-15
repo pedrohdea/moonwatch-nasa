@@ -106,10 +106,10 @@
             '<button id="reset-zoom" class="btn btn-ghost" type="button">Resetar zoom</button>' +
           '</div>' +
           '<div id="fill-areas" class="fill-areas" role="status" aria-live="polite" aria-label="Área preenchida por série"></div>' +
-          '<div class="toolbar vlines-bar" aria-label="Linhas verticais">' +
-            '<span class="vlines-label">Linhas verticais</span>' +
+          '<div class="toolbar vlines-bar" aria-label="Tempo de percurso">' +
+            '<span class="vlines-label" title="Uma linha vertical por série (V1…Vn): o preenchimento começa nela">Tempo de percurso</span>' +
             '<div id="vlines-list" class="vlines-list"></div>' +
-            '<button id="vline-add" class="btn btn-ghost" type="button">+ Linha vertical</button>' +
+            '<button id="vline-add" class="btn btn-ghost" type="button">+ Tempo de percurso</button>' +
           '</div>' +
           '<div class="toolbar vlines-bar hlines-bar" aria-label="Viabilidade mínima">' +
             '<span class="vlines-label" title="Uma linha para todas as séries: o preenchimento fica acima dela">Viabilidade mínima</span>' +
@@ -211,7 +211,7 @@
   var vl = root.MoonCore.vlines;
   var hl = root.MoonCore.hlines;
   var refreshVChips = lineBar(vl, {
-    param: 'vlinhas', listId: 'vlines-list', addId: 'vline-add', removable: true, kind: 'vertical',
+    param: 'vlinhas', listId: 'vlines-list', addId: 'vline-add', removable: true, kind: 'de tempo de percurso',
     tag: function (i) { return 'V' + (i + 1); }, color: root.MoonCore.vlineColor, visible: root.MoonCore.vlineVisible
   });
   var refreshHChips = lineBar(hl, {
@@ -229,7 +229,7 @@
         return '<span class="fill-area" title="' + a.name + '" style="--area-color:' + a.color + '">' +
           '<span><span class="vline-tag" style="color:' + a.color + '">' + a.label + '</span> <span class="fill-area-name">' + a.name + '</span></span>' +
           '<strong>' + areaFmt.format(a.area) + '</strong></span>';
-      }).join('') || '<span class="vlines-empty">nenhuma linha vertical</span>');
+      }).join('') || '<span class="vlines-empty">nenhum tempo de percurso</span>');
   }
   vl.onChange(renderAreas);
   hl.onChange(renderAreas);
