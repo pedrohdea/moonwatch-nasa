@@ -374,6 +374,29 @@ async function main() {
     check('no horizontal page scroll', await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`));
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }
+
+  // Video sections: #intro above #home and #closing after #about play once when visible and stop at the end; Play replays, Stop pauses.
+  for (const [lib, port] of Object.entries(PORTS)) {
+    errors.length = 0;
+    console.log(`${lib} (:${port}) video sections width=${WIDTH}`);
+    await send('Page.navigate', { url: `http://localhost:${port}/` }); await wait(2000);
+    const vid = (id) => `document.querySelector('#${id} video')`;
+    const btn = (id) => `document.querySelector('#${id} .video-toggle')`;
+    check('intro section above #home, video playing', await evaluate(`(()=>{const s=document.getElementById('intro'),v=${vid('intro')};return !!v&&s.nextElementSibling.id==='home'&&!v.paused&&v.currentTime>0})()`));
+    check('closing section after #about, not started off screen', await evaluate(`document.getElementById('about').nextElementSibling.id==='closing'&&${vid('closing')}.paused&&${vid('closing')}.currentTime===0`));
+    await wait(4500);
+    check('intro: auto stop at the end (button says Play)', await evaluate(`${vid('intro')}.ended&&${vid('intro')}.paused&&${btn('intro')}.textContent.includes('Play')`));
+    await evaluate(`${btn('intro')}.click()`); await wait(500);
+    check('intro: Play replays it from the start', await evaluate(`!${vid('intro')}.paused&&${vid('intro')}.currentTime<2`));
+    await evaluate(`${btn('intro')}.click()`); await wait(300);
+    check('intro: Stop pauses the video', await evaluate(`${vid('intro')}.paused&&${btn('intro')}.textContent.includes('Play')`));
+    await evaluate(`document.getElementById('closing').scrollIntoView({block:'center'})`); await wait(1500);
+    check('closing: starts when scrolled into view', await evaluate(`!${vid('closing')}.paused&&${vid('closing')}.currentTime>0`));
+    await wait(5000);
+    check('closing: auto stop at 4.5 s, before the fade', await evaluate(`${vid('closing')}.paused&&Math.abs(${vid('closing')}.currentTime-4.5)<0.15&&${btn('closing')}.textContent.includes('Play')`));
+    check('no horizontal page scroll', await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`));
+    check('no JS errors', errors.length === 0, errors.join(' | '));
+  }
   ws.close();
   console.log(failed ? `${failed} FAILED` : 'ALL OK');
   process.exit(failed ? 1 : 0);

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const SITE = resolve(fileURLToPath(import.meta.url), '../../site');
 const VARIANTS = { chartjs: 8003 };
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml' };
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.json': 'application/json', '.mp4': 'video/mp4', '.wasm': 'application/wasm' };
 
 for (const [dir, port] of Object.entries(VARIANTS)) {
   const root = join(SITE, dir);
@@ -24,7 +24,19 @@ for (const [dir, port] of Object.entries(VARIANTS)) {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Not found');
       return;
     }
-    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' });
+    const headers = { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store', 'Accept-Ranges': 'bytes' };
+    // Byte ranges: browsers need them to seek in <video> (without them the media is not seekable).
+    const size = statSync(file).size;
+    const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+    if (range && (range[1] || range[2])) {
+      const start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+      const end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+      if (start > end || start >= size) { res.writeHead(416, { 'Content-Range': `bytes */${size}` }).end(); return; }
+      res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1 });
+      createReadStream(file, { start, end }).pipe(res);
+      return;
+    }
+    res.writeHead(200, { ...headers, 'Content-Length': size });
     createReadStream(file).pipe(res);
   }).listen(port, '127.0.0.1', () => console.log(`${dir} -> http://localhost:${port}/`));
 }

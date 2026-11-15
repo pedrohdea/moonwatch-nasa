@@ -224,7 +224,7 @@ Request: use NASA options 1 (SVS Moon 3D models), 3 (NASA 3D Resources) and 4 (M
 - Terrain 3D tab (option 3): Apollo 11/12/14/15/16 STL height maps, centered and scaled to 2 units, colored by height NASA blue → Neon Yellow, slow turntable + drag. Gotchas: the STLs ship zero normals (`computeVertexNormals`) and inverted winding (`DoubleSide`); `geometry.translate()` recomputes `boundingBox` in place (clone it first); the Lunar Module GLB is Draco-compressed (vendored `DRACOLoader` + decoder). LM not to scale. Other missions: "3D terrain available for Apollo 11, 12, 14, 15 and 16".
 - Tests: unit (Trek tile grid, STL mission mapping), E2E (Trek texture 4096×2048, GLB source, Terrain 3D for Apollo 11 + LM, message for Luna 9), desktop and 390 px.
 
-## Plan (proposed, awaiting approval): hook video as full-screen intro (2026-11-15)
+## Plan: hook video as full-screen intro (2026-11-15) — approved, then replaced (see below)
 
 Request: use `docs/video/hook_newspaper.mp4` (5 s, 1920×1080, 14.7 MB, no audio; "The Lunar Gazette": "At the lunar south pole, a four-day launch slip can mean months of waiting, and millions lost", made in session `session_018cxk3pLr2GZZbmfUKRTaof` by `docs/video/hook_newspaper.py`) in the opening of the site. Quiz decisions: **full-screen intro** that plays and then reveals the hero; site loads a **720p compressed** copy; version **only the `.py` and fonts** of `docs/video/` (fonts are SIL OFL, `OFL.txt` included); the original mp4 stays out of git (regenerable).
 
@@ -247,3 +247,14 @@ Acceptance (manual): fresh tab `http://localhost:8003/` → intro plays, stamp, 
 
 Simplest-solution check: native `<video>` + ~60 lines of JS/CSS; no library. No sub-agents (one coupled change).
 Risk: every new session waits up to ~6 s before seeing the hero unless Skip is used.
+
+### Change: intro section instead of the full-screen overlay (2026-11-15)
+
+Pedro, after seeing the overlay working: "roda o video de intro dentro da secção, cria uma secção em cima. em loop, com botão de stop." Implemented instead of the overlay:
+- New section `#intro` above `#home` (`site/shared/intro.js`): 16:9 frame inside `.wrap`, `<video muted loop playsinline autoplay>` + poster, yellow **Stop / Play** button (bottom right). Reduced motion: no autoplay, poster shown, button says Play.
+- Dropped: overlay, Skip/Esc, once-per-session rule, `?intro=`, "Watch intro" button, `shouldShowIntro` unit test.
+- Kept from the plan: 720p web copy (1.3 MB) + poster in `site/shared/media/`, `docs/video/*.mp4` ignored, `.py` + OFL fonts versioned. `scripts/serve.mjs` gained MIME types (mp4, jpg, json, wasm).
+- E2E: section sits right before `#home`, video loops and plays, Stop pauses, Play resumes.
+- Follow-up (Pedro: "faz auto stop, ao final do video"): no `loop`; the video plays once and stops on the last frame (stamp); the button turns into Play, which replays from the start.
+- Follow-up (Pedro: "adiciona outra secção, no mesmo modelo, no fim com outro video: docs/video/closing_moonwatch.mp4"): `site/shared/intro.js` became `site/shared/videos.js`, one config per video. New `#closing` section after `#about` with `closing_moonwatch.mp4` (web copy 0.57 MB). It stops at 4.5 s because the video fades to dark after 4.6 s; the poster is that frame. Both videos now start when half of the frame is visible (IntersectionObserver), so the closing one does not play off screen.
+- Gotcha: `scripts/serve.mjs` did not answer HTTP `Range`, so `<video>` was not seekable (`seekable` = [0, 0]) and the 4.5 s stop jumped back to 0. The server now returns 206 + `Content-Range` (any static host already does).
