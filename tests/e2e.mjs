@@ -166,21 +166,40 @@ async function main() {
     // Put the plot top below the sticky top bar (3 rows on phones), instantly (page uses smooth scroll).
     await evaluate(`(()=>{const r=document.getElementById('chart').getBoundingClientRect();const bar=document.querySelector('.topbar').getBoundingClientRect().bottom;window.scrollTo({top:scrollY+r.top-bar-40,behavior:'instant'})})()`); await wait(300);
     const hBefore = await evaluate(`JSON.stringify(MoonCore.hlines.list())`);
-    const v1 = (await evaluate(`MoonCore.vlines.list()`))[0];
-    const vTarget = d.xRange[0] + span * 0.4;
+    // A series filter shows only that series' travel-time line; drag that one (V of the filtered series).
+    check('filter shows only its travel-time line', (await evaluate(`[...document.querySelectorAll('#vlines-list .vline-chip')].filter(e=>!e.hidden).length`)) === 1);
+    const v1 = (await evaluate(`MoonCore.vlines.list()`))[first];
+    const vTarget = v1.value - span * 0.15;
     const [vx, vtop] = await px(0, v1.value, d.yRange[1]);
     const [tx] = await px(0, vTarget, d.yRange[1]);
     const vy = vtop - 8;
     await mouse('mouseMoved', vx, vy); await mouse('mousePressed', vx, vy);
     for (let k = 1; k <= 6; k++) await mouse('mouseMoved', vx + ((tx - vx) * k) / 6, vy);
     await mouse('mouseReleased', tx, vy); await wait(400);
-    const v1After = (await evaluate(`MoonCore.vlines.list()`))[0].value;
+    const v1After = (await evaluate(`MoonCore.vlines.list()`))[first].value;
     check('drag ▼ moves vertical line', Math.abs(v1After - vTarget) <= Math.max(span * 0.02, 1), `${v1.value} -> ${v1After} (want ${vTarget})`);
-    check('chip input follows the drag', Number(await evaluate(`document.querySelector('#vlines-list .vline-chip input').value`)) === v1After);
+    const depValue = await evaluate(`MoonCore.departure.list()[0].value`);
+    check('chip shows the travel time from the departure', Math.abs(Number(await evaluate(`document.querySelector('#vlines-list .vline-chip:not([hidden]) input').value`)) - (v1After - depValue)) < 0.011);
     check('vertical drag keeps the filter', (await badge()).includes(series[first]), await badge());
     const [vz0, vz1] = await evaluate(`(${XVIEW[lib]})()`);
     check('vertical drag does not zoom', Math.abs(vz0 - d.xRange[0]) < span * 0.01 && Math.abs(vz1 - d.xRange[1]) < span * 0.01, `${vz0}..${vz1}`);
     check('vertical drag leaves the horizontal lines', (await evaluate(`JSON.stringify(MoonCore.hlines.list())`)) === hBefore);
+    // Departure: dragging its ▼ moves every travel-time line by the same amount (travel times unchanged).
+    await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
+    const travelBefore = await evaluate(`JSON.stringify(MoonCore.vlines.list().map(l=>MoonCore.travelTime(l.id)))`);
+    const posBefore = await evaluate(`MoonCore.vlines.list().map(l=>l.value)`);
+    const [dx, dtop] = await px(0, depValue, d.yRange[1]);
+    const depTarget = depValue + span * 0.05;
+    const [dtx] = await px(0, depTarget, d.yRange[1]);
+    await mouse('mouseMoved', dx, dtop - 8); await mouse('mousePressed', dx, dtop - 8);
+    for (let k = 1; k <= 6; k++) await mouse('mouseMoved', dx + ((dtx - dx) * k) / 6, dtop - 8);
+    await mouse('mouseReleased', dtx, dtop - 8); await wait(400);
+    const depAfter = await evaluate(`MoonCore.departure.list()[0].value`);
+    check('drag Partida moves the departure', Math.abs(depAfter - depTarget) <= Math.max(span * 0.02, 1), `${depValue} -> ${depAfter}`);
+    check('travel times unchanged after moving the departure', (await evaluate(`JSON.stringify(MoonCore.vlines.list().map(l=>MoonCore.travelTime(l.id)))`)) === travelBefore);
+    const posAfter = await evaluate(`MoonCore.vlines.list().map(l=>l.value)`);
+    const shift = depAfter - depValue;
+    check('every travel-time line shifted with the departure', posAfter.every((v, i) => Math.abs(v - Math.min(d.xRange[1], posBefore[i] + shift)) < 0.02), `shift ${shift}`);
     // Legend toggle: hiding series 0 removes its vertical line, chip and area card; showing it brings them back.
     const toggle = async () => {
       // Legend sits above the plot: bring the chart's top edge just below the sticky top bar first.

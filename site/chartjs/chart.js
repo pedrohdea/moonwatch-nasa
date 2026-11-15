@@ -65,7 +65,7 @@
     var decor = {
       id: 'moonDecor',
       beforeDatasetsDraw: function (c) { drawFills(c); drawDecor(c, true); },
-      afterDatasetsDraw: function (c) { drawDecor(c, false); drawHLines(c); drawVLines(c); },
+      afterDatasetsDraw: function (c) { drawDecor(c, false); drawHLines(c); drawVLines(c); drawDeparture(c); },
       beforeInit: function (c) { root.Chart.layouts.addBox(c, spacer); }
     };
 
@@ -148,6 +148,34 @@
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('V' + (i + 1), px + VH_W / 2 + 3, cy);
+        ctx.restore();
+      });
+    }
+
+    // Departure ("Partida"): solid white line + ▼ handle labelled "Partida"; every travel-time line is measured from it.
+    function drawDeparture(c) {
+      var ctx = c.ctx, a = c.chartArea, cy = a.top - VH_OFFSET;
+      root.MoonCore.departure.list().forEach(function (l) {
+        var px = vlinePixel(c, l.value);
+        if (px === null) return;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(px, a.top);
+        ctx.lineTo(px, a.bottom);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(px - VH_W / 2, cy - VH_H / 2);
+        ctx.lineTo(px + VH_W / 2, cy - VH_H / 2);
+        ctx.lineTo(px, cy + VH_H / 2);
+        ctx.closePath();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.font = "bold 11px 'Fira Code', monospace";
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Partida', px - VH_W / 2 - 3, cy);
         ctx.restore();
       });
     }
@@ -349,7 +377,16 @@
     }
 
     // Line drag (horizontal or vertical lines): capture-phase listeners keep plugin-zoom (drag-zoom/pan) and the filter click out of it.
-    var lineDrag = false, vDrag = null, hDrag = null, swallowClick = false;
+    var lineDrag = false, vDrag = null, hDrag = null, dDrag = null, swallowClick = false;
+    // Id of the departure line whose ▼ handle (<= 9 px) is under the pointer, or null.
+    function dHit(e) {
+      var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea, hit = null;
+      root.MoonCore.departure.list().forEach(function (l) {
+        var px = vlinePixel(chart, l.value);
+        if (px !== null && Math.hypot(pos.x - px, pos.y - (a.top - VH_OFFSET)) <= 9) hit = l.id;
+      });
+      return hit;
+    }
     // Id of the horizontal line whose handle (<= 9 px) or body (<= 5 px, inside the plot) is under the pointer, or null.
     function hHit(e) {
       var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea, hit = null, best = Infinity;
@@ -377,14 +414,17 @@
     }
     function setFromPointer(e) {
       var pos = root.Chart.helpers.getRelativePosition(e, chart);
-      if (vDrag !== null) root.MoonCore.vlines.set(vDrag, chart.scales.x.getValueForPixel(pos.x), 'drag');
+      if (dDrag !== null) root.MoonCore.departure.set(dDrag, chart.scales.x.getValueForPixel(pos.x), 'drag');
+      else if (vDrag !== null) root.MoonCore.vlines.set(vDrag, chart.scales.x.getValueForPixel(pos.x), 'drag');
       else root.MoonCore.hlines.set(hDrag, chart.scales.y.getValueForPixel(pos.y), 'drag');
     }
     canvas.addEventListener('pointerdown', function (e) {
-      var h = hHit(e), v = h === null ? vHit(e) : null; // horizontal handle has priority
-      if (h === null && v === null) return;
+      // Priority: minimum viability ◀, then departure ▼, then travel-time ▼.
+      var h = hHit(e), d = h === null ? dHit(e) : null, v = h === null && d === null ? vHit(e) : null;
+      if (h === null && d === null && v === null) return;
       lineDrag = true;
       hDrag = h;
+      dDrag = d;
       vDrag = v;
       canvas.setPointerCapture(e.pointerId);
       e.stopImmediatePropagation();
@@ -392,17 +432,18 @@
       setFromPointer(e);
     }, true);
     canvas.addEventListener('mousedown', function (e) {
-      if (lineDrag || hHit(e) !== null || vHit(e) !== null) { e.stopImmediatePropagation(); e.preventDefault(); }
+      if (lineDrag || hHit(e) !== null || dHit(e) !== null || vHit(e) !== null) { e.stopImmediatePropagation(); e.preventDefault(); }
     }, true);
     canvas.addEventListener('pointermove', function (e) {
       if (lineDrag) { setFromPointer(e); return; }
-      canvas.style.cursor = hHit(e) !== null ? 'ns-resize' : vHit(e) !== null ? 'ew-resize' : '';
+      canvas.style.cursor = hHit(e) !== null ? 'ns-resize' : dHit(e) !== null || vHit(e) !== null ? 'ew-resize' : '';
     });
     function endDrag() {
       if (!lineDrag) return;
       lineDrag = false;
       vDrag = null;
       hDrag = null;
+      dDrag = null;
       swallowClick = true;
       root.setTimeout(function () { swallowClick = false; }, 0); // click, if any, fires right after pointerup
     }
@@ -410,6 +451,7 @@
     canvas.addEventListener('pointercancel', endDrag);
     root.MoonCore.hlines.onChange(function () { chart.draw(); });
     root.MoonCore.vlines.onChange(function () { chart.draw(); });
+    root.MoonCore.departure.onChange(function () { chart.draw(); });
     root.MoonCore.onVisibilityChange(function () { chart.draw(); });
 
     var down = null;

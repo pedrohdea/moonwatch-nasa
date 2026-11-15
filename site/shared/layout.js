@@ -87,6 +87,10 @@
             '<button id="reset-zoom" class="btn btn-ghost" type="button">Resetar zoom</button>' +
           '</div>' +
           '<div id="fill-areas" class="fill-areas" role="status" aria-live="polite" aria-label="Área preenchida por série"></div>' +
+          '<div class="toolbar vlines-bar departure-bar" aria-label="Partida">' +
+            '<span class="vlines-label" title="Mover a partida leva junto todas as linhas de tempo de percurso">Partida</span>' +
+            '<div id="departure-list" class="vlines-list"></div>' +
+          '</div>' +
           '<div class="toolbar vlines-bar" aria-label="Tempo de percurso">' +
             '<span class="vlines-label" title="Uma linha vertical por série (V1…Vn): o preenchimento começa nela">Tempo de percurso</span>' +
             '<div id="vlines-list" class="vlines-list"></div>' +
@@ -147,11 +151,14 @@
 
   // Line chips (vertical and horizontal share the pattern): one chip per line with a number input and ×,
   // plus an add button; values kept in the URL (replaceState, no reload). Line k <-> series k (color, visibility).
-  // opts: {param, listId, addId|null, removable, tag(i), color(i), visible(i), kind}
+  // opts: {param, listId, addId|null, removable, tag(i), color(i), visible(i), kind,
+  //        show(line) -> input value, write(id, inputValue, source), input: {type, min, max, step}}
   function lineBar(set, opts) {
     var list = doc.getElementById(opts.listId);
     var add = opts.addId ? doc.getElementById(opts.addId) : null;
-    var step = set.step === 1 ? '1' : '0.1';
+    var input = opts.input || { type: 'number', min: set.min, max: set.max, step: set.step === 1 ? '1' : '0.1' };
+    var show = opts.show || function (l) { return l.value; };
+    var write = opts.write || function (id, v, source) { set.set(id, v, source); };
     var param = opts.param;
     var kind = opts.kind;
 
@@ -168,7 +175,7 @@
         var tag = opts.tag(i);
         return '<span class="vline-chip" data-id="' + l.id + '" style="border-color:' + color + '"' + hiddenAttr + '>' +
           '<span class="vline-tag" style="color:' + color + '" title="' + root.MoonSeries.all[i % root.MoonSeries.all.length].name + '">' + tag + '</span>' +
-          '<input type="number" step="' + step + '" min="' + set.min + '" max="' + set.max + '" value="' + l.value + '" aria-label="Posição da linha ' + kind + ' ' + tag + '">' +
+          '<input type="' + input.type + '" step="' + input.step + '" min="' + input.min + '" max="' + input.max + '" value="' + show(l) + '" aria-label="Linha ' + kind + ' ' + tag + '">' +
           (opts.removable ? '<button type="button" class="vline-remove" aria-label="Excluir linha ' + kind + ' ' + tag + '" title="Excluir">×</button>' : '') +
         '</span>';
       }).join('') || '<span class="vlines-empty">nenhuma</span>';
@@ -176,7 +183,7 @@
 
     list.addEventListener('input', function (e) {
       var chip = e.target.closest('.vline-chip');
-      if (chip && e.target.tagName === 'INPUT') set.set(Number(chip.getAttribute('data-id')), e.target.value, 'input');
+      if (chip && e.target.tagName === 'INPUT') write(Number(chip.getAttribute('data-id')), e.target.value, 'input');
     });
     list.addEventListener('change', function () { render(set.list(), 'change'); }); // show the clamped value
     list.addEventListener('click', function (e) {
@@ -191,9 +198,31 @@
 
   var vl = root.MoonCore.vlines;
   var hl = root.MoonCore.hlines;
+  var dep = root.MoonCore.departure;
+  var span = data.xRange[1] - data.xRange[0];
+
+  // Departure: a date input when the x axis is a day index (viability), a number otherwise.
+  var start = root.MoonViability && data.xDate ? Date.parse(root.MoonViability.start + 'T00:00:00Z') : null;
+  function isoFromDay(day) { return new Date(start + Math.round(day) * 864e5).toISOString().slice(0, 10); }
+  function dayFromIso(iso) { return Math.round((Date.parse(iso + 'T00:00:00Z') - start) / 864e5); }
+  lineBar(dep, start === null ? {
+    param: 'partida', listId: 'departure-list', addId: null, removable: false, kind: 'de partida',
+    tag: function () { return 'Partida'; }, color: function () { return '#FFFFFF'; }, visible: function () { return true; }
+  } : {
+    param: 'partida', listId: 'departure-list', addId: null, removable: false, kind: 'de partida',
+    tag: function () { return 'Partida'; }, color: function () { return '#FFFFFF'; }, visible: function () { return true; },
+    input: { type: 'date', min: isoFromDay(data.xRange[0]), max: isoFromDay(data.xRange[1]), step: 1 },
+    show: function (l) { return isoFromDay(l.value); },
+    write: function (id, v, source) { if (v) dep.set(id, dayFromIso(v), source); }
+  });
+
+  // Travel-time chips show the duration from the departure; typing it moves only that line.
   var refreshVChips = lineBar(vl, {
     param: 'vlinhas', listId: 'vlines-list', addId: 'vline-add', removable: true, kind: 'de tempo de percurso',
-    tag: function (i) { return 'V' + (i + 1); }, color: root.MoonCore.vlineColor, visible: root.MoonCore.vlineVisible
+    tag: function (i) { return 'V' + (i + 1); }, color: root.MoonCore.vlineColor, visible: root.MoonCore.vlineVisible,
+    input: { type: 'number', min: -span, max: span, step: vl.step === 1 ? '1' : '0.1' },
+    show: function (l) { return root.MoonCore.travelTime(l.id); },
+    write: function (id, v, source) { root.MoonCore.setTravelTime(id, v, source); }
   });
   var refreshHChips = lineBar(hl, {
     param: 'minima', listId: 'hlines-list', addId: null, removable: false, kind: 'de viabilidade mínima',
@@ -222,6 +251,11 @@
     refreshHChips();
     renderAreas();
   });
+  // A series filter also filters the travel-time chips and area cards.
+  root.MoonCore.onFilterChange(function () {
+    refreshVChips();
+    renderAreas();
+  });
 
   // Switching dataset reloads the page so every chart adapter starts clean.
   doc.getElementById('dataset-select').addEventListener('change', function (e) {
@@ -230,6 +264,7 @@
     // Line positions belong to the old dataset's axes and series count: start the new one from defaults.
     url.searchParams.delete('vlinhas');
     url.searchParams.delete('minima');
+    url.searchParams.delete('partida');
     url.hash = 'track';
     root.location.href = url.toString();
   });

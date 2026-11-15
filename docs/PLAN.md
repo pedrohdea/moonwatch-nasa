@@ -204,3 +204,6 @@ Decisões:
 - Só as setinhas arrastam (corpos das linhas roubavam cliques nas curvas); gráfico só com linhas, sem pontos.
 - Gráfico logo abaixo do seletor de dados; controles e tabela embaixo.
 - Modos de assertividade "Tamanho" e "Desvio" removidos a pedido; restam Cor, Faixa (padrão) e Rótulo.
+- Só Chart.js (porta 8003): versões ECharts e Plotly.js removidas a pedido.
+- "Linhas verticais" renomeadas para "Tempo de percurso". Nova linha "Partida" (branca, `?partida=`, campo de data no conjunto de viabilidade): Vk = Partida + tempo k; mover a Partida desloca todas as Vk mantendo os tempos (guardados mesmo se a linha bater na borda do eixo); arrastar/digitar uma Vk muda só o tempo dela. Padrão: tempos distribuídos entre a Partida e o fim do eixo.
+- Filtro de série também filtra o tempo de percurso (linha, chip) e os cartões de área.

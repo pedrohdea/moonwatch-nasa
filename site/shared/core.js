@@ -166,7 +166,36 @@
       return v === null ? defaultVLines(min, max, seriesCount) : v.split(',').filter(Boolean);
     }
     api.createCore = createCore;
-    api.vlines = createVLines(ds.xRange[0], ds.xRange[1], ds.xIsYear ? 1 : 0.01, initialLines('vlinhas', ds.xRange[0], ds.xRange[1]), seriesCount);
+    var xStep = ds.xIsYear ? 1 : 0.01;
+    // Departure ("Partida"): one vertical line; each travel-time line Vk sits at departure + travelTime[k].
+    // Moving the departure shifts every Vk by the same amount (travel times kept, even past the axis edges);
+    // dragging or typing a Vk changes only its own travel time.
+    var partidaParam = params.get('partida');
+    api.departure = createVLines(ds.xRange[0], ds.xRange[1], xStep,
+      [partidaParam !== null && partidaParam !== '' ? partidaParam : ds.xRange[0]], 1);
+    // Default travel-time lines are spread between the departure and the end of the x axis.
+    api.vlines = createVLines(ds.xRange[0], ds.xRange[1], xStep, initialLines('vlinhas', api.departure.list()[0].value, ds.xRange[1]), seriesCount);
+    var travel = {}; // vline id -> travel time (x units)
+    function departureValue() { var d = api.departure.list()[0]; return d ? d.value : ds.xRange[0]; }
+    function syncTravel() {
+      var dep = departureValue();
+      api.vlines.list().forEach(function (l) { travel[l.id] = Math.round((l.value - dep) * 100) / 100; });
+    }
+    syncTravel();
+    var shifting = false;
+    api.vlines.onChange(function () { if (!shifting) syncTravel(); });
+    api.departure.onChange(function () {
+      var dep = departureValue();
+      shifting = true;
+      api.vlines.list().forEach(function (l) { api.vlines.set(l.id, dep + (travel[l.id] || 0), 'departure'); });
+      shifting = false;
+    });
+    api.travelTime = function (id) { return travel[id] !== undefined ? travel[id] : 0; };
+    api.setTravelTime = function (id, t, source) {
+      var n = Number(t);
+      if (t === '' || !isFinite(n)) return;
+      api.vlines.set(id, departureValue() + n, source);
+    };
     // Minimum viability: ONE horizontal line shared by every series (default: middle of the y range).
     var minimaParam = params.get('minima');
     api.hlines = createVLines(ds.yRange[0], ds.yRange[1], 0.01,
@@ -197,7 +226,7 @@
     // Filled area per series (above the minimum viability, right of Vk), independent of the series filter.
     api.areas = function () {
       return root.MoonSeries.all
-        .filter(function (s) { return api.isVisible(s.index) && pairFor(s.index); })
+        .filter(function (s) { return api.vlineVisible(s.index) && pairFor(s.index); }) // legend + series filter
         .map(function (s) {
           var p = pairFor(s.index);
           var area = fillRegions(s.points, p.h, p.v).reduce(function (sum, poly) { return sum + polygonArea(poly); }, 0);
@@ -205,7 +234,11 @@
         });
     };
     // Line k (vertical or horizontal) is drawn only while series k is visible in the chart.
-    api.vlineVisible = function (k) { return k < seriesCount && api.isVisible(k); };
+    // Travel-time line k: only while series k is visible, and only the filtered series when a filter is active.
+    api.vlineVisible = function (k) {
+      var active = api.getFilter();
+      return k < seriesCount && api.isVisible(k) && (active === null || active === k);
+    };
     api.hlineVisible = function () { return true; }; // shared line: never tied to one series
     root.MoonCore = api;
   }

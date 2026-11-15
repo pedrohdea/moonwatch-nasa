@@ -22,6 +22,8 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
 - Tabela equivalente ao gráfico logo abaixo dele, com scroll infinito (50 linhas por vez) dentro da própria caixa.
 - Tempo de percurso (linhas verticais arrastáveis): uma por série do gráfico (V1…Vn, com a cor da série n), cada uma com setinha ▼ na borda de cima do gráfico. Arraste a seta para mudar a posição, digite no chip da linha, "×" exclui e "+ Tempo de percurso" adiciona de volta (máximo = número de séries). Posições na URL (`?vlinhas=`).
+- Partida: linha vertical branca com ▼ "Partida" (arrastável) e um campo (data no conjunto de viabilidade; `?partida=`). Cada tempo de percurso é medido a partir dela: Vk = Partida + tempo k. Mover a Partida leva todas as linhas de tempo de percurso juntas; os chips de tempo de percurso mostram a duração.
+- Com uma série filtrada, "Tempo de percurso" e os cartões de área mostram só a série escolhida.
 - Viabilidade mínima: uma única linha horizontal amarela, comum a todas as séries, com setinha ◀ na borda direita do gráfico para arrastar e um campo para digitar. Valor na URL (`?minima=`).
 - Tempo de percurso segue a legenda: esconder uma série esconde a linha vertical dela, o preenchimento e o cartão de área dela.
 - O gráfico mostra só as linhas, sem pontos (exceto no modo de assertividade "Cor", que precisa dos marcadores).
