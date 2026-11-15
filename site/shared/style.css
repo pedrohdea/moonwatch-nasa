@@ -184,6 +184,7 @@ th.sortable:hover { color: var(--neon-yellow); }
 .data tbody tr[hidden] { display: none; }
 .table-bar + .table-box { margin-top: 8px; }
 .table-box.is-min { display: none; }
+.table-bar:has(.table-toggle[aria-expanded="false"]) .table-search { display: none; } /* collapsed table: no filter box */
 .table-bar[hidden] { display: none; }
 .table-box {
   margin-top: 20px; max-height: 70vh; overflow: auto; /* maximized: tall box, still scrolls */
