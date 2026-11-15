@@ -456,21 +456,19 @@
 
   setTab('canvas');
 
-  // Viability chart filter -> landing groups: filtering "Grupo N" selects only group N here (globe frames its sites);
-  // clearing the filter unselects it, unless the user changed the selection meanwhile.
-  var linkedKey = null;
+  // Viability chart -> landing groups, same rule as the "Área preenchida" cards (MoonCore.vlineVisible):
+  // every group visible in the chart (legend / "Todos os grupos"), or only the filtered one when a filter is active.
   if (root.MoonCore && root.MoonSeries && root.MoonSeries.dataset.kind === 'viability') {
-    root.MoonCore.onFilterChange(function (index) {
+    var syncFromChart = function () {
       ready.then(function () {
-        if (index !== null && root.MoonSeries.all[index] && root.MoonSeries.all[index].group !== undefined) {
-          linkedKey = 'csv-' + root.MoonSeries.all[index].group;
-          setGroups([linkedKey]);
-        } else if (linkedKey !== null) {
-          if (state.checked.length === 1 && state.checked[0] === linkedKey) setGroups([]);
-          linkedKey = null;
-        }
+        setGroups(root.MoonSeries.all
+          .filter(function (s) { return s.group !== undefined && root.MoonCore.vlineVisible(s.index); })
+          .map(function (s) { return 'csv-' + s.group; }));
       });
-    });
+    };
+    root.MoonCore.onFilterChange(syncFromChart);
+    root.MoonCore.onVisibilityChange(syncFromChart);
+    syncFromChart();
   }
 
   root.MoonLanding = { missions: MISSIONS, state: state, select: selectMission, setGroups: setGroups, setTab: setTab, math: math, ready: ready };

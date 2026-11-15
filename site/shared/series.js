@@ -232,8 +232,10 @@
     return rows;
   }
 
+  // Default: the landing-site viability (when its data file is loaded), otherwise the math curves.
   function findDataset(key) {
-    return datasets.filter(function (d) { return d.key === key; })[0] || datasets[0];
+    var byKey = function (k) { return datasets.filter(function (d) { return d.key === k; })[0]; };
+    return byKey(key) || byKey('viabilidade') || datasets[0];
   }
 
   // Ways to draw the point-to-curve accuracy; chosen with ?viz=<key> (header pills).

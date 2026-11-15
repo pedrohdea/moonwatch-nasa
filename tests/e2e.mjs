@@ -257,12 +257,17 @@ async function main() {
     console.log(`${lib} (:${port}) filter -> landing groups width=${WIDTH}`);
     await send('Page.navigate', { url: `http://localhost:${port}/?dataset=viabilidade&seed=${SEED}#track` });
     await wait(3000);
-    await evaluate(`MoonLanding.ready`);
+    await evaluate(`MoonLanding.ready`); await wait(300);
+    const checkedCount = () => evaluate(`MoonLanding.state.checked.length`);
+    check('viability is the default dataset', (await evaluate(`(()=>{const u=new URL(location.href);return u.searchParams.get('dataset')})()`)) === 'viabilidade' || (await evaluate(`MoonSeries.dataset.key`)) === 'viabilidade');
+    check('no filter: every visible group selected on the globe', (await checkedCount()) === 10);
     await evaluate(`MoonCore.setFilter(2)`); await wait(800);
     check('filter Grupo 3 selects only group 3 on the globe', (await evaluate(`JSON.stringify(MoonLanding.state.checked)`)) === '["csv-3"]' &&
       (await evaluate(`document.querySelectorAll('#landing-points tbody tr').length`)) === 5);
     await evaluate(`MoonCore.setFilter(null)`); await wait(500);
-    check('clearing the filter unselects the group', (await evaluate(`MoonLanding.state.checked.length`)) === 0);
+    check('clearing the filter selects all visible groups again', (await checkedCount()) === 10);
+    await evaluate(`(b=>{b.checked=false;b.dispatchEvent(new Event('change'))})(document.getElementById('all-series'))`); await wait(500);
+    check('"Todos os grupos" unchecked: no group on the globe', (await checkedCount()) === 0);
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }
 
@@ -270,7 +275,7 @@ async function main() {
   for (const [lib, port] of Object.entries(PORTS)) {
     errors.length = 0;
     console.log(`${lib} (:${port}) #pouso width=${WIDTH}`);
-    await send('Page.navigate', { url: `http://localhost:${port}/?seed=${SEED}#pouso` });
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=curvas&seed=${SEED}#pouso` });
     await wait(2500);
     await evaluate(`MoonLanding.ready`);
     const centered = (key) => evaluate(`(()=>{const m=MoonLanding.missions.find(x=>x.key==='${key}'),v=MoonLanding.state.view;return Math.abs(v.lat-m.lat)<1&&Math.abs(((v.lon-m.lon+540)%360)-180)<1})()`);
