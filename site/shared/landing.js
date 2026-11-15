@@ -151,7 +151,8 @@
   }).join('');
   var TABS = [['canvas', 'Canvas'], ['three', 'three.js'], ['iframe', 'Moon3DMap']];
 
-  doc.getElementById('mission').insertAdjacentHTML('afterend',
+  // Landing section goes right after the chart section; "Definições da missão" stays below the Moon map.
+  doc.getElementById('mission').insertAdjacentHTML('beforebegin',
     '<section id="pouso" class="landing">' +
       '<div class="wrap">' +
         '<h2>Sítios de pouso e impacto</h2>' +
@@ -179,7 +180,7 @@
         '<p class="dataset-info">Textura: NASA Scientific Visualization Studio, CGI Moon Kit (LRO/LROC, domínio público). Coordenadas: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.</p>' +
       '</div>' +
     '</section>');
-  doc.querySelector('.nav a[href="#about"]').insertAdjacentHTML('beforebegin', '<a href="#pouso">Pousos</a>');
+  doc.querySelector('.nav a[href="#mission"]').insertAdjacentHTML('beforebegin', '<a href="#pouso">Pousos</a>');
 
   var select = doc.getElementById('landing-select');
   var info = doc.getElementById('landing-info');

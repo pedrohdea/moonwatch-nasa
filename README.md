@@ -18,7 +18,7 @@ google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir=/tmp/m
 node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 ```
 
-- Página única com âncoras `#home`, `#track`, `#mission` (Definições da missão), `#about`.
+- Página única com âncoras `#home`, `#track`, `#pouso` (Sítios de pouso e impacto), `#mission` (Definições da missão, abaixo do mapa da Lua), `#about`.
 - Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
 - Tabelas minimizadas por padrão (Maximizar/Minimizar), com filtro de texto e ordenação por coluna (clique no título; de novo inverte).
 - Cartões de "Área preenchida" ordenados da maior para a menor área; a maior fica em verde.
