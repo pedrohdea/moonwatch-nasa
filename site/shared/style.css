@@ -131,7 +131,7 @@ section { scroll-margin-top: calc(var(--topbar-h) + 8px); }
 
 /* Mission definitions */
 .mission { padding: 72px 0; border-top: 1px solid var(--line); }
-.mission .roadmap-list { margin-top: 24px; }
+.mission .roadmap-list { margin-top: 24px; grid-template-columns: repeat(2, 1fr); }
 .about .variant { display: inline-block; margin: 0 2px; }
 .hint { color: var(--text-muted); font-size: 16px; }
 .dataset-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-weight: 700; margin-top: 16px; }
@@ -250,8 +250,7 @@ th.sortable:hover { color: var(--neon-yellow); }
 .chip-status { background: var(--deep-blue); border: 1px solid var(--line); }
 .chip-area { background: #0050D8; }
 .roadmap-body p { margin: 0; }
-.roadmap-card-simple { grid-template-columns: 160px 1fr; gap: 24px; }
-.roadmap-card-simple .roadmap-img { aspect-ratio: 1; }
+.roadmap-card-simple { grid-template-columns: 1fr; }
 .roadmap-body .roadmap-tags { margin: 0 0 8px; }
 .footer-brand strong { color: var(--text, #fff); }
 
@@ -264,7 +263,7 @@ th.sortable:hover { color: var(--neon-yellow); }
   .hero { padding: 56px 0 48px; }
   .track, .mission, .landing, .about { padding: 48px 0; }
   .roadmap-card, .roadmap-card-simple { grid-template-columns: 1fr; gap: 16px; }
-  .roadmap-card-simple .roadmap-img { aspect-ratio: 3 / 1; }
+  .mission .roadmap-list { grid-template-columns: 1fr; }
   .roadmap-img { aspect-ratio: 2 / 1; }
   .roadmap-meta > div { padding: 0 16px 0 0; border-left: 0; }
 }

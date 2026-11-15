@@ -82,18 +82,17 @@
     '</article>';
   }
 
-  // Mission Definitions: simplified roadmap cards (image, title, one category chip, text).
+  // Mission Definitions: simplified roadmap cards (title, one category chip, text), 2 columns.
   var DEFINITIONS = [
-    { title: 'Objective', tag: 'Goal', img: TILE + '3/8.jpg', text: 'Help planners, educators, and the public compare landing sites and dates quickly and intuitively.' },
-    { title: 'Landing site', tag: 'Location', img: TILE + '4/7.jpg', text: 'Candidate location on the lunar surface, defined by selenographic latitude and longitude.' },
-    { title: 'Elevation', tag: 'Measurement', img: TILE + '3/5.jpg', text: 'Angle of the Sun or Earth above (positive) or below (negative) the local horizon, in degrees.' },
-    { title: 'Illumination window', tag: 'Window', img: TILE + '2/8.jpg', text: 'Period with the Sun above the local horizon: potential for solar power generation.' },
-    { title: 'Communication window', tag: 'Window', img: TILE + '4/8.jpg', text: 'Period with the Earth above the local horizon: direct-to-Earth (DTE) communication without a relay satellite.' },
-    { title: 'South Pole constraints', tag: 'Constraint', img: TILE + '7/8.jpg', text: 'The Sun and Earth stay low on the horizon, so small changes in date and location greatly change illumination and communication.' }
+    { title: 'Objective', tag: 'Goal', text: 'Help planners, educators, and the public compare landing sites and dates quickly and intuitively.' },
+    { title: 'Landing site', tag: 'Location', text: 'Candidate location on the lunar surface, defined by selenographic latitude and longitude.' },
+    { title: 'Elevation', tag: 'Measurement', text: 'Angle of the Sun or Earth above (positive) or below (negative) the local horizon, in degrees.' },
+    { title: 'Illumination window', tag: 'Window', text: 'Period with the Sun above the local horizon: potential for solar power generation.' },
+    { title: 'Communication window', tag: 'Window', text: 'Period with the Earth above the local horizon: direct-to-Earth (DTE) communication without a relay satellite.' },
+    { title: 'South Pole constraints', tag: 'Constraint', text: 'The Sun and Earth stay low on the horizon, so small changes in date and location greatly change illumination and communication.' }
   ];
   function definitionCard(d) {
     return '<article class="roadmap-card roadmap-card-simple">' +
-      '<div class="roadmap-img" style="background-image:url(' + d.img + ')" role="img" aria-label="NASA Moon Trek image"></div>' +
       '<div class="roadmap-body">' +
         '<h3>' + escapeHtml(d.title) + '</h3>' +
         '<p class="roadmap-tags"><span class="chip chip-area">' + escapeHtml(d.tag) + '</span></p>' +
