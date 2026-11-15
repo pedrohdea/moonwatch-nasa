@@ -223,3 +223,27 @@ Request: use NASA options 1 (SVS Moon 3D models), 3 (NASA 3D Resources) and 4 (M
 - Canvas tab (option 4): CGI Moon Kit 2k first, then the 16×8 Moon Trek LRO WAC tiles (zoom 3, 256 px) stitched into a 4096×2048 texture; same equirectangular frame (top-left -180°, 90°). `MoonLanding.renderers.canvas.texture` reports the source for the E2E.
 - Terrain 3D tab (option 3): Apollo 11/12/14/15/16 STL height maps, centered and scaled to 2 units, colored by height NASA blue → Neon Yellow, slow turntable + drag. Gotchas: the STLs ship zero normals (`computeVertexNormals`) and inverted winding (`DoubleSide`); `geometry.translate()` recomputes `boundingBox` in place (clone it first); the Lunar Module GLB is Draco-compressed (vendored `DRACOLoader` + decoder). LM not to scale. Other missions: "3D terrain available for Apollo 11, 12, 14, 15 and 16".
 - Tests: unit (Trek tile grid, STL mission mapping), E2E (Trek texture 4096×2048, GLB source, Terrain 3D for Apollo 11 + LM, message for Luna 9), desktop and 390 px.
+
+## Plan (proposed, awaiting approval): hook video as full-screen intro (2026-11-15)
+
+Request: use `docs/video/hook_newspaper.mp4` (5 s, 1920×1080, 14.7 MB, no audio; "The Lunar Gazette": "At the lunar south pole, a four-day launch slip can mean months of waiting, and millions lost", made in session `session_018cxk3pLr2GZZbmfUKRTaof` by `docs/video/hook_newspaper.py`) in the opening of the site. Quiz decisions: **full-screen intro** that plays and then reveals the hero; site loads a **720p compressed** copy; version **only the `.py` and fonts** of `docs/video/` (fonts are SIL OFL, `OFL.txt` included); the original mp4 stays out of git (regenerable).
+
+Steps (small, verifiable):
+1. Asset. `site/shared/media/hook_newspaper.mp4` = `ffmpeg -i docs/video/hook_newspaper.mp4 -vf scale=1280:-2 -c:v libx264 -crf 28 -preset slow -pix_fmt yuv420p -movflags +faststart -an` (target 1–2 MB). Poster `hook_newspaper.jpg` = last frame (stamp visible), `-sseof -0.1 -frames:v 1`. `.gitattributes`: `*.mp4 binary`. `.gitignore`: `docs/video/*.mp4`, `docs/video/.ruff_cache/`. Command recorded in README.
+2. `site/shared/intro.js` (classic script after `layout.js`). Fixed full-screen overlay `#intro` (deep-blue background, `<video muted playsinline autoplay preload="auto" poster>`, `object-fit: contain` = letterbox on phones), yellow **Skip** button (focused on open; Esc also skips), page scroll locked while open.
+   - On `ended`: hold the last frame ~1.2 s (the stamp is the punchline), fade out 600 ms, remove the overlay, focus the hero `h1`.
+   - Never blocks the site: if `play()` is rejected, the video errors, or it is not playing after 3 s, the overlay is removed at once.
+3. When it shows: pure `shouldShowIntro({hash, search, reducedMotion, seen})`, exported for node tests.
+   - Shows on the first visit of the session (`sessionStorage`, try/catch).
+   - Skipped for deep links (hash other than `#home`, e.g. `#sites`), `?intro=0` and `prefers-reduced-motion`.
+   - `?intro=1` forces it. The existing E2E URLs all use `#track`/`#sites`, so they stay unaffected.
+4. Hero: small ghost button "▶ Watch intro" reopens the overlay. Text alternative: visually hidden headline inside the overlay (`aria-label` on the dialog).
+5. Tests and docs:
+   - Unit: `shouldShowIntro` cases.
+   - E2E: `/?intro=1` shows `#intro` and the video plays; Skip removes it; after `ended` it is removed (wait ~7 s); `#sites` has no intro; 390 px has no horizontal scroll and the console stays clean.
+   - README and this file updated; one commit.
+
+Acceptance (manual): fresh tab `http://localhost:8003/` → intro plays, stamp, fade into the hero; reload in the same tab → no intro; Skip / Esc work; `/#sites` → no intro; OS "reduce motion" → no intro; phone portrait → letterboxed video, Skip reachable; offline still works.
+
+Simplest-solution check: native `<video>` + ~60 lines of JS/CSS; no library. No sub-agents (one coupled change).
+Risk: every new session waits up to ~6 s before seeing the hero unless Skip is used.
