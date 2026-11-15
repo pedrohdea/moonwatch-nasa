@@ -52,24 +52,34 @@
       ': one series per mission (missionID) = daily mean of its 5 sites. X axis in dates. Random confidence (usability test).</p>'
     : '<p class="dataset-info">20 types of math curves, simulated data: 21 measured points per curve (x from 0 to 10), with random confidence: the lower it is, the farther the point sits from the theoretical curve.</p>';
 
-  // Improvements & Fixes (#roadmap): same card grid as Mission Definitions (.defs), plus Type / Areas chips.
+  // Improvements & Fixes (#roadmap): cards in the style of spaceappschallenge.org/2026/challenges (image, title, Type / Status / Areas chips, text).
+  var TILE = 'shared/vendor/nasa/moontrek/3/'; // vendored NASA Moon Trek tiles as thumbnails
   var ROADMAP = [
-    { title: 'Transit time from Departure and daily variables', type: 'Improvement', areas: ['Chart', 'Transit time'],
+    { title: 'Transit time from Departure and daily variables', type: 'Improvement', status: 'Planned', areas: ['Chart', 'Transit time'], img: TILE + '3/8.jpg',
       text: 'Recalculate transit time from the Departure date and day-to-day variables (daily lunar conditions and space weather), instead of fixed offsets.' },
-    { title: 'Models grounded in NASA LRO and DONKI data', type: 'Improvement', areas: ['Viability', 'Departure', 'Deadline'],
+    { title: 'Models grounded in NASA LRO and DONKI data', type: 'Improvement', status: 'Planned', areas: ['Viability', 'Departure', 'Deadline'], img: TILE + '2/7.jpg',
       text: 'Ground the Viability, Departure and Deadline models in real NASA LRO lunar maps and DONKI space weather data (today the viability data is simulated).' },
-    { title: 'Real-time viability', type: 'Improvement', areas: ['Data lake', 'Viability'],
+    { title: 'Real-time viability', type: 'Improvement', status: 'Planned', areas: ['Data lake', 'Viability'], img: TILE + '4/9.jpg',
       text: 'Ingest official internal NASA sources (not mapped yet) into a structured data lake, following the current star schema, relate them by landing site and date, and compute viability in real time.' },
-    { title: 'Demo and pilot', type: 'Improvement', areas: ['Validation', 'Missions'],
+    { title: 'Demo and pilot', type: 'Improvement', status: 'Planned', areas: ['Validation', 'Missions'], img: TILE + '3/6.jpg',
       text: 'Demo and pilot with data from successful and delayed missions.' },
-    { title: 'Sun–Earth–Moon animation', type: 'Improvement', areas: ['Landing & Impact Sites', 'Animation'],
+    { title: 'Sun–Earth–Moon animation', type: 'Improvement', status: 'Planned', areas: ['Landing & Impact Sites', 'Animation'], img: TILE + '2/9.jpg',
       text: 'Animation showing the bodies\u2019 positions on the launch (Departure), landing and Deadline dates, displayed next to the Moon globe in Landing & Impact Sites.' }
   ];
   function roadmapCard(r) {
     var chip = function (cls, t) { return '<span class="chip ' + cls + '">' + escapeHtml(t) + '</span>'; };
-    return '<div><dt>' + escapeHtml(r.title) + '</dt>' +
-      '<dd class="chips">' + chip(r.type === 'Fix' ? 'chip-fix' : 'chip-improvement', r.type) + r.areas.map(function (x) { return chip('chip-area', x); }).join('') + '</dd>' +
-      '<dd>' + escapeHtml(r.text) + '</dd></div>';
+    return '<article class="roadmap-card">' +
+      '<div class="roadmap-img" style="background-image:url(' + r.img + ')" role="img" aria-label="NASA Moon Trek image"></div>' +
+      '<div class="roadmap-body">' +
+        '<h3>' + escapeHtml(r.title) + '</h3>' +
+        '<dl class="roadmap-meta">' +
+          '<div><dt>Type</dt><dd>' + chip(r.type === 'Fix' ? 'chip-fix' : 'chip-improvement', r.type) + '</dd></div>' +
+          '<div><dt>Status</dt><dd>' + chip('chip-status', r.status) + '</dd></div>' +
+          '<div><dt>Areas</dt><dd>' + r.areas.map(function (a) { return chip('chip-area', a); }).join('') + '</dd></div>' +
+        '</dl>' +
+        '<p>' + escapeHtml(r.text) + '</p>' +
+      '</div>' +
+    '</article>';
   }
 
   doc.body.insertAdjacentHTML('afterbegin',
@@ -160,7 +170,9 @@
         '<div class="wrap">' +
           '<h2>Improvements &amp; Fixes</h2>' +
           '<p class="hint">Planned work for MoonWatch. Not implemented yet.</p>' +
-          '<dl class="defs">' + ROADMAP.map(roadmapCard).join('') + '</dl>' +
+          '<div class="roadmap-bar"><input type="search" id="roadmap-search" class="table-search" placeholder="Search by improvement or fix" aria-label="Search improvements and fixes"></div>' +
+          '<p id="roadmap-count" class="roadmap-count"></p>' +
+          '<div id="roadmap-list" class="roadmap-list">' + ROADMAP.map(roadmapCard).join('') + '</div>' +
         '</div>' +
       '</section>' +
       '<section id="about" class="about">' +
@@ -187,6 +199,18 @@
       '<p>Globe and terrain imagery: NASA Moon Trek, NASA Scientific Visualization Studio and NASA 3D Resources (public domain). Chart by ' + lib + '.</p>' +
     '</div></footer>'
   );
+
+  // Roadmap search: text filter over the cards + "Currently returning N items".
+  var roadmapSearch = doc.getElementById('roadmap-search');
+  function filterRoadmap() {
+    var q = roadmapSearch.value.trim().toLowerCase();
+    var cards = doc.querySelectorAll('#roadmap-list .roadmap-card');
+    var shown = 0;
+    cards.forEach(function (c) { c.hidden = q !== '' && c.textContent.toLowerCase().indexOf(q) < 0; if (!c.hidden) shown++; });
+    doc.getElementById('roadmap-count').textContent = 'Currently returning ' + shown + ' of ' + cards.length + ' items';
+  }
+  roadmapSearch.addEventListener('input', filterRoadmap);
+  filterRoadmap();
 
   // Fixed top bar: reserve exactly its height (it wraps on narrow screens) for the body and anchor offsets.
   var topbar = doc.querySelector('.topbar');
