@@ -7,7 +7,7 @@
   var ZOOM_IN = 1.8;
   var DURATION = 2600;
 
-  // [slug, name, agency, year, kind, lat, lon] from moon3dmap.com links (Chang'e 4 was listed twice).
+  // [slug, name, agency, year, kind, lat, lon] from moon3dmap.com links.
   var MISSIONS = [
     ['apollo-11-landing-site', 'Apollo 11', 'NASA', 1969, 'pouso', 0.71, 23.63],
     ['apollo-12-landing-site', 'Apollo 12', 'NASA', 1969, 'pouso', -3.01, -23.42],
@@ -24,10 +24,7 @@
     ['luna-9-landing-site', 'Luna 9', 'URSS', 1966, 'pouso', -7.1, -64.4],
     ['luna-16-landing-site', 'Luna 16', 'URSS', 1970, 'pouso', -0.5137, 56.3638],
     ['luna-20-landing-site', 'Luna 20', 'URSS', 1972, 'pouso', 3.7863, 56.6242],
-    ['luna-24-landing-site', 'Luna 24', 'URSS', 1976, 'pouso', 12.7145, 62.2097],
-    ['change-3-landing-site', "Chang'e 3", 'CNSA', 2013, 'pouso', 44.1214, -19.5116],
-    ['change-4-landing-site', "Chang'e 4", 'CNSA', 2019, 'pouso', -45.46, 177.59],
-    ['change-5-landing-site', "Chang'e 5", 'CNSA', 2020, 'pouso', 43.0576, -51.9161]
+    ['luna-24-landing-site', 'Luna 24', 'URSS', 1976, 'pouso', 12.7145, 62.2097]
   ].map(function (m) {
     return {
       key: m[0], name: m[1], agency: m[2], year: m[3], kind: m[4], lat: m[5], lon: m[6],

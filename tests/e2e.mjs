@@ -336,16 +336,16 @@ async function main() {
     await evaluate(`MoonLanding.select('apollo-11-landing-site')`); await wait(3000);
     check('canvas centers on Apollo 11', await centered('apollo-11-landing-site'));
     await evaluate(`MoonLanding.setTab('three')`); await wait(1500);
-    await evaluate(`MoonLanding.select('change-4-landing-site')`); await wait(3000);
-    check("three.js centers on Chang'e 4 (far side)", await centered('change-4-landing-site'));
+    await evaluate(`MoonLanding.select('luna-9-landing-site')`); await wait(3000);
+    check('three.js centers on Luna 9', await centered('luna-9-landing-site'));
     await evaluate(`document.querySelector('#landing-group-list input[value="csv-1"]').click()`);
     await evaluate(`document.querySelector('#landing-group-list input[value="csv-10"]').click()`); await wait(3000);
     const framed = await evaluate(`(()=>{const v=MoonLanding.state.view,M=MoonLanding.math;return MoonLanding.state.groups.filter(g=>MoonLanding.state.checked.includes(g.key)).flatMap(g=>g.points).every(p=>{const s=M.latLonToScreen(p.lat,p.lon,v);return v.zoom===1||(s.visible&&Math.hypot(s.x,s.y)*0.46*v.zoom<=0.41)})})()`);
     check('multi-select groups 1+10 frames all 10 points and lists them', framed && (await evaluate(`document.querySelectorAll('#landing-points tbody tr').length`)) === 10);
-    await evaluate(`MoonLanding.select('change-4-landing-site')`); await wait(3000);
+    await evaluate(`MoonLanding.select('luna-9-landing-site')`); await wait(3000);
     check('three.js canvas drawn', await evaluate(`!!document.querySelector('[data-pane=three] canvas')`));
     await evaluate(`MoonLanding.setTab('iframe')`); await wait(300);
-    check('iframe gets mission URL', (await evaluate(`document.querySelector('[data-pane=iframe]').src`)).includes('change-4-landing-site'));
+    check('iframe gets mission URL', (await evaluate(`document.querySelector('[data-pane=iframe]').src`)).includes('luna-9-landing-site'));
     check('no horizontal page scroll', await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`));
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }

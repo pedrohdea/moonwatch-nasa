@@ -110,10 +110,8 @@ Stretch: máscara LOLA real (3–5 sítios), calendário de calor, panorama 360�
 | IM-2 Athena (Mons Mouton) | -84.79 | 29.20 | Wikipedia IM-2 |
 | Alvo IM-2 (LROC) | -84.78 | 29.13 | lroc.asu.edu/images/1401 |
 | Chandrayaan-3 | -69.373 | 32.319 | memória — conferir |
-| Chang'e-6 | -41.6 | -153.99 | memória — conferir |
 
 Artemis III (out/2024, 9 regiões ~15x15 km): Peak near Cabeus B, Haworth, Malapert Massif, Mons Mouton Plateau, Mons Mouton, Nobile Rim 1, Nobile Rim 2, de Gerlache Rim 2, Slater Plain. Coordenadas sem fonte ainda.
-Chang'e-7 (2026): borda de Shackleton, ponto exato não divulgado.
 
 ### Física (memória — validar com A2)
 - Obliquidade do eixo lunar ~1,54° => Sol máx ~1,5° + (90 - |lat|) no polo.

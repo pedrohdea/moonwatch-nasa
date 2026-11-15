@@ -166,12 +166,12 @@ Pedido do Pedro: ao selecionar uma missão, animação que leva até as coordena
 
 Decisões:
 - Nova seção `#pouso` ("Sítios de pouso e impacto") em `site/shared/landing.js`, logo após `#mission`; vale para as 3 portas. Link "Pousos" no menu.
-- 19 missões (Chang'e 4 veio duplicada na lista). Agência correta por missão (NASA, URSS, CNSA); Luna 2 e Ranger 7 são sítios de impacto. URL do Moon3DMap montada de slug + lat/long (`toFixed(4)`, igual aos links colados).
+- 16 missões. Agência correta por missão (NASA, URSS); Luna 2 e Ranger 7 são sítios de impacto. URL do Moon3DMap montada de slug + lat/long (`toFixed(4)`, igual aos links colados).
 - Seletor de missão único, compartilhado pelas 3 abas de renderização (troca de aba mantém a missão):
   - **Canvas**: globo ortográfico desenhado pixel a pixel em canvas 2D; zero dependência.
   - **three.js**: esfera WebGL com luz; `three.min.js` r158 (último UMD) em `site/shared/vendor/`, carregado só ao abrir a aba (não pesa nas páginas de gráfico).
   - **Moon3DMap**: iframe do moon3dmap.com com a URL da missão; `src` só é definido com a aba aberta (resto do site segue offline); link de fallback sempre visível.
-- Animação (Canvas e three.js usam o mesmo estado `{lat, lon, zoom}`): afasta, gira pelo caminho mais curto em longitude (ex.: Chang'e 4 → Luna 9 cruza 180°) e aproxima até o sítio, ~2,6 s, easing cúbico. `prefers-reduced-motion` pula direto. `requestAnimationFrame` só roda durante a animação.
+- Animação (Canvas e three.js usam o mesmo estado `{lat, lon, zoom}`): afasta, gira pelo caminho mais curto em longitude (ex.: um sítio perto de 177° E → Luna 9 cruza 180°) e aproxima até o sítio, ~2,6 s, easing cúbico. `prefers-reduced-motion` pula direto. `requestAnimationFrame` só roda durante a animação.
 - Textura: NASA SVS CGI Moon Kit, LROC color 2k (domínio público), convertida de TIF para JPG (378 KB) em `site/shared/vendor/moon-2k.jpg`. Crédito ao lado do globo.
 - Matemática pura (projeção ortográfica, caminho mais curto, interpolação, rotação do three.js) exportada via `module.exports` e testada em `tests/landing.test.mjs`. Gancho `window.MoonLanding` para o E2E.
 - Pontos fictícios (pedido do Pedro: "salvei um csv com pontos fictícios na Lua; mostrar na animação"): `dLandingSites.csv` movido de `docs/` para `site/shared/data/` (o site precisa servi-lo). 50 pontos, 10 grupos de 5 por `missionID`; os IDs não correspondem às 19 missões, então viram o grupo "Pontos fictícios (CSV)" no seletor.
@@ -207,3 +207,4 @@ Decisões:
 - Só Chart.js (porta 8003): versões ECharts e Plotly.js removidas a pedido.
 - "Linhas verticais" renomeadas para "Tempo de percurso". Nova linha "Partida" (branca, `?partida=`, campo de data no conjunto de viabilidade): Vk = Partida + tempo k; mover a Partida desloca todas as Vk mantendo os tempos (guardados mesmo se a linha bater na borda do eixo); arrastar/digitar uma Vk muda só o tempo dela. Padrão: tempos distribuídos entre a Partida e o fim do eixo.
 - Filtro de série também filtra o tempo de percurso (linha, chip) e os cartões de área.
+- 3 missões removidas da lista do globo, da documentação e dos testes a pedido (16 missões).

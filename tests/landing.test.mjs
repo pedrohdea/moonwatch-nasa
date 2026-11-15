@@ -7,9 +7,9 @@ import { readFileSync } from 'node:fs';
 const L = createRequire(import.meta.url)('../site/shared/landing.js');
 const close = (a, b, eps = 1e-6) => assert.ok(Math.abs(a - b) < eps, `${a} != ${b}`);
 
-test('19 unique missions with Moon3DMap URLs matching the pasted links', () => {
-  assert.equal(L.MISSIONS.length, 19);
-  assert.equal(new Set(L.MISSIONS.map((m) => m.key)).size, 19);
+test('16 unique missions with Moon3DMap URLs matching the pasted links', () => {
+  assert.equal(L.MISSIONS.length, 16);
+  assert.equal(new Set(L.MISSIONS.map((m) => m.key)).size, 16);
   const a11 = L.MISSIONS.find((m) => m.key === 'apollo-11-landing-site');
   assert.equal(a11.url, 'https://moon3dmap.com/pt/apollo-11-landing-site/?lat=0.7100&long=23.6300&layer=nasa-wac&auto3d=1');
   const luna2 = L.MISSIONS.find((m) => m.key === 'luna-2-impact-site');
@@ -17,7 +17,7 @@ test('19 unique missions with Moon3DMap URLs matching the pasted links', () => {
 });
 
 test('shortest longitude turn crosses 180° when shorter', () => {
-  close(L.shortestLon(177.59, -64.4), 295.6); // Chang'e 4 -> Luna 9: +118°, not -242°
+  close(L.shortestLon(177.59, -64.4), 295.6); // across the 180° meridian: +118°, not -242°
   close(L.shortestLon(10, 20), 20);
   close(L.shortestLon(-170, 170), -190);
 });
