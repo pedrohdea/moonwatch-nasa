@@ -38,3 +38,13 @@ test('viability series: 10 x 731 points following the point contract', () => {
     });
   }
 });
+
+test('generated data: total VIABILITY per site matches the raw CSV', () => {
+  const V = globalThis.MoonViability;
+  const raw = readFileSync(new URL('../docs/fLandingSites_viability.csv', import.meta.url), 'utf8').trim().split('\n').slice(1).map((l) => l.split(','));
+  assert.equal(Object.keys(V.siteTotals).length, 50);
+  for (const id of ['1', '27', '50']) {
+    const sum = raw.filter((c) => c[0] === id).reduce((a, c) => a + Number(c[2]), 0);
+    assert.equal(V.siteTotals[id], Math.round(sum * 100) / 100, `site ${id}`);
+  }
+});

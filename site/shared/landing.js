@@ -392,6 +392,13 @@
   }
 
   // Multi-select of CSV groups: highlights them, lists their points and autoscales the view to frame all of them.
+  // Total VIABILITY of a site over every day of docs/fLandingSites_viability.csv (null when not loaded).
+  var sumFmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
+  function siteTotal(id) {
+    var t = root.MoonViability && root.MoonViability.siteTotals ? root.MoonViability.siteTotals[id] : undefined;
+    return t === undefined ? null : t;
+  }
+
   function setGroups(keys) {
     state.checked = state.groups.map(function (g) { return g.key; }).filter(function (k) { return keys.indexOf(k) >= 0; });
     groupList.querySelectorAll('input').forEach(function (cb) { cb.checked = state.checked.indexOf(cb.value) >= 0; });
@@ -401,10 +408,11 @@
     doc.querySelector('.landing-points-bar').hidden = !pts.length;
     doc.querySelector('.landing-points-bar .table-bar-title').textContent = 'Sítios selecionados (' + pts.length + ')';
     pointsBox.innerHTML = pts.length
-      ? '<table class="data"><thead><tr><th>ID</th><th>Grupo</th><th>Nome</th><th>Latitude</th><th>Longitude</th><th>PRSID</th><th>NEARESTCOLD</th></tr></thead><tbody>' +
+      ? '<table class="data"><thead><tr><th>ID</th><th>Grupo</th><th>Nome</th><th>Latitude</th><th>Longitude</th><th>PRSID</th><th>NEARESTCOLD</th><th class="num">Soma de viabilidade</th></tr></thead><tbody>' +
         pts.map(function (r) {
+          var total = siteTotal(r.id);
           return '<tr><td>' + r.id + '</td><td>' + r.group + '</td><td class="mono">' + escapeHtml(r.name) + '</td><td>' + nf.format(r.lat) + '</td><td>' + nf.format(r.lon) +
-            '</td><td>' + r.prsId + '</td><td>' + nf.format(r.nearestCold) + '</td></tr>';
+            '</td><td>' + r.prsId + '</td><td>' + nf.format(r.nearestCold) + '</td><td class="num mono">' + (total === null ? '—' : sumFmt.format(total)) + '</td></tr>';
         }).join('') + '</tbody></table>'
       : '';
     if (!pts.length) { if (!state.mission) { info.innerHTML = ''; state.url = null; animateTo({ lat: 0, lon: 0, zoom: 1 }); } else draw(); return; }
@@ -412,7 +420,10 @@
     select.value = '';
     var f = frameSites(pts);
     state.url = mapLink(f.lat, f.lon);
-    info.innerHTML = '<strong>' + pts.length + ' pontos fictícios</strong> · ' + state.checked.length + ' grupo(s) · centro <span class="mono">' + coords(f) +
+    var sum = pts.reduce(function (acc, r) { var t = siteTotal(r.id); return t === null ? acc : acc + t; }, 0);
+    info.innerHTML = '<strong>' + pts.length + ' pontos fictícios</strong> · ' + state.checked.length + ' grupo(s)' +
+      (root.MoonViability && root.MoonViability.siteTotals ? ' · <span class="landing-sum">soma de viabilidade <strong>' + sumFmt.format(sum) + '</strong></span>' : '') +
+      ' · centro <span class="mono">' + coords(f) +
       '</span> · <a href="' + state.url + '" target="_blank" rel="noopener">Ver no Moon3DMap</a>';
     animateTo(f);
   }

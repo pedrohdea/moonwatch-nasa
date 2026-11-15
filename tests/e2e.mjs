@@ -269,6 +269,9 @@ async function main() {
     await evaluate(`MoonCore.setFilter(2)`); await wait(800);
     check('filter Grupo 3 selects only group 3 on the globe', (await evaluate(`JSON.stringify(MoonLanding.state.checked)`)) === '["csv-3"]' &&
       (await evaluate(`document.querySelectorAll('#landing-points tbody tr').length`)) === 5);
+    const wantSum = await evaluate(`new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(MoonSeries.all[2].sites.reduce((a,id)=>a+MoonViability.siteTotals[id],0))`);
+    check('globe shows the viability sum of the selected sites', (await evaluate(`document.querySelector('.landing-sum strong')?.textContent`)) === wantSum &&
+      (await evaluate(`document.querySelector('#landing-points thead').textContent.includes('Soma de viabilidade')`)), wantSum);
     await evaluate(`MoonCore.setFilter(null)`); await wait(500);
     check('clearing the filter selects all visible groups again', (await checkedCount()) === 10);
     await evaluate(`(b=>{b.checked=false;b.dispatchEvent(new Event('change'))})(document.getElementById('all-series'))`); await wait(500);
