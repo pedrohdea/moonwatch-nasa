@@ -4,11 +4,6 @@
 
   var doc = root.document;
   var lib = doc.body.getAttribute('data-lib') || 'Gráfico';
-  var VARIANTS = [
-    { name: 'ECharts', port: 8001 },
-    { name: 'Plotly.js', port: 8002 },
-    { name: 'Chart.js', port: 8003 }
-  ];
   var data = root.MoonSeries.dataset;
   var total = root.MoonSeries.all.reduce(function (n, s) { return n + s.points.length; }, 0);
   var fmt = new Intl.NumberFormat('pt-BR');
@@ -48,26 +43,12 @@
       ': uma série por grupo (missionID) = média diária dos 5 sítios. Eixo x em dias; a data está na tabela. Assertividade aleatória (teste de usabilidade).</p>'
     : '<p class="dataset-info">20 tipos de curvas matemáticas, dados fictícios: 21 pontos medidos por curva (x de 0 a 10), com assertividade aleatória: quanto menor, mais longe o ponto fica da curva teórica.</p>';
 
-  var sharedQuery = (function () {
-    var q = new URLSearchParams(root.location.search);
-    q.set('seed', root.MoonSeries.seed);
-    return '?' + q.toString();
-  })();
-
-  var variantLinks = VARIANTS.map(function (v) {
-    var protocol = root.location.protocol === 'https:' ? 'https:' : 'http:'; // file:// still links to the local servers
-    var href = protocol + '//' + (root.location.hostname || 'localhost') + ':' + v.port + '/' + sharedQuery; // keep dataset, viz mode and random seed across variants
-    var current = v.name === lib ? ' aria-current="page"' : '';
-    return '<a class="variant" href="' + href + '"' + current + '>' + v.name + '</a>';
-  }).join('');
-
   doc.body.insertAdjacentHTML('afterbegin',
     '<header class="topbar">' +
       '<a class="brand" href="#home">Moon<span>Watch</span></a>' +
       '<nav class="nav" aria-label="Seções">' +
         '<a href="#home">Home</a><a href="#track">Track</a><a href="#mission">Missão</a><a href="#about">About</a>' +
       '</nav>' +
-      '<div class="variants" aria-label="Versões do gráfico">' + variantLinks + '</div>' +
       '<div class="variants viz" aria-label="Visualização da assertividade"><span class="variants-label">Assertividade:</span>' + vizLinks + '</div>' +
     '</header>' +
     '<main>' +
@@ -148,7 +129,7 @@
             '<li><strong>Correlações espúrias (reais)</strong>: quatro exemplos de <a href="https://www.tylervigen.com/spurious-correlations" target="_blank" rel="noopener">Spurious Correlations</a>, de Tyler Vigen (CC BY 4.0). Correlação alta não significa causa.</li>' +
           '</ul>' +
           '<p>O gráfico é desenhado a partir dos pontos da tabela. Cada ponto tem uma <strong>assertividade</strong> (0–100%): neste protótipo ela é <strong>aleatória</strong> (sorteada a cada carga; <code>?seed=N</code> repete um sorteio). Nas curvas, o ponto fica afastado da curva teórica na proporção da assertividade: 100% em cima da curva, 0% a 2,5 unidades dela. Nas correlações espúrias os valores são reais e só a assertividade é sorteada.</p>' +
-          '<p>Existem três versões da mesma página, cada uma com uma biblioteca de gráficos diferente: ' + variantLinks + '. Tabela, filtro e layout são os mesmos nas três.</p>' +
+          '<p>Gráficos com <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a> 4.4.1, sem dependência de rede (biblioteca local).</p>' +
         '</div>' +
       '</section>' +
     '</main>' +

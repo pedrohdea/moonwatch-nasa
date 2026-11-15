@@ -8,18 +8,12 @@ NASA’s Commercial Lunar Payload Services (CLPS) program and other lunar missio
 
 ## Rodar local
 
-Três versões do mesmo site, cada uma com uma biblioteca de gráficos diferente:
-
-| Versão | Porta | Biblioteca |
-|---|---|---|
-| ECharts | http://localhost:8001/ | Apache ECharts 5.6.0 |
-| Plotly.js | http://localhost:8002/ | plotly.js-basic 2.35.2 |
-| Chart.js | http://localhost:8003/ | Chart.js 4.4.1 + chartjs-plugin-zoom 2.0.1 |
+Site em http://localhost:8003/, gráficos com Chart.js 4.4.1 + chartjs-plugin-zoom 2.0.1 (bibliotecas locais).
 
 ```bash
-./scripts/serve.sh   # sobe as 3 portas (Node, sem cache do navegador); Ctrl+C para todas
+./scripts/serve.sh   # sobe o site na porta 8003 (Node, sem cache do navegador); Ctrl+C para
 node --test          # testes do núcleo (tests/*.test.mjs)
-# E2E nas 3 versões (clique na linha, área vazia, arraste, scroll infinito):
+# E2E (clique na linha, área vazia, arrastes, legenda, scroll infinito):
 google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir=/tmp/mw-e2e about:blank &
 node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 ```
@@ -38,7 +32,7 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - O gráfico é desenhado a partir dos pontos da tabela (retas ligando os pontos). Cada ponto tem **assertividade** (0–100%), mostrada na tabela e no tooltip:
   - curvas: proximidade do ponto medido à curva teórica (ruído fixo por semente, 75–100%);
   - aleatória neste protótipo (5–100%, novo sorteio a cada carga; `?seed=N` repete). O ponto fica a `(1 − acc/100)·2,5` da referência: 100% em cima dela.
-- Versões da visualização da assertividade no cabeçalho (`?viz=<modo>`), nas 3 bibliotecas:
+- Versões da visualização da assertividade no cabeçalho (`?viz=<modo>`):
   - `cor` — cor do marcador (vermelho → amarelo → verde);
   - `faixa` (padrão) — faixa de tolerância em volta da referência;
   - `rotulo` — `NN%` escrito em cada ponto.
@@ -46,7 +40,7 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - E2E: `VIZ=faixa,cor DATASETS=curvas node tests/e2e.mjs` limita modos e conjuntos.
 - `viabilidade` — viabilidade fictícia dos 50 sítios (`docs/fLandingSites_viability.csv`), uma série por grupo (média diária dos 5 sítios), 731 dias. Eixo x em dias (data na tabela). Se o CSV mudar: `node scripts/build-viability.mjs`.
 - Seção `#pouso` (menu "Pousos"): escolha uma missão (19 sítios de pouso/impacto) ou marque grupos de pontos fictícios (`site/shared/data/dLandingSites.csv`, múltipla escolha) e o globo gira e enquadra todos os pontos (autoscale). Três versões em abas: Canvas (sem dependência), three.js (carregado só ao abrir a aba) e Moon3DMap (iframe, precisa de internet). Textura NASA SVS CGI Moon Kit (LROC, domínio público).
-- Bibliotecas ficam em `site/<versão>/vendor/`; funciona sem internet (só as fontes do Google caem para fontes do sistema).
+- Bibliotecas ficam em `site/chartjs/vendor/`; funciona sem internet (só as fontes do Google caem para fontes do sistema).
 
 ### Banco de dados (SQLite)
 
@@ -64,7 +58,7 @@ Esquema estrela, montado com o `node:sqlite` nativo do Node 22 (sem dependência
 
 O build valida cabeçalhos, números, datas e chaves estrangeiras, e carrega tudo numa transação (se algo falhar, não sobra banco pela metade).
 
-Estrutura: tudo que não é gráfico (dados, filtro, tabela, layout, CSS) fica em `site/shared/` e vale para as 3 versões. Cada versão só tem seu `chart.js` (adaptador da biblioteca). Plano e decisões: [`docs/PLAN.md`](docs/PLAN.md).
+Estrutura: tudo que não é gráfico (dados, filtro, tabela, linhas-guia, layout, CSS) fica em `site/shared/`; `site/chartjs/chart.js` é o adaptador do Chart.js. Plano e decisões: [`docs/PLAN.md`](docs/PLAN.md).
 
 About the Challenge
 https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/

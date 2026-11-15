@@ -1,6 +1,6 @@
 // E2E check of the 3 variants via Chrome DevTools Protocol (Node 22 global WebSocket).
 // Usage: ./scripts/serve.sh &  google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir=/tmp/mw-e2e about:blank &  node tests/e2e.mjs   (W=390 for mobile width)
-const PORTS = { echarts: 8001, plotly: 8002, chartjs: 8003 };
+const PORTS = { chartjs: 8003 };
 const WIDTH = Number(process.env.W || 1280);
 const DATASETS = (process.env.DATASETS || 'curvas,sarah').split(',');
 const SEED = process.env.SEED || 424242; // fixed random accuracy so runs are reproducible
@@ -8,17 +8,13 @@ const VIZS = (process.env.VIZ || 'cor,faixa,rotulo').split(',');
 
 // In-page helpers working on MoonSeries data (normalized to the dataset ranges), so any dataset can be tested.
 // Handle (arrow) center = right end of the plot area + HANDLE_DX px. Filled in from each adapter's report.
-const HANDLE_DX = { echarts: 8, plotly: 5, chartjs: 6 };
+const HANDLE_DX = { chartjs: 6 };
 // Toggle series k through each library's legend path (Chart.js needs a real click on the legend item).
 const LEGEND_TOGGLE = {
-  echarts: `(k)=>{const el=document.getElementById('chart');const c=echarts.getInstanceByDom(el)||echarts.getInstanceByDom(el.firstElementChild);c.dispatchAction({type:'legendToggleSelect',name:MoonSeries.all[k].name});return null;}`,
-  plotly: `(k)=>{const gd=document.querySelector('.js-plotly-plot');Plotly.restyle(gd,{visible:gd._fullData[k].visible===true?'legendonly':true},[k]);return null;}`,
   chartjs: `(k)=>{const cv=document.querySelector('#chart canvas');const c=Chart.getChart(cv);const b=c.legend.legendHitBoxes[c.legend.legendItems.findIndex(it=>it.datasetIndex===k)];const r=cv.getBoundingClientRect();return [r.left+b.left+b.width/2,r.top+b.top+b.height/2];}`,
 };
 // Visible x range per library (to prove dragging the line did not zoom).
 const XVIEW = {
-  echarts: `()=>{const el=document.getElementById('chart');const c=echarts.getInstanceByDom(el)||echarts.getInstanceByDom(el.firstElementChild);const r=c.getModel().getComponent('grid').coordinateSystem.getRect();return [c.convertFromPixel({xAxisIndex:0},r.x),c.convertFromPixel({xAxisIndex:0},r.x+r.width)];}`,
-  plotly: `()=>document.querySelector('.js-plotly-plot')._fullLayout.xaxis.range.slice()`,
   chartjs: `()=>{const c=Chart.getChart(document.querySelector('#chart canvas'));return [c.scales.x.min,c.scales.x.max];}`,
 };
 
@@ -31,8 +27,6 @@ const EMPTY = `()=>{${NORM}const pts=MoonSeries.all.flatMap(dense);let best=null
 
 // Returns page-relative pixel of data point (x, y) for series s, using each lib's API.
 const PIXEL = {
-  echarts: `(s,x,y)=>{const el=document.getElementById('chart');const c=echarts.getInstanceByDom(el)||echarts.getInstanceByDom(el.firstElementChild);const p=c.convertToPixel({seriesIndex:s},[x,y]);const r=c.getDom().getBoundingClientRect();return [r.left+p[0],r.top+p[1]];}`,
-  plotly: `(s,x,y)=>{const gd=document.querySelector('.js-plotly-plot');const L=gd._fullLayout;const r=gd.getBoundingClientRect();return [r.left+L._size.l+L.xaxis.l2p(x),r.top+L._size.t+L.yaxis.l2p(y)];}`,
   chartjs: `(s,x,y)=>{const cv=document.querySelector('#chart canvas');const c=Chart.getChart(cv);const r=cv.getBoundingClientRect();return [r.left+c.scales.x.getPixelForValue(x),r.top+c.scales.y.getPixelForValue(y)];}`,
 };
 
