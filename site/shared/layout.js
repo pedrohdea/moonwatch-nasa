@@ -274,7 +274,8 @@
   var areaFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function renderAreas() {
     // Sorted best -> worst (largest filled area first), refreshed on every line move.
-    var items = root.MoonCore.areas().slice().sort(function (a, b) { return b.area - a.area; });
+    // Cards with zero viable area are hidden; the rest sorted best -> worst.
+    var items = root.MoonCore.areas().filter(function (a) { return a.area > 0; }).sort(function (a, b) { return b.area - a.area; });
     // Largest filled area is highlighted in green (ties: all of them); nothing when every area is 0.
     var maxArea = items.reduce(function (m, a) { return Math.max(m, a.area); }, 0);
     areasEl.innerHTML = '<span class="fill-areas-label">Viable area <span class="unit">(' + (data.xDate ? 'days × mean viability' : data.xLabel + ' × ' + data.yLabel) + ')</span></span>' +
@@ -284,7 +285,7 @@
         return '<span class="fill-area' + (isMax ? ' is-max' : '') + '" title="' + escapeHtml(a.name + (objectives ? ' — ' + objectives : '') + (isMax ? ' · largest area' : '')) + '" style="--area-color:' + a.color + '">' +
           '<span><span class="vline-tag" style="color:' + a.color + '">' + a.label + '</span> <span class="fill-area-name">' + a.name + '</span></span>' +
           '<strong>' + areaFmt.format(a.area) + '</strong></span>';
-      }).join('') || '<span class="vlines-empty">no transit time</span>');
+      }).join('') || '<span class="vlines-empty">no viable area</span>');
   }
   vl.onChange(renderAreas);
   hl.onChange(renderAreas);

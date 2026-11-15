@@ -217,6 +217,7 @@ async function main() {
     const kAfter = await evaluate(`MoonCore.deadline.list()[0].value`);
     check('drag Deadline moves it', Math.abs(kAfter - kTarget) <= Math.max(span * 0.02, 1), `${kAfter} (want ${kTarget})`);
     check('deadline cuts the viable areas', (await totalArea()) <= totalBefore + 1e-9 && (await evaluate(`MoonCore.fills().every(f=>f.polygons.every(p=>p.every(pt=>pt[0]<=MoonCore.deadline.list()[0].value+1e-9)))`)));
+    check('zero viable areas are hidden', await evaluate(`document.querySelectorAll('#fill-areas .fill-area').length===MoonCore.areas().filter(a=>a.area>0).length && ![...document.querySelectorAll('#fill-areas .fill-area strong')].some(e=>e.textContent==='0.00')`));
     check('deadline chip follows the drag', await evaluate(`!!document.querySelector('#deadline-list .vline-chip input')`));
     await evaluate(`MoonCore.deadline.set(MoonCore.deadline.list()[0].id, MoonSeries.dataset.xRange[1], 'input')`); await wait(300);
     // Legend toggle: hiding series 0 removes its vertical line, chip and area card; showing it brings them back.
@@ -227,18 +228,20 @@ async function main() {
     };
     const shownChips = () => evaluate(`[...document.querySelectorAll('#vlines-list .vline-chip')].filter(e=>getComputedStyle(e).display!=='none').length`);
     const cards = () => evaluate(`document.querySelectorAll('#fill-areas .fill-area').length`);
+    // Cards exist only for visible series with a viable area > 0.
+    const wantCards = () => evaluate(`MoonCore.areas().filter(a=>a.area>0).length`);
     await toggle();
     check('legend hide: series 0 reported hidden', (await evaluate(`MoonCore.isVisible(0)`)) === false);
-    check('legend hide: one vertical line less', (await shownChips()) === nSeries - 1 && (await cards()) === nSeries - 1, `${await shownChips()} chips, ${await cards()} cards`);
+    check('legend hide: one vertical line less', (await shownChips()) === nSeries - 1 && (await cards()) === (await wantCards()), `${await shownChips()} chips, ${await cards()} cards`);
     await toggle();
-    check('legend show: lines back', (await evaluate(`MoonCore.isVisible(0)`)) === true && (await shownChips()) === nSeries && (await cards()) === nSeries);
+    check('legend show: lines back', (await evaluate(`MoonCore.isVisible(0)`)) === true && (await shownChips()) === nSeries && (await cards()) === (await wantCards()));
     // "Todos os grupos" checkbox: unchecking hides every series (chart, travel-time chips, cards); checking shows all.
     const setAll = (v) => evaluate(`(b=>{b.checked=${v};b.dispatchEvent(new Event('change'))})(document.getElementById('all-series'))`);
     await setAll(false); await wait(400);
     check('uncheck all: nothing visible', (await evaluate(`MoonCore.visibleCount()`)) === 0 && (await shownChips()) === 0 && (await cards()) === 0 && (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === 0);
     await setAll(true); await wait(400);
     check('check all: everything back', (await evaluate(`MoonCore.visibleCount()`)) === nSeries && (await shownChips()) === nSeries && (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === nSeries);
-    const areasMatch = `(()=>{const f=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().slice().sort((a,b)=>b.area-a.area).map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
+    const areasMatch = `(()=>{const f=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().filter(a=>a.area>0).sort((a,b)=>b.area-a.area).map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
     check('filled areas shown per vertical line', await evaluate(areasMatch));
     check('largest area card is green', await evaluate(`(()=>{const max=Math.max(...MoonCore.areas().map(a=>a.area));const g=[...document.querySelectorAll('#fill-areas .fill-area.is-max')];const f=new Intl.NumberFormat('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});return max<=0?g.length===0:g.length>=1&&g.every(e=>e.querySelector('strong').textContent===f.format(max))&&getComputedStyle(g[0].querySelector('strong')).color==='rgb(61, 220, 132)';})()`));
     const areaBefore = await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`);
