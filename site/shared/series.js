@@ -238,8 +238,6 @@
 
   // Ways to draw the point-to-curve accuracy; chosen with ?viz=<key> (header pills).
   var VIZ_MODES = [
-    { key: 'tamanho', label: 'Tamanho', help: 'Tamanho do marcador proporcional à assertividade.' },
-    { key: 'desvio', label: 'Desvio', help: 'Referência tracejada e um traço de cada ponto até ela.' },
     { key: 'cor', label: 'Cor', help: 'Cor do marcador pela assertividade.' },
     { key: 'faixa', label: 'Faixa', help: 'Faixa de tolerância em volta da referência; ponto fora da faixa = assertividade baixa.' },
     { key: 'rotulo', label: 'Rótulo', help: 'Percentual de assertividade escrito em cada ponto.' }
@@ -276,7 +274,7 @@
   var active = findDataset(params.get('dataset'));
   var seed = Number(params.get('seed')) || (root.document ? Date.now() % 2147483647 : SEED);
   var all = active.build(prng(seed));
-  var viz = VIZ_MODES.filter(function (m) { return m.key === params.get('viz'); })[0] || VIZ_MODES[1];
+  var viz = VIZ_MODES.filter(function (m) { return m.key === params.get('viz'); })[0] || VIZ_MODES[1]; // default: faixa
   var domain = [0, 100];
 
   var api = {
@@ -291,7 +289,6 @@
     accuracyColor: makeAccuracyColor(domain),
     focus: focus,
     seed: seed,
-    markerSize: function (acc) { return 3 + (11 * acc) / 100; }, // px, shared by the 3 libraries
     load: function (key) { return findDataset(key).build(prng(seed)); },
     filterRows: filterRows
   };

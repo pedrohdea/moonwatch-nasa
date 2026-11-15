@@ -113,13 +113,11 @@ test('reference value per point and reference curve', () => {
 });
 
 test('viz modes, accuracy colors and focus', () => {
-  assert.deepEqual(MoonSeries.vizModes.map((m) => m.key), ['tamanho', 'desvio', 'cor', 'faixa', 'rotulo']);
-  assert.equal(MoonSeries.viz, 'desvio');
+  assert.deepEqual(MoonSeries.vizModes.map((m) => m.key), ['cor', 'faixa', 'rotulo']);
+  assert.equal(MoonSeries.viz, 'faixa');
   assert.equal(MoonSeries.accuracyColor(100), '#3DDC84');
   assert.equal(MoonSeries.accuracyColor(0), '#FF6A3D');
   assert.equal(MoonSeries.accuracyColor(50), '#EAFE07');
-  assert.equal(MoonSeries.markerSize(0), 3);
-  assert.equal(MoonSeries.markerSize(100), 14);
   assert.match(MoonSeries.accuracyColor(90), /^#[0-9A-F]{6}$/);
   assert.deepEqual(MoonSeries.focus(3), [3]);
   assert.deepEqual(MoonSeries.focus(null), [], 'decorations only on the selected series');

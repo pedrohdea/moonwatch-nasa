@@ -4,7 +4,7 @@ const PORTS = { echarts: 8001, plotly: 8002, chartjs: 8003 };
 const WIDTH = Number(process.env.W || 1280);
 const DATASETS = (process.env.DATASETS || 'curvas,sarah').split(',');
 const SEED = process.env.SEED || 424242; // fixed random accuracy so runs are reproducible
-const VIZS = (process.env.VIZ || 'tamanho,desvio,cor,faixa,rotulo').split(',');
+const VIZS = (process.env.VIZ || 'cor,faixa,rotulo').split(',');
 
 // In-page helpers working on MoonSeries data (normalized to the dataset ranges), so any dataset can be tested.
 // Handle (arrow) center = right end of the plot area + HANDLE_DX px. Filled in from each adapter's report.

@@ -196,3 +196,11 @@ Decisões:
 - Eixo x = índice do dia (0 = 01/01/2024), porque mostrar data no eixo exige mexer nos 3 `chart.js`, que outra sessão estava editando (preenchimento entre curva e linhas). A tabela mostra Data + Dia + Viabilidade. **Pendente:** formatar o eixo x e o tooltip como data nos 3 adaptadores (`MoonSeries.dataset.xDate(day)` já existe).
 - Assertividade aleatória como nas correlações espúrias; referência a `(1 − acc/100)·50` (desvio máximo escalado de 0–10 para 0–200); faixa ±25.
 - Teste: `tests/viability.test.mjs` (média recalculada do CSV bruto; contrato do ponto).
+
+## Atualização: linhas-guia, áreas e simplificação (2026-11-15)
+
+- Linhas verticais: uma por série (padrão e máximo), cor da série, seguem a legenda (série escondida = sem linha, sem preenchimento, sem cartão); trocar de conjunto de dados recomeça do padrão.
+- Linha horizontal única "Viabilidade mínima" (amarela, `?minima=`), comum a todas as séries; preenchimento de cada série = acima dela e à direita da sua vertical; cartões grandes com a área (shoelace) por série.
+- Só as setinhas arrastam (corpos das linhas roubavam cliques nas curvas); gráfico só com linhas, sem pontos.
+- Gráfico logo abaixo do seletor de dados; controles e tabela embaixo.
+- Modos de assertividade "Tamanho" e "Desvio" removidos a pedido; restam Cor, Faixa (padrão) e Rótulo.

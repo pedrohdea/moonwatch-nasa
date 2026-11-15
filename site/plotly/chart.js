@@ -40,21 +40,17 @@
     var S = root.MoonSeries;
     var viz = S.viz;
     var mainCount = series.length;
-    var markerSize = { tamanho: null, cor: 7 }[viz] || 6;
 
     var traces = series.map(function (s) {
       var t = {
         type: 'scatter',
-        mode: (viz === 'tamanho' || viz === 'cor') ? 'lines+markers' : 'lines', // other modes: line only, no point markers
+        mode: viz === 'cor' ? 'lines+markers' : 'lines', // lines only; 'cor' needs markers to show accuracy
         name: s.name,
         x: s.points.map(function (p) { return p[0]; }),
         y: s.points.map(function (p) { return p[1]; }),
         // Straight segments between the table points.
         line: { color: s.color, width: 2, shape: 'linear' },
-        marker: {
-          color: s.color,
-          size: s.points.map(function (p) { return markerSize || MoonSeries.markerSize(p[3]); })
-        },
+        marker: { color: s.color, size: 7 },
         // [raw value, accuracy, reference, deviation]
         customdata: s.points.map(function (p) { return [p[2], p[3], p[4], p[1] - p[4]]; }),
         opacity: 1
@@ -89,19 +85,11 @@
             hoverinfo: 'skip', showlegend: false
           });
         }
-        if (viz === 'desvio' || viz === 'faixa') {
+        if (viz === 'faixa') {
           extraTraces.push({
             type: 'scatter', mode: 'lines', x: ref.map(function (r) { return r[0]; }), y: ref.map(function (r) { return r[1]; }),
             line: { color: s.color, width: 1.5, dash: 'dash' }, opacity: 0.8,
             hoverinfo: 'skip', showlegend: false
-          });
-        }
-        if (viz === 'desvio') {
-          s.points.forEach(function (p) {
-            shapes.push({
-              type: 'line', xref: 'x', yref: 'y', x0: p[0], x1: p[0], y0: p[1], y1: p[4],
-              line: { color: S.accuracyColor(p[3]), width: 2 }, layer: 'above'
-            });
           });
         }
         if (viz === 'rotulo') {
@@ -208,7 +196,7 @@
         'line.width': series.map(function (_, i) { return active && i === index ? 4 : 2; }),
         opacity: series.map(function (_, i) { return !active || i === index ? 1 : 0.15; })
       }, mainIdx);
-      if (viz === 'tamanho' || viz === 'cor') return Plotly.relayout(container, { shapes: allShapes() });
+      if (viz === 'cor') return Plotly.relayout(container, { shapes: allShapes() });
       var d = decorations(S.focus(active ? index : null));
       // Serialized so quick filter changes cannot interleave trace deletion and insertion.
       queue = queue.then(function () {

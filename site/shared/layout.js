@@ -158,7 +158,7 @@
   // Modes drawn only on focused series tell the user to pick one when nothing is focused.
   var hint = doc.getElementById('viz-hint');
   function updateHint(index) {
-    var needsFocus = ['desvio', 'faixa', 'rotulo'].indexOf(root.MoonSeries.viz) >= 0;
+    var needsFocus = ['faixa', 'rotulo'].indexOf(root.MoonSeries.viz) >= 0;
     hint.textContent = needsFocus && root.MoonSeries.focus(index).length === 0 ? 'Clique numa linha para ver.' : '';
   }
   root.MoonCore.onFilterChange(updateHint);

@@ -173,7 +173,7 @@
     }
 
     function drawDecor(c, below) {
-      if (viz === 'tamanho' || viz === 'cor') return;
+      if (viz === 'cor') return;
       var ctx = c.ctx, xs = c.scales.x, ys = c.scales.y, a = c.chartArea;
       ctx.save();
       ctx.beginPath();
@@ -191,7 +191,7 @@
           ctx.fillStyle = withAlpha(color, 0.15);
           ctx.fill();
         }
-        if (below && (viz === 'desvio' || viz === 'faixa')) {
+        if (below && viz === 'faixa') {
           ctx.beginPath();
           ref.forEach(function (p, k) { ctx[k ? 'lineTo' : 'moveTo'](p.x, p.y); });
           ctx.setLineDash([6, 4]);
@@ -204,15 +204,7 @@
         var pts = c.getDatasetMeta(i).data;
         sr.points.forEach(function (p, k) {
           var el = pts[k];
-          if (viz === 'desvio') {
-            ctx.beginPath();
-            ctx.moveTo(el.x, el.y);
-            ctx.lineTo(el.x, ys.getPixelForValue(p[4]));
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = S.accuracyColor(p[3]);
-            ctx.stroke();
-          } else if (viz === 'rotulo') {
-            ctx.font = "11px 'Fira Code', monospace";
+          if (viz === 'rotulo') {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
             ctx.font = "bold 11px 'Fira Code', monospace";
@@ -236,8 +228,8 @@
             normalized: true,
             tension: 0, // straight segments between table points
             showLine: true,
-            pointRadius: function (ctx) { return viz === 'tamanho' ? MoonSeries.markerSize(ctx.raw.acc) / 2 : viz === 'cor' ? 3.5 : 0; }, // tamanho: bigger = more accurate
-            pointHoverRadius: function (ctx) { return viz === 'tamanho' ? MoonSeries.markerSize(ctx.raw.acc) / 2 + 1.5 : 4; },
+            pointRadius: viz === 'cor' ? 3.5 : 0, // lines only; 'cor' needs markers to show accuracy
+            pointHoverRadius: 4,
             pointBackgroundColor: viz === 'cor' ? colorFill(i) : s.color,
             pointBorderColor: s.color,
             borderWidth: 2,

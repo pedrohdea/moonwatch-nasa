@@ -39,10 +39,6 @@
     var LABEL_RICH = {};
     for (var b = 0; b <= 10; b++) LABEL_RICH['a' + b] = { color: MoonSeries.accuracyColor(b * 10), fontFamily: 'Fira Code, monospace', fontSize: 11, fontWeight: 'bold' };
 
-    function symbolSize(value) {
-      if (viz === 'tamanho') return MoonSeries.markerSize(value[3]);
-      return viz === 'cor' ? 7 : 6;
-    }
 
     // Main series (ids s0..sn-1, always first so seriesIndex == series index).
     function mainSeries(active, focus, withData) {
@@ -61,7 +57,7 @@
         };
         if (withData) {
           o.data = s.points; o.dimensions = ['x', 'y', 'raw', 'acc', 'ref'];
-          o.encode = { x: 'x', y: 'y' }; o.showSymbol = viz === 'tamanho' || viz === 'cor'; o.symbolSize = symbolSize;
+          o.encode = { x: 'x', y: 'y' }; o.showSymbol = viz === 'cor'; o.symbolSize = 7; // lines only; 'cor' needs markers to show accuracy
           o.triggerLineEvent = true; o.smooth = false; o.emphasis = { disabled: true };
         }
         return o;
@@ -72,11 +68,10 @@
     function decorations(focus) {
       var out = [];
       var base = { silent: true, tooltip: { show: false }, legendHoverLink: false, z: 1 };
-      if (viz === 'desvio' || viz === 'faixa') {
+      if (viz === 'faixa') {
         focus.forEach(function (i) {
           var s = series[i];
-          if (viz === 'faixa') {
-            out.push(Object.assign({}, base, {
+          out.push(Object.assign({}, base, {
               id: 'dband' + i, type: 'custom', coordinateSystem: 'cartesian2d', clip: true,
               data: [[s.reference[0][0], s.reference[0][1]]],
               renderItem: function (params, api) {
@@ -85,25 +80,10 @@
                 return { type: 'polygon', shape: { points: up.concat(lo) }, style: { fill: hex(s.color, 0.15) }, silent: true };
               }
             }));
-          }
           out.push(Object.assign({}, base, {
             id: 'dref' + i, type: 'line', data: s.reference, showSymbol: false, smooth: false,
             lineStyle: { type: 'dashed', width: 1.5, opacity: 0.8, color: s.color }, itemStyle: { color: s.color }
           }));
-          if (viz === 'desvio') {
-            out.push(Object.assign({}, base, {
-              id: 'dseg' + i, type: 'custom', coordinateSystem: 'cartesian2d', clip: true,
-              data: s.points, dimensions: ['x', 'y', 'raw', 'acc', 'ref'], encode: { x: 0, y: 1 },
-              renderItem: function (params, api) {
-                var a = api.coord([api.value(0), api.value(1)]);
-                var b = api.coord([api.value(0), api.value(4)]);
-                return {
-                  type: 'line', shape: { x1: a[0], y1: a[1], x2: b[0], y2: b[1] },
-                  style: { stroke: MS.accuracyColor(api.value(3)), lineWidth: 2 }, silent: true
-                };
-              }
-            }));
-          }
         });
       }
       return out;
