@@ -237,9 +237,12 @@
   var areaFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function renderAreas() {
     var items = root.MoonCore.areas();
+    // Largest filled area is highlighted in green (ties: all of them); nothing when every area is 0.
+    var maxArea = items.reduce(function (m, a) { return Math.max(m, a.area); }, 0);
     areasEl.innerHTML = '<span class="fill-areas-label">Área preenchida <span class="unit">(' + (data.xDate ? 'dias' : data.xLabel) + ' × ' + data.yLabel + ')</span></span>' +
       (items.map(function (a) {
-        return '<span class="fill-area" title="' + a.name + '" style="--area-color:' + a.color + '">' +
+        var isMax = maxArea > 0 && a.area === maxArea;
+        return '<span class="fill-area' + (isMax ? ' is-max' : '') + '" title="' + a.name + (isMax ? ' · maior área' : '') + '" style="--area-color:' + a.color + '">' +
           '<span><span class="vline-tag" style="color:' + a.color + '">' + a.label + '</span> <span class="fill-area-name">' + a.name + '</span></span>' +
           '<strong>' + areaFmt.format(a.area) + '</strong></span>';
       }).join('') || '<span class="vlines-empty">nenhum tempo de percurso</span>');
