@@ -215,7 +215,7 @@
     };
   })).concat(root.MoonViability ? [{
     key: 'viabilidade', label: 'Viabilidade dos sítios fictícios (10 grupos)', kind: 'viability',
-    xLabel: 'Dia (0 = ' + dayToDate(root.MoonViability.start, 0) + ')', yLabel: 'Viabilidade (média do grupo)',
+    xLabel: 'Data', yLabel: 'Viabilidade (média do grupo)',
     xRange: [0, root.MoonViability.days - 1], yRange: [0, 200], xIsYear: false,
     tolerance: VIAB_DEV / 2, referenceLabel: 'valor esperado (fictício)',
     xDate: function (day) { return dayToDate(root.MoonViability.start, day); },

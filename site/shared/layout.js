@@ -40,7 +40,7 @@
       ' · cada série normalizada para 0–10; valores reais na tabela; assertividade aleatória (teste de usabilidade). Fonte: <a href="' + data.url + '" target="_blank" rel="noopener">Tyler Vigen, Spurious Correlations</a> (CC BY 4.0).</p>'
     : data.kind === 'viability'
     ? '<p class="dataset-info">Viabilidade fictícia dos 50 sítios de <code>dLandingSites.csv</code>, de ' + data.xDate(0) + ' a ' + data.xDate(data.xRange[1]) +
-      ': uma série por grupo (missionID) = média diária dos 5 sítios. Eixo x em dias; a data está na tabela. Assertividade aleatória (teste de usabilidade).</p>'
+      ': uma série por grupo (missionID) = média diária dos 5 sítios. Eixo x em datas. Assertividade aleatória (teste de usabilidade).</p>'
     : '<p class="dataset-info">20 tipos de curvas matemáticas, dados fictícios: 21 pontos medidos por curva (x de 0 a 10), com assertividade aleatória: quanto menor, mais longe o ponto fica da curva teórica.</p>';
 
   doc.body.insertAdjacentHTML('afterbegin',
@@ -60,7 +60,9 @@
           '<div class="stats">' +
             '<div><strong>' + root.MoonSeries.all.length + '</strong><span>séries</span></div>' +
             '<div><strong>' + fmt.format(total) + '</strong><span>pontos</span></div>' +
-            '<div><strong>' + data.xRange[0] + '–' + data.xRange[1] + '</strong><span>intervalo de ' + escapeHtml(data.xLabel) + '</span></div>' +
+            (data.xDate
+              ? '<div><strong>' + data.xDate(data.xRange[0]) + '–' + data.xDate(data.xRange[1]) + '</strong><span>período</span></div>'
+              : '<div><strong>' + data.xRange[0] + '–' + data.xRange[1] + '</strong><span>intervalo de ' + escapeHtml(data.xLabel) + '</span></div>') +
           '</div>' +
           '<a class="btn" href="#track">Ver gráfico</a>' +
         '</div>' +
@@ -234,7 +236,7 @@
   var areaFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function renderAreas() {
     var items = root.MoonCore.areas();
-    areasEl.innerHTML = '<span class="fill-areas-label">Área preenchida <span class="unit">(' + data.xLabel + ' × ' + data.yLabel + ')</span></span>' +
+    areasEl.innerHTML = '<span class="fill-areas-label">Área preenchida <span class="unit">(' + (data.xDate ? 'dias' : data.xLabel) + ' × ' + data.yLabel + ')</span></span>' +
       (items.map(function (a) {
         return '<span class="fill-area" title="' + a.name + '" style="--area-color:' + a.color + '">' +
           '<span><span class="vline-tag" style="color:' + a.color + '">' + a.label + '</span> <span class="fill-area-name">' + a.name + '</span></span>' +

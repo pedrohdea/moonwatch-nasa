@@ -21,6 +21,35 @@
   // Integer ticks only (no locale thousands separator on years).
   function yearTick(v) { return Number.isInteger(v) ? String(v) : ''; }
 
+  // Date axis (x = day index from MoonViability.start): ticks on month starts ("abr/24"), or every few days
+  // ("10/04") when zoomed into less than ~2 months. Keeps at most ~10 labels.
+  var MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  var DAY_MS = 864e5;
+  function startMs() { return Date.parse(root.MoonViability.start + 'T00:00:00Z'); }
+  function dayToUtc(day) { return new Date(startMs() + day * DAY_MS); }
+  var dateTickMode = 'month';
+  function dateTicks(scale) {
+    var min = scale.min, max = scale.max, ticks = [];
+    if (max - min < 60) {
+      dateTickMode = 'day';
+      var step = Math.max(1, Math.ceil((max - min) / 10));
+      for (var d = Math.ceil(min); d <= max; d += step) ticks.push({ value: d });
+    } else {
+      dateTickMode = 'month';
+      var first = dayToUtc(min), months = [];
+      var m = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + (first.getUTCDate() > 1 ? 1 : 0), 1));
+      while ((m - startMs()) / DAY_MS <= max) { months.push((m - startMs()) / DAY_MS); m = new Date(Date.UTC(m.getUTCFullYear(), m.getUTCMonth() + 1, 1)); }
+      var every = Math.max(1, Math.ceil(months.length / 10));
+      months.forEach(function (day, i) { if (i % every === 0) ticks.push({ value: day }); });
+    }
+    scale.ticks = ticks;
+  }
+  function dateTick(v) {
+    var d = dayToUtc(v);
+    if (dateTickMode === 'day') return String(d.getUTCDate()).padStart(2, '0') + '/' + String(d.getUTCMonth() + 1).padStart(2, '0');
+    return MONTHS[d.getUTCMonth()] + '/' + String(d.getUTCFullYear()).slice(2);
+  }
+
   function distToSegment(px, py, a, b) {
     var dx = b.x - a.x, dy = b.y - a.y;
     var len2 = dx * dx + dy * dy;
@@ -287,7 +316,10 @@
             grid: { color: GRID }, border: { color: MUTED },
             ticks: ds.xIsYear
               ? { color: MUTED, font: { family: "'Fira Code', monospace" }, stepSize: 1, callback: yearTick }
-              : { color: MUTED, font: { family: "'Fira Code', monospace" } }
+              : ds.xDate
+                ? { color: MUTED, font: { family: "'Fira Code', monospace" }, autoSkip: false, maxRotation: 0, callback: dateTick }
+                : { color: MUTED, font: { family: "'Fira Code', monospace" } },
+            afterBuildTicks: ds.xDate ? dateTicks : undefined
           },
           y: {
             type: 'linear', min: ds.yRange[0], max: ds.yRange[1],
@@ -320,6 +352,7 @@
                 if (spurious) {
                   return [ctx.dataset.label + ' (' + ctx.parsed.x + '): ' + nf.format(ctx.raw.raw) + ' ' + ctx.dataset.unit].concat(extra);
                 }
+                if (ds.xDate) return [ctx.dataset.label + ' (' + ds.xDate(ctx.parsed.x) + '): ' + nf.format(ctx.parsed.y)].concat(extra);
                 return [ctx.dataset.label + ': x=' + ctx.parsed.x.toFixed(3) + ', y=' + ctx.parsed.y.toFixed(3)].concat(extra);
               }
             }
