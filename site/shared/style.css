@@ -232,6 +232,13 @@ th.sortable:hover { color: var(--neon-yellow); }
 .landing-pane canvas:not([hidden]) + .terrain-note { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(7, 23, 63, 0.7); border-radius: 0 0 var(--radius) var(--radius); }
 
 .footer { border-top: 1px solid var(--line); padding: 24px 0; color: var(--text-muted); font-size: 14px; }
+.footer p { margin: 0 0 8px; max-width: 80ch; line-height: 1.5; }
+.footer p:last-child { margin-bottom: 0; }
+.todo { list-style: none; padding: 0; margin: 16px 0 0; }
+.todo li { display: flex; gap: 8px; align-items: baseline; margin: 8px 0; max-width: 760px; }
+.todo input { flex: none; }
+.todo-tag { flex: none; padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--text-muted); }
+.footer-brand strong { color: var(--text, #fff); }
 
 @media (max-width: 640px) {
   body { font-size: 16px; }

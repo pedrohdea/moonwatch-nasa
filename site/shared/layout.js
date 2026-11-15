@@ -56,7 +56,7 @@
     '<header class="topbar">' +
       '<a class="brand" href="#home">Moon<span>Watch</span></a>' +
       '<nav class="nav" aria-label="Sections">' +
-        '<a href="#home">Home</a><a href="#track">Track</a><a href="#mission">Mission</a><a href="#about">About</a>' +
+        '<a href="#home">Home</a><a href="#track">Track</a><a href="#mission">Mission</a><a href="#roadmap">Roadmap</a><a href="#about">About</a>' +
       '</nav>' +
       '<div class="variants viz" aria-label="Confidence visualization"><span class="variants-label">Confidence:</span>' + vizLinks + '</div>' +
     '</header>' +
@@ -136,6 +136,16 @@
           '</dl>' +
         '</div>' +
       '</section>' +
+      '<section id="roadmap" class="about roadmap">' +
+        '<div class="wrap">' +
+          '<h2>Improvements &amp; Fixes</h2>' +
+          '<p>Planned work for MoonWatch. Not implemented yet.</p>' +
+          '<ul class="todo">' +
+            '<li><input type="checkbox" disabled aria-label="Pending"><span class="todo-tag">Improvement</span><span>Recalculate transit time from the Departure date and day-to-day variables (daily lunar conditions and space weather), instead of fixed offsets.</span></li>' +
+            '<li><input type="checkbox" disabled aria-label="Pending"><span class="todo-tag">Improvement</span><span>Ground the Viability, Departure and Deadline models in real NASA LRO lunar maps and DONKI space weather data (today the viability data is simulated).</span></li>' +
+          '</ul>' +
+        '</div>' +
+      '</section>' +
       '<section id="about" class="about">' +
         '<div class="wrap">' +
           '<h2>About</h2>' +
@@ -151,7 +161,14 @@
         '</div>' +
       '</section>' +
     '</main>' +
-    '<footer class="footer"><div class="wrap">MoonWatch · Myr Battlesphere · chart by ' + lib + '</div></footer>'
+    '<footer class="footer"><div class="wrap">' +
+      '<p class="footer-brand"><strong>MoonWatch</strong> · Myr Battlesphere · NASA Space Apps Challenge 2026 · <em>Lunar Landing Site Navigator</em></p>' +
+      '<p>Viability, Departure and Deadline models and formulas are grounded in data from NASA’s ' +
+        '<a href="https://science.nasa.gov/mission/lro/" target="_blank" rel="noopener">Lunar Reconnaissance Orbiter (LRO)</a> lunar maps and the ' +
+        '<a href="https://kauai.ccmc.gsfc.nasa.gov/DONKI/" target="_blank" rel="noopener">DONKI</a> space weather database (Space Weather Database Of Notifications, Knowledge, Information).</p>' +
+      '<p>Next: transit time recalculated from Departure and day-to-day variables · <a href="#roadmap">Improvements &amp; Fixes</a></p>' +
+      '<p>Globe and terrain imagery: NASA Moon Trek, NASA Scientific Visualization Studio and NASA 3D Resources (public domain). Chart by ' + lib + '.</p>' +
+    '</div></footer>'
   );
 
   // Fixed top bar: reserve exactly its height (it wraps on narrow screens) for the body and anchor offsets.
