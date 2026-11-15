@@ -59,8 +59,8 @@
       text: 'Ground the Viability, Departure and Deadline models in real NASA LRO lunar maps and DONKI space weather data (today the viability data is simulated).' },
     { title: 'Real-time viability', type: 'Improvement', status: 'Planned', areas: ['Data lake', 'Viability'], img: TILE + '4/9.jpg',
       text: 'Ingest official internal NASA sources (not mapped yet) into a structured data lake, following the current star schema, relate them by landing site and date, and compute viability in real time.' },
-    { title: 'Demo and pilot', type: 'Improvement', status: 'Planned', areas: ['Validation', 'Missions'], img: TILE + '3/6.jpg',
-      text: 'Demo and pilot with data from successful and delayed missions.' },
+    { title: 'Demo and pilot with historical missions', type: 'Improvement', status: 'Planned', areas: ['Validation', 'Missions'], img: TILE + '3/6.jpg',
+      text: 'Run a demo and a pilot on past missions, both on time and delayed: replay their real Departure, landing and Deadline dates and check whether MoonWatch would have flagged the risk before the delay.' },
     { title: 'Sun–Earth–Moon animation', type: 'Improvement', status: 'Planned', areas: ['Landing & Impact Sites', 'Animation'], img: TILE + '2/9.jpg',
       text: 'Animation showing the bodies\u2019 positions on the launch (Departure), landing and Deadline dates, displayed next to the Moon globe in Landing & Impact Sites.' }
   ];
