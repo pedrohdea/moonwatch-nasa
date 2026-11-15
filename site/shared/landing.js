@@ -1,4 +1,4 @@
-// #sites section: mission picker + animated Moon globe in 3 renderers (Canvas 2D, three.js, Moon3DMap iframe).
+// #sites section: mission picker + animated Moon globe in 3 renderers (Canvas 2D, three.js, Moon3DMap iframe) + Apollo Terrain 3D.
 // Pure math is exported for node tests; the DOM part runs only in the browser, after layout.js.
 (function (root) {
   'use strict';
@@ -128,9 +128,26 @@
     });
   }
 
+  // Moon Trek tiles of one zoom level (index.json from scripts/fetch-nasa-assets.mjs) -> [{url, x, y}] pixel offsets in the mosaic.
+  function trekTiles(index, base) {
+    var list = [];
+    for (var r = 0; r < index.rows; r++) for (var c = 0; c < index.cols; c++) {
+      list.push({ url: base + index.zoom + '/' + r + '/' + c + '.jpg', x: c * index.tile, y: r * index.tile });
+    }
+    return list;
+  }
+
+  // NASA 3D Resources height maps exist for these Apollo landing sites only.
+  var TERRAIN_APOLLO = [11, 12, 14, 15, 16];
+  function terrainModel(key) {
+    var m = /^apollo-(\d+)-landing-site$/.exec(key || '');
+    var n = m ? Number(m[1]) : NaN;
+    return TERRAIN_APOLLO.indexOf(n) >= 0 ? { apollo: n, stl: 'shared/vendor/nasa/terrain/apollo-' + n + '.stl' } : null;
+  }
+
   var math = {
     MISSIONS: MISSIONS, parseSites: parseSites, groupSites: groupSites, frameSites: frameSites, shortestLon: shortestLon, angularDistance: angularDistance, interpolateView: interpolateView,
-    screenToLatLon: screenToLatLon, latLonToScreen: latLonToScreen, globeRotation: globeRotation, surfacePoint: surfacePoint
+    screenToLatLon: screenToLatLon, latLonToScreen: latLonToScreen, globeRotation: globeRotation, surfacePoint: surfacePoint, trekTiles: trekTiles, terrainModel: terrainModel
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = math;
   if (!root.document || !root.MoonLayout) return;
@@ -138,6 +155,7 @@
   // ---------- Browser ----------
   var doc = root.document;
   var TEXTURE = 'shared/vendor/moon-2k.jpg';
+  var TREK_BASE = 'shared/vendor/nasa/moontrek/';
   var SITES_CSV = 'shared/data/dLandingSites.csv';
   var reducedMotion = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
@@ -149,14 +167,14 @@
   var options = MISSIONS.map(function (m) {
     return '<option value="' + m.key + '">' + m.name + ' · ' + m.agency + ' · ' + m.year + '</option>';
   }).join('');
-  var TABS = [['canvas', 'Canvas'], ['three', 'three.js'], ['iframe', 'Moon3DMap']];
+  var TABS = [['canvas', 'Canvas'], ['three', 'three.js'], ['iframe', 'Moon3DMap'], ['terrain', 'Terrain 3D']];
 
   // Landing section goes right after the chart section; "Mission Definitions" stays below the Moon map.
   doc.getElementById('mission').insertAdjacentHTML('beforebegin',
     '<section id="sites" class="landing">' +
       '<div class="wrap">' +
         '<h2>Landing &amp; Impact Sites</h2>' +
-        '<p class="hint">Choose a mission or check groups of simulated sites: the globe spins and frames the coordinates. Three versions to compare.</p>' +
+        '<p class="hint">Choose a mission or check groups of simulated sites: the globe spins and frames the coordinates. Four versions to compare; Terrain 3D shows the Apollo landing sites in relief.</p>' +
         '<div class="landing-controls">' +
           '<label class="dataset-picker">Mission <select id="landing-select"><option value="">Choose…</option><optgroup label="Historic missions">' + options + '</optgroup></select></label>' +
           '<div class="variants landing-tabs" role="group" aria-label="Globe version">' +
@@ -171,13 +189,14 @@
           '<canvas id="landing-canvas" class="landing-pane" data-pane="canvas" width="560" height="560" role="img" aria-label="Lunar globe"></canvas>' +
           '<div class="landing-pane" data-pane="three" role="img" aria-label="3D lunar globe"></div>' +
           '<iframe class="landing-pane" data-pane="iframe" title="Moon3DMap: mission site" loading="lazy" referrerpolicy="no-referrer"></iframe>' +
+          '<div class="landing-pane" data-pane="terrain" role="img" aria-label="3D terrain of the Apollo landing site"></div>' +
         '</div>' +
         '<p id="landing-info" class="dataset-info" aria-live="polite"></p>' +
         '<div class="table-bar landing-points-bar" data-for="landing-points" hidden><span class="table-bar-title">Selected sites</span>' +
           '<input type="search" id="landing-search" class="table-search" placeholder="Filter sites…" aria-label="Filter selected sites">' +
           '<button type="button" class="btn btn-ghost table-toggle" aria-controls="landing-points" aria-expanded="false">Expand</button></div>' +
         '<div id="landing-points" class="table-box landing-points is-min" hidden></div>' +
-        '<p class="dataset-info">Texture: NASA Scientific Visualization Studio, CGI Moon Kit (LRO/LROC, public domain). Coordinates: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.</p>' +
+        '<p class="dataset-info">NASA data (public domain): Canvas texture from <a href="https://trek.nasa.gov/moon/" target="_blank" rel="noopener">NASA Moon Trek</a> (LRO WAC mosaic), fallback SVS CGI Moon Kit; three.js globe from <a href="https://svs.gsfc.nasa.gov/14959/" target="_blank" rel="noopener">NASA SVS Moon 3D model</a>; Terrain 3D from <a href="https://science.nasa.gov/3d-resources/" target="_blank" rel="noopener">NASA 3D Resources</a>. Coordinates: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.</p>' +
       '</div>' +
     '</section>');
   doc.querySelector('.nav a[href="#mission"]').insertAdjacentHTML('beforebegin', '<a href="#sites">Sites</a>');
@@ -214,17 +233,38 @@
       canvas.style.cursor = best ? 'help' : '';
     });
     var tex = null, tw = 0, th = 0;
-    var img = new Image();
-    img.onload = function () {
+    var api = { draw: draw, hits: function () { return hits; }, texture: { source: 'loading', width: 0, height: 0 } };
+    function useTexture(source, w, h, paint) {
       var c = doc.createElement('canvas');
-      c.width = tw = img.naturalWidth; c.height = th = img.naturalHeight;
+      c.width = w; c.height = h;
       var cx = c.getContext('2d');
-      cx.drawImage(img, 0, 0);
-      tex = new Uint32Array(cx.getImageData(0, 0, tw, th).data.buffer);
+      paint(cx);
+      tex = new Uint32Array(cx.getImageData(0, 0, w, h).data.buffer);
+      tw = w; th = h;
+      api.texture = { source: source, width: w, height: h };
       draw(state.view);
-    };
-    img.onerror = function () { console.error('Moon texture failed to load: ' + TEXTURE); };
-    img.src = TEXTURE;
+    }
+    function loadImage(url) {
+      return new Promise(function (resolve, reject) {
+        var im = new Image();
+        im.onload = function () { resolve(im); };
+        im.onerror = function () { reject(new Error('image failed: ' + url)); };
+        im.src = url;
+      });
+    }
+    // 2k CGI Moon Kit first (fast), then the sharper Moon Trek LRO WAC mosaic stitched from vendored tiles.
+    loadImage(TEXTURE).then(function (img) {
+      useTexture('cgi-moon-kit', img.naturalWidth, img.naturalHeight, function (cx) { cx.drawImage(img, 0, 0); });
+    }).catch(function (err) { console.error('Moon texture failed to load: ' + err.message); }).then(function () {
+      return root.fetch(TREK_BASE + 'index.json').then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    }).then(function (index) {
+      var tiles = trekTiles(index, TREK_BASE);
+      return Promise.all(tiles.map(function (t) { return loadImage(t.url); })).then(function (imgs) {
+        useTexture('moon-trek', index.width, index.height, function (cx) {
+          imgs.forEach(function (im, i) { cx.drawImage(im, tiles[i].x, tiles[i].y); });
+        });
+      });
+    }).catch(function (err) { console.error('Moon Trek mosaic failed to load: ' + err.message); });
 
     function draw(view) {
       if (!tex) return;
@@ -289,7 +329,7 @@
         });
       });
     }
-    return { draw: draw, hits: function () { return hits; } };
+    return api;
   }
 
   // ----- three.js: textured, lit sphere; script loaded on first use -----
@@ -301,8 +341,9 @@
       THREE_LIBS = Promise.all([
         import('three'),
         import(new URL('shared/vendor/three/addons/loaders/GLTFLoader.js', base).href),
-        import(new URL('shared/vendor/three/addons/loaders/STLLoader.js', base).href)
-      ]).then(function (m) { return { THREE: m[0], GLTFLoader: m[1].GLTFLoader, STLLoader: m[2].STLLoader }; });
+        import(new URL('shared/vendor/three/addons/loaders/STLLoader.js', base).href),
+        import(new URL('shared/vendor/three/addons/loaders/DRACOLoader.js', base).href)
+      ]).then(function (m) { return { THREE: m[0], GLTFLoader: m[1].GLTFLoader, STLLoader: m[2].STLLoader, DRACOLoader: m[3].DRACOLoader }; });
     }
     return THREE_LIBS;
   }
@@ -401,6 +442,157 @@
     return api;
   }
 
+  // ----- Terrain 3D: NASA 3D Resources Apollo landing-site height map (STL) + Apollo Lunar Module (GLB) -----
+  var LM_GLB = 'shared/vendor/nasa/apollo-lm.glb';
+  var TERRAIN_LOW = [0x0b, 0x3d, 0x91], TERRAIN_HIGH = [0xea, 0xfe, 0x07]; // NASA blue -> Neon Yellow by height
+
+  function createTerrainRenderer() {
+    var el = pane('terrain');
+    var note = doc.createElement('p');
+    note.className = 'terrain-note';
+    el.appendChild(note);
+    var api = { draw: function () {}, status: 'loading', apollo: null, lander: 'loading' };
+    loadThree().then(function (libs) {
+      var THREE = libs.THREE;
+      var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(2, root.devicePixelRatio || 1));
+      el.insertBefore(renderer.domElement, note);
+      var scene = new THREE.Scene();
+      var camera = new THREE.PerspectiveCamera(40, 1, 0.01, 100);
+      camera.up.set(0, 0, 1); // STL height maps are Z-up
+      camera.position.set(0, -3.1, 2.3);
+      camera.lookAt(0, 0, 0);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+      var sun = new THREE.DirectionalLight(0xffffff, 1.4);
+      sun.position.set(-2, -1, 2.5); // low sun: relief casts readable shading
+      scene.add(sun);
+      var turntable = new THREE.Group();
+      scene.add(turntable);
+      var cache = {};   // apollo number -> Promise<{mesh, top}>
+      var current = null;
+      var wanted = null;
+      var lm = null;
+      var draco = new libs.DRACOLoader().setDecoderPath('shared/vendor/three/addons/libs/draco/gltf/'); // the LM GLB is Draco-compressed
+      new libs.GLTFLoader().setDRACOLoader(draco).load(LM_GLB, function (gltf) {
+        var model = gltf.scene;
+        model.rotation.x = Math.PI / 2; // GLB is Y-up
+        var box = new THREE.Box3().setFromObject(model);
+        var size = box.getSize(new THREE.Vector3());
+        var holder = new THREE.Group();
+        model.position.sub(box.getCenter(new THREE.Vector3()));
+        model.position.z += size.z / 2; // feet on z=0
+        holder.add(model);
+        holder.scale.setScalar(0.16 / Math.max(size.x, size.y, size.z)); // not to scale: visible marker of the landing point
+        lm = holder;
+        api.lander = 'ready';
+        if (current) { lm.position.z = current.top; turntable.add(lm); frame(); }
+      }, undefined, function (err) { api.lander = 'error'; console.error('Apollo LM GLB did not load (' + LM_GLB + '): ' + err.message); });
+
+      function loadTerrain(model) {
+        if (!cache[model.apollo]) {
+          cache[model.apollo] = new Promise(function (resolve, reject) {
+            new libs.STLLoader().load(model.stl, resolve, undefined, reject);
+          }).then(function (geometry) {
+            geometry.computeBoundingBox();
+            var bb = geometry.boundingBox.clone(); // translate()/scale() recompute boundingBox in place
+            var k = 2 / Math.max(bb.max.x - bb.min.x, bb.max.y - bb.min.y); // 30 km square -> 2 units
+            geometry.translate(-(bb.max.x + bb.min.x) / 2, -(bb.max.y + bb.min.y) / 2, -bb.min.z);
+            geometry.scale(k, k, k);
+            geometry.computeVertexNormals(); // the NASA STLs ship zero normals (no shading otherwise)
+            var pos = geometry.attributes.position;
+            var zMax = (bb.max.z - bb.min.z) * k;
+            var zLow = zMax; // lowest surface point, above the flat printing base at z=0
+            for (var j = 0; j < pos.count; j++) if (pos.getZ(j) > 1e-3) zLow = Math.min(zLow, pos.getZ(j));
+            var colors = new Float32Array(pos.count * 3);
+            var tint = new THREE.Color();
+            var top = 0;
+            for (var i = 0; i < pos.count; i++) {
+              var t = Math.max(0, (pos.getZ(i) - zLow) / (zMax - zLow || 1));
+              tint.setRGB.apply(tint, [0, 1, 2].map(function (c) { return (TERRAIN_LOW[c] + (TERRAIN_HIGH[c] - TERRAIN_LOW[c]) * t) / 255; }).concat(THREE.SRGBColorSpace)); // sRGB -> linear
+              colors[i * 3] = tint.r; colors[i * 3 + 1] = tint.g; colors[i * 3 + 2] = tint.b;
+              if (Math.abs(pos.getX(i)) < 0.04 && Math.abs(pos.getY(i)) < 0.04) top = Math.max(top, pos.getZ(i)); // surface at the landing point
+            }
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            var mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0, side: THREE.DoubleSide })); // DoubleSide: STL winding is inverted
+            mesh.position.z = -zMax / 2;
+            return { mesh: mesh, top: top - zMax / 2 };
+          });
+        }
+        return cache[model.apollo];
+      }
+
+      function show(model) {
+        api.apollo = model ? model.apollo : null;
+        if (!model) {
+          if (current) turntable.remove(current.mesh);
+          if (lm) turntable.remove(lm);
+          current = null;
+          renderer.domElement.hidden = true;
+          api.status = 'empty';
+          note.textContent = '3D terrain available for Apollo 11, 12, 14, 15 and 16: choose one in "Mission".';
+          return;
+        }
+        api.status = 'loading';
+        note.textContent = 'Loading Apollo ' + model.apollo + ' terrain…';
+        loadTerrain(model).then(function (t) {
+          if (wanted !== model.apollo) return; // user moved on meanwhile
+          if (current) turntable.remove(current.mesh);
+          current = t;
+          turntable.add(t.mesh);
+          if (lm) { lm.position.z = t.top; turntable.add(lm); }
+          renderer.domElement.hidden = false;
+          api.status = 'ready';
+          note.textContent = 'NASA 3D Resources — Apollo ' + model.apollo + ' landing site (30×30 km, height ×60). Lunar Module not to scale. Drag to rotate.';
+          frame();
+        }).catch(function (err) {
+          api.status = 'error';
+          note.textContent = 'Could not load the Apollo ' + model.apollo + ' terrain.';
+          console.error('Terrain STL did not load (' + model.stl + '): ' + (err && err.message));
+        });
+      }
+
+      // Drag rotates; otherwise a slow turntable while the tab is open.
+      var dragging = null, loop = null;
+      renderer.domElement.style.touchAction = 'none';
+      renderer.domElement.addEventListener('pointerdown', function (e) { dragging = e.clientX; renderer.domElement.setPointerCapture(e.pointerId); });
+      renderer.domElement.addEventListener('pointermove', function (e) {
+        if (dragging === null) return;
+        turntable.rotation.z += (e.clientX - dragging) * 0.01;
+        dragging = e.clientX;
+        frame();
+      });
+      ['pointerup', 'pointercancel'].forEach(function (n) { renderer.domElement.addEventListener(n, function () { dragging = null; }); });
+
+      function frame() {
+        var w = el.clientWidth || 560;
+        renderer.setSize(w, w, false);
+        renderer.render(scene, camera);
+      }
+      function tick() {
+        loop = null;
+        if (state.tab !== 'terrain') return; // restarted by api.draw when the tab opens again
+        if (current) {
+          if (dragging === null) turntable.rotation.z += 0.0025;
+          frame();
+        }
+        loop = root.requestAnimationFrame(tick);
+      }
+
+      api.draw = function () {
+        var model = state.mission ? terrainModel(state.mission.key) : null;
+        var key = model ? model.apollo : null;
+        if (key !== wanted || api.status === 'loading' && !model) { wanted = key; show(model); }
+        if (!reducedMotion && !loop) loop = root.requestAnimationFrame(tick);
+      };
+      api.draw();
+    }).catch(function (err) {
+      console.error(err);
+      api.status = 'error';
+      note.textContent = 'Could not load three.js.';
+    });
+    return api;
+  }
+
   // ----- Moon3DMap iframe: external page, src set only while its tab is open -----
   function createIframeRenderer() {
     var frame = pane('iframe');
@@ -412,7 +604,7 @@
     };
   }
 
-  var factories = { canvas: createCanvasRenderer, three: createThreeRenderer, iframe: createIframeRenderer };
+  var factories = { canvas: createCanvasRenderer, three: createThreeRenderer, iframe: createIframeRenderer, terrain: createTerrainRenderer };
 
   function draw() {
     if (!renderers[state.tab]) renderers[state.tab] = factories[state.tab]();
@@ -429,7 +621,7 @@
     if (anim) root.cancelAnimationFrame(anim);
     var from = state.view;
     var start = null;
-    if (reducedMotion || state.tab === 'iframe') { state.view = target; draw(); return; }
+    if (reducedMotion || state.tab === 'iframe' || state.tab === 'terrain') { state.view = target; draw(); return; }
     function step(ts) {
       if (start === null) start = ts;
       var t = (ts - start) / DURATION;

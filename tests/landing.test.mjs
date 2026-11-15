@@ -82,3 +82,23 @@ test('fictional sites CSV: 50 rows, 10 groups of 5; autoscale frames every selec
   assert.deepEqual(L.parseSites('ID,NAME,LAT,LONG,missionID\n1,x,95,0,1\n2,y,abc,0,1\n3,z,1,2,1'), [
     { id: 3, name: 'z', lat: 1, lon: 2, group: 1, prsId: NaN, nearestCold: NaN }]);
 });
+
+test('Moon Trek tiles: 16x8 grid of 256 px covering the 4096x2048 mosaic, row-major', () => {
+  const index = { zoom: 3, cols: 16, rows: 8, tile: 256 };
+  const tiles = L.trekTiles(index, 'trek/');
+  assert.equal(tiles.length, 128);
+  assert.deepEqual(tiles[0], { url: 'trek/3/0/0.jpg', x: 0, y: 0 });
+  assert.deepEqual(tiles[17], { url: 'trek/3/1/1.jpg', x: 256, y: 256 });
+  assert.deepEqual(tiles[127], { url: 'trek/3/7/15.jpg', x: 3840, y: 1792 });
+  const vendored = JSON.parse(readFileSync(new URL('../site/shared/vendor/nasa/moontrek/index.json', import.meta.url)));
+  assert.equal(vendored.cols * vendored.tile, vendored.width);
+  assert.equal(vendored.rows * vendored.tile, vendored.height);
+});
+
+test('Terrain 3D: STL only for Apollo 11, 12, 14, 15, 16', () => {
+  assert.deepEqual(L.terrainModel('apollo-15-landing-site'), { apollo: 15, stl: 'shared/vendor/nasa/terrain/apollo-15.stl' });
+  const withTerrain = L.MISSIONS.filter((m) => L.terrainModel(m.key)).map((m) => m.name);
+  assert.deepEqual(withTerrain, ['Apollo 11', 'Apollo 12', 'Apollo 14', 'Apollo 15', 'Apollo 16']);
+  assert.equal(L.terrainModel('apollo-17-landing-site'), null);
+  assert.equal(L.terrainModel(null), null);
+});

@@ -353,7 +353,12 @@ async function main() {
     const centered = (key) => evaluate(`(()=>{const m=MoonLanding.missions.find(x=>x.key==='${key}'),v=MoonLanding.state.view;return Math.abs(v.lat-m.lat)<1&&Math.abs(((v.lon-m.lon+540)%360)-180)<1})()`);
     await evaluate(`MoonLanding.select('apollo-11-landing-site')`); await wait(3000);
     check('canvas centers on Apollo 11', await centered('apollo-11-landing-site'));
+    const tex = await evaluate(`JSON.stringify(MoonLanding.renderers.canvas.texture)`);
+    check('canvas texture = Moon Trek mosaic 4096x2048', tex === '{"source":"moon-trek","width":4096,"height":2048}', tex);
+    await evaluate(`MoonLanding.setTab('terrain')`); await wait(4000);
+    check('Terrain 3D renders Apollo 11 STL + Lunar Module', await evaluate(`(()=>{const r=MoonLanding.renderers.terrain;const cv=document.querySelector('[data-pane=terrain] canvas');return r.status==='ready'&&r.apollo===11&&r.lander==='ready'&&!!cv&&!cv.hidden})()`));
     await evaluate(`MoonLanding.setTab('three')`); await wait(1500);
+    check('three.js globe uses NASA SVS GLB', (await evaluate(`MoonLanding.renderers.three.source`)) === 'glb');
     await evaluate(`MoonLanding.select('luna-9-landing-site')`); await wait(3000);
     check('three.js centers on Luna 9', await centered('luna-9-landing-site'));
     await evaluate(`document.querySelector('#landing-group-list input[value="csv-1"]').click()`);
@@ -364,6 +369,8 @@ async function main() {
     check('three.js canvas drawn', await evaluate(`!!document.querySelector('[data-pane=three] canvas')`));
     await evaluate(`MoonLanding.setTab('iframe')`); await wait(300);
     check('iframe gets mission URL', (await evaluate(`document.querySelector('[data-pane=iframe]').src`)).includes('luna-9-landing-site'));
+    await evaluate(`MoonLanding.setTab('terrain')`); await wait(500);
+    check('Terrain 3D: Luna 9 shows the "available for" message', await evaluate(`MoonLanding.renderers.terrain.status==='empty'&&document.querySelector('.terrain-note').textContent.includes('Apollo 11, 12, 14, 15 and 16')`));
     check('no horizontal page scroll', await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`));
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }

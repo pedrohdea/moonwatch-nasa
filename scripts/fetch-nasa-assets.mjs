@@ -3,7 +3,7 @@
 //   nasa/apollo-lm.glb                   NASA 3D Resources (GitHub) — Apollo Lunar Module
 //   nasa/terrain/apollo-NN.stl           NASA 3D Resources — Apollo 11/12/14/15/16 landing-site height maps
 //   nasa/moontrek/<z>/<row>/<col>.jpg    NASA Moon Trek WMTS — LRO WAC global mosaic (one zoom level) + index.json
-//   three/...                            three.js r158 ES modules + GLTFLoader / STLLoader (MIT)
+//   three/...                            three.js r158 ES modules + GLTFLoader / STLLoader / DRACOLoader + Draco decoder (MIT)
 // Usage: node scripts/fetch-nasa-assets.mjs [--zoom 3]     (re-running overwrites the files)
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -24,7 +24,10 @@ const THREE_FILES = {
   'three/three.module.min.js': `${THREE}/build/three.module.min.js`,
   'three/addons/loaders/GLTFLoader.js': `${THREE}/examples/jsm/loaders/GLTFLoader.js`,
   'three/addons/loaders/STLLoader.js': `${THREE}/examples/jsm/loaders/STLLoader.js`,
-  'three/addons/utils/BufferGeometryUtils.js': `${THREE}/examples/jsm/utils/BufferGeometryUtils.js`
+  'three/addons/utils/BufferGeometryUtils.js': `${THREE}/examples/jsm/utils/BufferGeometryUtils.js`,
+  'three/addons/loaders/DRACOLoader.js': `${THREE}/examples/jsm/loaders/DRACOLoader.js`, // apollo-lm.glb is Draco-compressed
+  'three/addons/libs/draco/gltf/draco_decoder.wasm': `${THREE}/examples/jsm/libs/draco/gltf/draco_decoder.wasm`,
+  'three/addons/libs/draco/gltf/draco_wasm_wrapper.js': `${THREE}/examples/jsm/libs/draco/gltf/draco_wasm_wrapper.js`
 };
 
 async function download(url, rel, minBytes = 1000) {

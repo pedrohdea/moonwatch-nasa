@@ -212,3 +212,14 @@ Decisões:
 ## Update: English site and code (2026-11-15)
 
 User request: whole site and code in English, NASA-style mission wording. Keys renamed (datasets `curves`/`boat`/`corn`/`malta`/`sarah`/`viability`; confidence modes `color`/`band`/`label`; URL params `transit`/`threshold`/`departure`; anchor `#sites`), en-US numbers, ISO 8601 dates. Glossary: Confidence, Departure, Transit time, Minimum viability, Viable area, Landing & Impact Sites, Mission Definitions, Direct-to-Earth (DTE). This plan file keeps its earlier sections in Portuguese as the decision log.
+
+## Update: NASA 3D assets in Landing & Impact Sites (2026-11-15)
+
+Request: use NASA options 1 (SVS Moon 3D models), 3 (NASA 3D Resources) and 4 (Moon Trek). Quiz decisions: version `moon_small.glb` in the repo; keep everything local (offline, repo +~74 MB); keep the Moon3DMap tab and add a Terrain 3D tab.
+
+- `scripts/fetch-nasa-assets.mjs` vendors everything into `site/shared/vendor/` (`nasa/` + `three/`) and writes `nasa/SOURCES.md`. `.gitattributes` marks `*.glb`, `*.stl`, `*.jpg` binary; no git-lfs.
+- three.js r158 moved from the UMD `three.min.js` (removed) to ES modules: import map `three` in `site/chartjs/index.html`, loaders imported dynamically from the classic `landing.js` (still lazy, only when a 3D tab opens).
+- three.js tab (option 1): `moon_small.glb`, scaled by half its box width (bounding sphere of a sphere's box is √3·R), `GLB_YAW = -π/2` measured with screenshots (lon 0 faces -Z in the SVS frame). Frontal light so no site sits in the dark. Fallback: textured sphere.
+- Canvas tab (option 4): CGI Moon Kit 2k first, then the 16×8 Moon Trek LRO WAC tiles (zoom 3, 256 px) stitched into a 4096×2048 texture; same equirectangular frame (top-left -180°, 90°). `MoonLanding.renderers.canvas.texture` reports the source for the E2E.
+- Terrain 3D tab (option 3): Apollo 11/12/14/15/16 STL height maps, centered and scaled to 2 units, colored by height NASA blue → Neon Yellow, slow turntable + drag. Gotchas: the STLs ship zero normals (`computeVertexNormals`) and inverted winding (`DoubleSide`); `geometry.translate()` recomputes `boundingBox` in place (clone it first); the Lunar Module GLB is Draco-compressed (vendored `DRACOLoader` + decoder). LM not to scale. Other missions: "3D terrain available for Apollo 11, 12, 14, 15 and 16".
+- Tests: unit (Trek tile grid, STL mission mapping), E2E (Trek texture 4096×2048, GLB source, Terrain 3D for Apollo 11 + LM, message for Luna 9), desktop and 390 px.
