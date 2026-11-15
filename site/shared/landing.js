@@ -174,7 +174,7 @@
     '<section id="sites" class="landing">' +
       '<div class="wrap">' +
         '<h2>Landing &amp; Impact Sites</h2>' +
-        '<p class="hint">Choose a mission or check groups of simulated sites: the globe spins and frames the coordinates. Four versions to compare; Terrain 3D shows the Apollo landing sites in relief.</p>' +
+        '<p class="hint">Choose a mission or check groups of simulated sites: the globe spins and frames the coordinates. Four versions to compare; Terrain 3D shows the Apollo landing sites in relief.<sup class="ref-mark"><a href="#ref-3" id="refmark-3" aria-label="Reference 3">*3</a></sup></p>' +
         '<div class="landing-controls">' +
           '<label class="dataset-picker">Mission <select id="landing-select"><option value="">Choose…</option><optgroup label="Historic missions">' + options + '</optgroup></select></label>' +
           '<div class="variants landing-tabs" role="group" aria-label="Globe version">' +
@@ -196,7 +196,6 @@
           '<input type="search" id="landing-search" class="table-search" placeholder="Filter sites…" aria-label="Filter selected sites">' +
           '<button type="button" class="btn btn-ghost table-toggle" aria-controls="landing-points" aria-expanded="false">Expand</button></div>' +
         '<div id="landing-points" class="table-box landing-points is-min" hidden></div>' +
-        '<p class="dataset-info">NASA data (public domain): Canvas texture from <a href="https://trek.nasa.gov/moon/" target="_blank" rel="noopener">NASA Moon Trek</a> (LRO WAC mosaic), fallback SVS CGI Moon Kit; three.js globe from <a href="https://svs.gsfc.nasa.gov/14959/" target="_blank" rel="noopener">NASA SVS Moon 3D model</a>; Terrain 3D from <a href="https://science.nasa.gov/3d-resources/" target="_blank" rel="noopener">NASA 3D Resources</a>. Coordinates: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.</p>' +
       '</div>' +
     '</section>');
   doc.querySelector('.nav a[href="#mission"]').insertAdjacentHTML('beforebegin', '<a href="#sites">Sites</a>');

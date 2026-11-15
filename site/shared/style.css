@@ -284,3 +284,12 @@ th.sortable:hover { color: var(--neon-yellow); }
 .video-toggle { position: absolute; right: 16px; bottom: 16px; padding: 6px 16px; font-size: 15px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 @media (max-width: 640px) { .video-section { padding-top: 12px; } .video-toggle { right: 8px; bottom: 8px; padding: 2px 10px; font-size: 13px; } }
+
+/* Disclaimers: asterisk marks in the text, notes in #references (after About) */
+.ref-mark { font-size: 0.7em; line-height: 0; margin-left: 2px; }
+.ref-mark a { color: var(--neon-yellow); text-decoration: none; font-weight: 700; }
+.refs { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 10px; font-size: 15px; color: var(--text-muted); }
+.refs li { display: flex; gap: 10px; }
+.refs .ref-num { flex: none; min-width: 2.2em; font-family: var(--font-mono); color: var(--neon-yellow); font-weight: 700; }
+.refs li:target { color: var(--white); }
+.ref-back { text-decoration: none; }

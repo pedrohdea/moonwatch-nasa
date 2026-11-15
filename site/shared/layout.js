@@ -42,13 +42,21 @@
     return '<option value="' + d.key + '"' + (d.key === data.key ? ' selected' : '') + '>' + escapeHtml(d.label) + '</option>';
   }).join('');
 
+  // Disclaimers live in #references (after About); the text shows an asterisk mark linking to them.
+  function refMark(n) { return '<sup class="ref-mark"><a href="#ref-' + n + '" id="refmark-' + n + '" aria-label="Reference ' + n + '">*' + n + '</a></sup>'; }
   var datasetInfo = data.kind === 'spurious'
-    ? '<p class="dataset-info">' + escapeHtml(data.title) + ' · r = ' + data.r.toFixed(4) +
-      ' · each series normalized to 0–10; actual values in the table; random confidence (usability test). Source: <a href="' + data.url + '" target="_blank" rel="noopener">Tyler Vigen, Spurious Correlations</a> (CC BY 4.0).</p>'
+    ? escapeHtml(data.title) + ' · r = ' + data.r.toFixed(4) +
+      ' · each series normalized to 0–10; actual values in the table; random confidence (usability test). Source: <a href="' + data.url + '" target="_blank" rel="noopener">Tyler Vigen, Spurious Correlations</a> (CC BY 4.0).'
     : data.kind === 'viability'
-    ? '<p class="dataset-info">Simulated viability of the 50 sites in <code>dLandingSites.csv</code>, from ' + data.xDate(0) + ' to ' + data.xDate(data.xRange[1]) +
-      ': one series per mission (missionID) = daily mean of its 5 sites. X axis in dates. Random confidence (usability test).</p>'
-    : '<p class="dataset-info">20 types of math curves, simulated data: 21 measured points per curve (x from 0 to 10), with random confidence: the lower it is, the farther the point sits from the theoretical curve.</p>';
+    ? 'Simulated viability of the 50 sites in <code>dLandingSites.csv</code>, from ' + data.xDate(0) + ' to ' + data.xDate(data.xRange[1]) +
+      ': one series per mission (missionID) = daily mean of its 5 sites. X axis in dates. Random confidence (usability test).'
+    : '20 types of math curves, simulated data: 21 measured points per curve (x from 0 to 10), with random confidence: the lower it is, the farther the point sits from the theoretical curve.';
+
+  var REFS = [
+    'Viability, Departure and Deadline models and formulas are grounded in data from NASA’s <a href="https://science.nasa.gov/mission/lro/" target="_blank" rel="noopener">Lunar Reconnaissance Orbiter (LRO)</a> lunar maps and the <a href="https://kauai.ccmc.gsfc.nasa.gov/DONKI/" target="_blank" rel="noopener">DONKI</a> space weather database (Space Weather Database Of Notifications, Knowledge, Information).',
+    datasetInfo,
+    'NASA data (public domain): Canvas texture from <a href="https://trek.nasa.gov/moon/" target="_blank" rel="noopener">NASA Moon Trek</a> (LRO WAC mosaic), fallback SVS CGI Moon Kit; three.js globe from <a href="https://svs.gsfc.nasa.gov/14959/" target="_blank" rel="noopener">NASA SVS Moon 3D model</a>; Terrain 3D from <a href="https://science.nasa.gov/3d-resources/" target="_blank" rel="noopener">NASA 3D Resources</a>. Coordinates: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.'
+  ];
 
   // Improvements & Fixes (#roadmap): cards in the style of spaceappschallenge.org/2026/challenges (image, title, Type / Status / Areas chips, text).
   var TILE = 'shared/vendor/nasa/moontrek/3/'; // vendored NASA Moon Trek tiles as thumbnails
@@ -120,7 +128,7 @@
         '<div class="wrap">' +
           '<p class="eyebrow">Usability prototype · ' + lib + '</p>' +
           '<h1>Compare landing sites,<br>filter with a click.</h1>' +
-          '<p class="lead">Daily viability of candidate lunar landing sites, grouped by mission. Click a line to filter the table, the viable areas and the site map.</p>' +
+          '<p class="lead">Daily viability of candidate lunar landing sites, grouped by mission.' + refMark(1) + ' Click a line to filter the table, the viable areas and the site map.</p>' +
         '</div>' +
       '</section>' +
       '<section id="track" class="track">' +
@@ -129,8 +137,7 @@
           '<p class="hint">Click a line to filter. Click an empty area or “Clear filter” to see everything. Use the mouse wheel or drag to zoom.</p>' +
           '<label class="dataset-picker">Dataset ' +
             '<select id="dataset-select">' + datasetOptions + '</select>' +
-          '</label>' +
-          datasetInfo +
+          '</label>' + refMark(2) +
           '<label class="all-series"><input type="checkbox" id="all-series" checked> ' + (data.kind === 'viability' ? 'All missions' : 'All series') + '</label>' +
           '<div id="chart" class="chart" role="img" aria-label="Line chart of the dataset series"></div>' +
           '<p class="viz-info">' + vizInfoHtml(vizMode) + '</p>' +
@@ -199,14 +206,19 @@
           '<p>Charts by <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a> 4.4.1, with no network dependency (local library).</p>' +
         '</div>' +
       '</section>' +
+      '<section id="references" class="about references">' +
+        '<div class="wrap">' +
+          '<h2>References</h2>' +
+          '<ol class="refs">' + REFS.map(function (text, i) {
+            var n = i + 1;
+            return '<li id="ref-' + n + '"><span class="ref-num">*' + n + '</span> <span>' + text + ' <a class="ref-back" href="#refmark-' + n + '" aria-label="Back to the text">↩</a></span></li>';
+          }).join('') + '</ol>' +
+        '</div>' +
+      '</section>' +
     '</main>' +
     '<footer class="footer"><div class="wrap">' +
       '<p class="footer-brand"><strong>MoonWatch</strong> · Myr Battlesphere · NASA Space Apps Challenge 2026 · <em>Lunar Landing Site Navigator</em></p>' +
-      '<p>Viability, Departure and Deadline models and formulas are grounded in data from NASA’s ' +
-        '<a href="https://science.nasa.gov/mission/lro/" target="_blank" rel="noopener">Lunar Reconnaissance Orbiter (LRO)</a> lunar maps and the ' +
-        '<a href="https://kauai.ccmc.gsfc.nasa.gov/DONKI/" target="_blank" rel="noopener">DONKI</a> space weather database (Space Weather Database Of Notifications, Knowledge, Information).</p>' +
       '<p>Next: transit time recalculated from Departure and day-to-day variables · <a href="#roadmap">Improvements &amp; Fixes</a></p>' +
-      '<p>Globe and terrain imagery: NASA Moon Trek, NASA Scientific Visualization Studio and NASA 3D Resources (public domain). Chart by ' + lib + '.</p>' +
     '</div></footer>'
   );
 
