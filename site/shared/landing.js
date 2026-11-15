@@ -282,7 +282,7 @@
         g.points.forEach(function (r) {
           var s = latLonToScreen(r.lat, r.lon, view);
           if (!s.visible) return;
-          hits.push({ x: c + s.x * R, y: c - s.y * R, title: function () { return r.name + ' · ' + g.name + '\n' + groupAreaText(g); } });
+          hits.push({ x: c + s.x * R, y: c - s.y * R, title: function () { var t = siteTotal(r.id); return r.name + ' · ' + g.name + (t === null ? '' : '\nSoma de viabilidade: ' + sumFmt.format(t)) + '\n' + groupAreaText(g); } });
           ctx.beginPath();
           ctx.arc(c + s.x * R, c - s.y * R, top ? 6 : sel ? 4 : 3, 0, 2 * Math.PI);
           ctx.fillStyle = top ? BEST_GREEN : sel ? '#EAFE07' : 'rgba(255,106,61,0.9)';

@@ -305,6 +305,7 @@ async function main() {
       await mouse('mouseMoved', hp.x, hp.y); await wait(300);
       const want = await evaluate(`(()=>{const s=MoonSeries.all.find(x=>x.name===${JSON.stringify(hp.name)});const a=MoonCore.areas().find(a=>a.seriesIndex===s.index);return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(a.area);})()`);
       check('hover a globe point shows its filled area', (await evaluate(`document.querySelector('[data-pane=canvas]').title`)).includes('Área preenchida: ' + want), want);
+      check('hover title also shows the site viability sum', /Soma de viabilidade: [\d.]+/.test(await evaluate(`document.querySelector('[data-pane=canvas]').title`)));
     } else skip('hover a globe point shows its filled area', 'no CSV point visible on the Canvas');
     await evaluate(`document.getElementById('track').scrollIntoView({behavior:'instant'})`); await wait(300);
     check('globe green follows the card when lines move', await evaluate(`(()=>{const card=document.querySelector('#fill-areas .fill-area.is-max .fill-area-name').textContent;const s=MoonSeries.all.find(x=>x.name===card);return MoonLanding.bestGroupKey()==='csv-'+s.group;})()`));
