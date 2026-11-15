@@ -271,7 +271,7 @@ async function main() {
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }
 
-  // Switching dataset must drop the old ?transit=/?linha= so the new dataset starts with one line per series.
+  // Switching dataset must drop the old ?transit= (formerly ?linha=) so the new dataset starts with one line per series.
   for (const [lib, port] of Object.entries(PORTS)) {
     console.log(`${lib} (:${port}) dataset switch width=${WIDTH}`);
     await send('Page.navigate', { url: `http://localhost:${port}/?dataset=sarah&transit=1990,2000&threshold=3&seed=${SEED}#track` });

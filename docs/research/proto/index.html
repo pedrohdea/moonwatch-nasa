@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="pt-br">
+<html lang="en">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MoonWatch — protótipo céu polar</title>
+<title>MoonWatch — polar sky prototype</title>
 <style>
   :root { --bg:#07173f; --fg:#e9eef8; --muted:#9fb0d0; --sun:#E69F00; --earth:#56B4E9; --both:#009E73; --terrain:#5b5f6b; }
   body { margin:0; background:var(--bg); color:var(--fg); font:14px system-ui,sans-serif; }
@@ -22,27 +22,27 @@
 </head>
 <body>
 <main>
-  <h1>MoonWatch — Sol e Terra no horizonte</h1>
+  <h1>MoonWatch — Sun and Earth on the horizon</h1>
   <div class="bar">
-    <label>Sítio <select id="site"></select></label>
-    <label>Início (UTC) <input id="start" type="date" value="2027-01-01"></label>
-    <label>Dias <input id="days" type="number" min="1" max="120" value="30"></label>
-    <label>Elev. mín. DTE (°) <input id="dte" type="number" step="0.5" value="5"></label>
+    <label>Site <select id="site"></select></label>
+    <label>Start (UTC) <input id="start" type="date" value="2027-01-01"></label>
+    <label>Days <input id="days" type="number" min="1" max="120" value="30"></label>
+    <label>Min. DTE elevation (°) <input id="dte" type="number" step="0.5" value="5"></label>
   </div>
   <div class="grid">
     <div>
-      <canvas id="sky" width="700" height="700" aria-label="Gráfico polar do céu: horizonte, trilha do Sol e da Terra"></canvas>
-      <p class="legend"><span><i style="background:var(--sun)"></i>Sol</span><span><i style="background:var(--earth)"></i>Terra</span><span><i style="background:var(--terrain)"></i>Terreno (LOLA 80 m)</span><span>Ponto apagado = escondido</span></p>
+      <canvas id="sky" width="700" height="700" aria-label="Polar sky plot: horizon, Sun and Earth tracks"></canvas>
+      <p class="legend"><span><i style="background:var(--sun)"></i>Sun</span><span><i style="background:var(--earth)"></i>Earth</span><span><i style="background:var(--terrain)"></i>Terrain (LOLA 80 m)</span><span>Faded dot = hidden</span></p>
     </div>
     <div>
-      <h3>Métricas da janela</h3>
+      <h3>Window metrics</h3>
       <table id="metrics"></table>
-      <p><small>Centro do disco solar vs. máscara de 1°. Efeméride: astronomy-engine (erro ≤ 0,0035° vs JPL Horizons). Máscara aproximada (DEM 80 m, raio 150 km).</small></p>
+      <p><small>Center of the solar disc vs. 1° mask. Ephemeris: astronomy-engine (error ≤ 0.0035° vs JPL Horizons). Approximate mask (80 m DEM, 150 km radius).</small></p>
     </div>
   </div>
-  <h3>Comparação de sítios (Gantt)</h3>
-  <canvas id="gantt" width="1100" height="220" aria-label="Linha do tempo de Sol, Terra e ambos por sítio"></canvas>
-  <p class="legend"><span><i style="background:var(--sun)"></i>Sol visível</span><span><i style="background:var(--earth)"></i>Terra visível (DTE)</span><span><i style="background:var(--both)"></i>Ambos</span></p>
+  <h3>Site comparison (Gantt)</h3>
+  <canvas id="gantt" width="1100" height="220" aria-label="Timeline of Sun, Earth and both, per site"></canvas>
+  <p class="legend"><span><i style="background:var(--sun)"></i>Sun visible</span><span><i style="background:var(--earth)"></i>Earth visible (DTE)</span><span><i style="background:var(--both)"></i>Both</span></p>
 </main>
 <script src="astronomy.browser.min.js"></script>
 <script src="moonAzEl.js"></script>
@@ -50,7 +50,7 @@
 <script src="sites.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
-const NAMES = { connecting_ridge: 'Connecting Ridge (aprox.)', im2_mons_mouton: 'IM-2 Athena (Mons Mouton)', mons_mouton: 'Mons Mouton (centro IAU)' };
+const NAMES = { connecting_ridge: 'Connecting Ridge (approx.)', im2_mons_mouton: 'IM-2 Athena (Mons Mouton)', mons_mouton: 'Mons Mouton (IAU center)' };
 for (const k of Object.keys(SITES)) $('site').add(new Option(NAMES[k] || k, k));
 $('site').value = 'im2_mons_mouton';
 
@@ -68,7 +68,7 @@ function drawSky(site, samples, m) {
   g.clearRect(0, 0, W, W);
   g.strokeStyle = '#1e3370'; g.fillStyle = '#9fb0d0'; g.font = '12px system-ui';
   for (const el of [-10, -5, 0, 5, 10]) { g.beginPath(); g.arc(cx, cx, R * (EL_MAX - el) / (EL_MAX - EL_MIN), 0, 2 * Math.PI); g.lineWidth = el === 0 ? 2 : 1; g.stroke(); g.fillText(el + '°', cx + 4, cx - R * (EL_MAX - el) / (EL_MAX - EL_MIN) + 12); }
-  [['N', 0], ['L', 90], ['S', 180], ['O', 270]].forEach(([t, az]) => { const [x, y] = xy(az, EL_MIN - 1.5); g.fillText(t, x - 4, y + 4); });
+  [['N', 0], ['E', 90], ['S', 180], ['W', 270]].forEach(([t, az]) => { const [x, y] = xy(az, EL_MIN - 1.5); g.fillText(t, x - 4, y + 4); });
   // terrain: fill from mask outward to the edge
   g.beginPath();
   for (let az = 0; az <= 360; az++) { const [x, y] = xy(az, site.h[az % 360]); az ? g.lineTo(x, y) : g.moveTo(x, y); }
@@ -101,11 +101,11 @@ function render() {
   drawGantt(rows);
   const f = (x) => x.toFixed(1);
   $('metrics').innerHTML = [
-    ['Fração iluminada', f(cur.m.sunlitPct) + '%'],
-    ['Maior escuridão contínua', cur.m.longestDarkH + ' h'],
-    ['Fração DTE (Terra visível)', f(cur.m.dtePct) + '%'],
-    ['Maior apagão de comunicação', cur.m.longestBlackoutH + ' h'],
-    ['Sol + Terra (janela útil)', f(cur.m.bothPct) + '%'],
+    ['Illuminated fraction', f(cur.m.sunlitPct) + '%'],
+    ['Longest continuous darkness', cur.m.longestDarkH + ' h'],
+    ['DTE fraction (Earth visible)', f(cur.m.dtePct) + '%'],
+    ['Longest communication blackout', cur.m.longestBlackoutH + ' h'],
+    ['Sun + Earth (useful window)', f(cur.m.bothPct) + '%'],
   ].map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join('');
 }
 ['site', 'start', 'days', 'dte'].forEach((id) => $(id).addEventListener('change', render));

@@ -11,9 +11,9 @@ test('16 unique missions with Moon3DMap URLs matching the pasted links', () => {
   assert.equal(L.MISSIONS.length, 16);
   assert.equal(new Set(L.MISSIONS.map((m) => m.key)).size, 16);
   const a11 = L.MISSIONS.find((m) => m.key === 'apollo-11-landing-site');
-  assert.equal(a11.url, 'https://moon3dmap.com/pt/apollo-11-landing-site/?lat=0.7100&long=23.6300&layer=nasa-wac&auto3d=1');
+  assert.equal(a11.url, 'https://moon3dmap.com/en/apollo-11-landing-site/?lat=0.7100&long=23.6300&layer=nasa-wac&auto3d=1');
   const luna2 = L.MISSIONS.find((m) => m.key === 'luna-2-impact-site');
-  assert.equal(luna2.url, 'https://moon3dmap.com/pt/luna-2-impact-site/?lat=29.1000&long=0.0000&layer=nasa-wac&auto3d=1');
+  assert.equal(luna2.url, 'https://moon3dmap.com/en/luna-2-impact-site/?lat=29.1000&long=0.0000&layer=nasa-wac&auto3d=1');
 });
 
 test('shortest longitude turn crosses 180° when shorter', () => {

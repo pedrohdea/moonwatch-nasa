@@ -55,7 +55,7 @@
   var REFS = [
     'Viability, Departure and Deadline models and formulas are grounded in data from NASA’s <a href="https://science.nasa.gov/mission/lro/" target="_blank" rel="noopener">Lunar Reconnaissance Orbiter (LRO)</a> lunar maps and the <a href="https://kauai.ccmc.gsfc.nasa.gov/DONKI/" target="_blank" rel="noopener">DONKI</a> space weather database (Space Weather Database Of Notifications, Knowledge, Information).',
     datasetInfo,
-    'NASA data (public domain): Canvas texture from <a href="https://trek.nasa.gov/moon/" target="_blank" rel="noopener">NASA Moon Trek</a> (LRO WAC mosaic), fallback SVS CGI Moon Kit; three.js globe from <a href="https://svs.gsfc.nasa.gov/14959/" target="_blank" rel="noopener">NASA SVS Moon 3D model</a>; Terrain 3D from <a href="https://science.nasa.gov/3d-resources/" target="_blank" rel="noopener">NASA 3D Resources</a>. Coordinates: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.'
+    'NASA data (public domain): Canvas texture from <a href="https://trek.nasa.gov/moon/" target="_blank" rel="noopener">NASA Moon Trek</a> (LRO WAC mosaic), fallback SVS CGI Moon Kit; three.js globe from <a href="https://svs.gsfc.nasa.gov/14959/" target="_blank" rel="noopener">NASA SVS Moon 3D model</a>; Terrain 3D from <a href="https://science.nasa.gov/3d-resources/" target="_blank" rel="noopener">NASA 3D Resources</a>. Coordinates: <a href="https://moon3dmap.com/en/" target="_blank" rel="noopener">moon3dmap.com</a>.'
   ];
 
   // Improvements & Fixes (#roadmap): cards in the style of spaceappschallenge.org/2026/challenges (image, title, Type / Status / Areas chips, text).

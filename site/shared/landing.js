@@ -28,7 +28,7 @@
   ].map(function (m) {
     return {
       key: m[0], name: m[1], agency: m[2], year: m[3], kind: m[4], lat: m[5], lon: m[6],
-      url: 'https://moon3dmap.com/pt/' + m[0] + '/?lat=' + m[5].toFixed(4) + '&long=' + m[6].toFixed(4) + '&layer=nasa-wac&auto3d=1'
+      url: 'https://moon3dmap.com/en/' + m[0] + '/?lat=' + m[5].toFixed(4) + '&long=' + m[6].toFixed(4) + '&layer=nasa-wac&auto3d=1'
     };
   });
 
@@ -597,7 +597,7 @@
     var frame = pane('iframe');
     return {
       draw: function () {
-        var url = state.url || 'https://moon3dmap.com/pt/';
+        var url = state.url || 'https://moon3dmap.com/en/';
         if (frame.getAttribute('src') !== url) frame.setAttribute('src', url);
       }
     };
@@ -632,7 +632,7 @@
   }
 
   function mapLink(lat, lon) {
-    return 'https://moon3dmap.com/pt/?lat=' + lat.toFixed(4) + '&long=' + lon.toFixed(4) + '&layer=nasa-wac&auto3d=1';
+    return 'https://moon3dmap.com/en/?lat=' + lat.toFixed(4) + '&long=' + lon.toFixed(4) + '&layer=nasa-wac&auto3d=1';
   }
 
   function selectMission(key) {

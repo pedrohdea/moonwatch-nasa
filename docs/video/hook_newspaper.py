@@ -1,16 +1,16 @@
-"""Gera o vídeo HOOK (5 s) com temática de jornal bruxo (pergaminho, foto que se mexe).
+"""Generate the HOOK video (5 s) with a wizarding-newspaper theme (parchment, moving photograph).
 
-Uso:
-    python3 docs/video/hook_newspaper.py [saida.mp4]
+Usage:
+    python3 docs/video/hook_newspaper.py [output.mp4]
 
-Linha do tempo:
-    0.0–1.3 s  jornal gira e entra na tela ("spinning newspaper")
-    1.3–5.0 s  push-in lento sobre a manchete; a Lua gira dentro da foto
-    2.3–2.9 s  sublinhado vermelho em "MONTHS OF WAITING"
-    3.3 s      carimbo "AND MILLIONS LOST." com tremor de câmera
+Timeline:
+    0.0–1.3 s  newspaper spins onto the screen ("spinning newspaper")
+    1.3–5.0 s  slow push-in on the headline; the Moon spins inside the photo
+    2.3–2.9 s  red underline on "MONTHS OF WAITING"
+    3.3 s      stamp "AND MILLIONS LOST." with camera shake
 
-Fontes: UnifrakturMaguntia e IM Fell English (SIL OFL, em docs/video/fonts/).
-Textura da Lua: NASA SVS CGI Moon Kit (site/shared/vendor/moon-2k.jpg).
+Fonts: UnifrakturMaguntia and IM Fell English (SIL OFL, in docs/video/fonts/).
+Moon texture: NASA SVS CGI Moon Kit (site/shared/vendor/moon-2k.jpg).
 """
 
 import math
@@ -60,29 +60,29 @@ FILLER = (
 
 
 def ease_out_cubic(t):
-    """Curva de easing cúbica de saída.
+    """Cubic ease-out curve.
 
     Args:
-        t: progresso normalizado entre 0 e 1.
+        t: normalized progress between 0 and 1.
 
     Returns:
-        Progresso suavizado entre 0 e 1.
+        Eased progress between 0 and 1.
     """
     t = min(max(t, 0.0), 1.0)
     return 1 - (1 - t) ** 3
 
 
 def fit_font(path, text, max_w, start=220):
-    """Encontra o maior tamanho de fonte em que o texto cabe na largura.
+    """Find the largest font size at which the text fits the width.
 
     Args:
-        path: caminho do arquivo da fonte.
-        text: texto a medir.
-        max_w: largura máxima em pixels.
-        start: tamanho inicial da busca.
+        path: path to the font file.
+        text: text to measure.
+        max_w: maximum width in pixels.
+        start: starting size of the search.
 
     Returns:
-        ImageFont.FreeTypeFont no maior tamanho que cabe.
+        ImageFont.FreeTypeFont at the largest size that fits.
     """
     logger.debug("fit_font text={!r} max_w={}", text, max_w)
     size = start
@@ -95,14 +95,14 @@ def fit_font(path, text, max_w, start=220):
 
 
 def build_moon_maps(w, h):
-    """Pré-calcula a projeção ortográfica da esfera lunar para a foto.
+    """Precompute the orthographic projection of the lunar sphere for the photo.
 
     Args:
-        w: largura da foto.
-        h: altura da foto.
+        w: photo width.
+        h: photo height.
 
     Returns:
-        Dict com textura, coordenadas de textura base, sombreamento, máscara e estrelas.
+        Dict with texture, base texture coordinates, shading, mask and stars.
     """
     logger.debug("build_moon_maps w={} h={}", w, h)
     tex = np.asarray(Image.open(MOON_TEXTURE).convert("L")).astype(np.float32)
@@ -148,14 +148,14 @@ def build_moon_maps(w, h):
 
 
 def render_moon_photo(maps, t):
-    """Renderiza a "foto que se mexe": Lua girando, em sépia, com cintilação.
+    """Render the "moving photograph": spinning Moon, in sepia, with flicker.
 
     Args:
-        maps: resultado de build_moon_maps.
-        t: tempo em segundos.
+        maps: result of build_moon_maps.
+        t: time in seconds.
 
     Returns:
-        Imagem RGB da foto.
+        RGB image of the photo.
     """
     logger.debug("render_moon_photo t={:.3f}", t)
     shift = MOON_SPIN * t / (2 * math.pi) * maps["tw"]
@@ -173,15 +173,15 @@ def render_moon_photo(maps, t):
 
 
 def draw_crescent(d, cx, cy, r, color, bg):
-    """Desenha um emblema de lua crescente com estrelas.
+    """Draw a crescent-moon emblem with stars.
 
     Args:
-        d: ImageDraw de destino.
-        cx: centro x.
-        cy: centro y.
-        r: raio.
-        color: cor da tinta.
-        bg: cor do fundo (para recortar o crescente).
+        d: target ImageDraw.
+        cx: center x.
+        cy: center y.
+        r: radius.
+        color: ink color.
+        bg: background color (to cut out the crescent).
 
     Returns:
         None.
@@ -206,14 +206,14 @@ def draw_crescent(d, cx, cy, r, color, bg):
 
 
 def ornate_rule(d, y, x0, x1, color):
-    """Desenha um fio ornamental grosso-fino com losango central.
+    """Draw a thick-thin ornamental rule with a central diamond.
 
     Args:
-        d: ImageDraw de destino.
-        y: posição vertical.
-        x0: início horizontal.
-        x1: fim horizontal.
-        color: cor da tinta.
+        d: target ImageDraw.
+        y: vertical position.
+        x0: horizontal start.
+        x1: horizontal end.
+        color: ink color.
 
     Returns:
         None.
@@ -232,13 +232,13 @@ def ornate_rule(d, y, x0, x1, color):
 
 
 def age_parchment(page):
-    """Envelhece o papel: manchas, anéis de café, bordas queimadas e grão.
+    """Age the paper: stains, coffee rings, burnt edges and grain.
 
     Args:
-        page: imagem RGB da página.
+        page: RGB image of the page.
 
     Returns:
-        Imagem RGBA envelhecida.
+        Aged RGBA image.
     """
     logger.debug("age_parchment start")
     rng = np.random.default_rng(5)
@@ -277,10 +277,10 @@ def age_parchment(page):
 
 
 def build_page():
-    """Monta a primeira página do jornal (sem a foto e sem animações).
+    """Build the newspaper front page (without the photo and without animations).
 
     Returns:
-        Tupla (página RGBA, caixa do sublinhado (x0, y, x1), centro do carimbo (x, y)).
+        Tuple (RGBA page, underline box (x0, y, x1), stamp center (x, y)).
     """
     logger.info("build_page start")
     page = Image.new("RGB", (PAGE_W, PAGE_H), PAPER)
@@ -381,15 +381,15 @@ def build_page():
 
 
 def build_stamp(text=STAMP, size=130, color=RED):
-    """Desenha o carimbo vermelho com textura de tinta falhada.
+    """Draw the red stamp with a patchy-ink texture.
 
     Args:
-        text: texto do carimbo.
-        size: tamanho da fonte.
-        color: cor RGB da tinta.
+        text: stamp text.
+        size: font size.
+        color: RGB ink color.
 
     Returns:
-        Imagem RGBA do carimbo já rotacionado.
+        RGBA image of the already rotated stamp.
     """
     logger.debug("build_stamp start text={!r}", text)
     font = ImageFont.truetype(F_HEAD, size)
@@ -412,10 +412,10 @@ def build_stamp(text=STAMP, size=130, color=RED):
 
 
 def build_background():
-    """Cria o fundo escuro quente (luz de vela) com vinheta radial.
+    """Create the warm dark background (candlelight) with a radial vignette.
 
     Returns:
-        Imagem RGB do fundo.
+        RGB image of the background.
     """
     logger.debug("build_background start")
     yy, xx = np.mgrid[0:H, 0:W]
@@ -427,19 +427,19 @@ def build_background():
 
 
 def render_frame(t, page, ul, stamp_xy, stamp, bg, moon_maps):
-    """Renderiza um quadro do vídeo no instante t.
+    """Render one video frame at time t.
 
     Args:
-        t: tempo em segundos.
-        page: página base RGBA.
-        ul: caixa do sublinhado (x0, y, x1).
-        stamp_xy: centro do carimbo na página.
-        stamp: imagem RGBA do carimbo.
-        bg: fundo RGB.
-        moon_maps: mapas pré-calculados da foto da Lua.
+        t: time in seconds.
+        page: base RGBA page.
+        ul: underline box (x0, y, x1).
+        stamp_xy: stamp center on the page.
+        stamp: RGBA image of the stamp.
+        bg: RGB background.
+        moon_maps: precomputed maps of the Moon photo.
 
     Returns:
-        Quadro RGB no tamanho final.
+        RGB frame at the final size.
     """
     logger.debug("render_frame t={:.3f}", t)
     pg = page.copy()
@@ -470,13 +470,13 @@ def render_frame(t, page, ul, stamp_xy, stamp, bg, moon_maps):
 
 
 def slam_stamp(pg, stamp, center, ts):
-    """Aplica o carimbo batendo na página (escala 2.4 -> 1 em 0.15 s).
+    """Slam the stamp onto the page (scale 2.4 -> 1 in 0.15 s).
 
     Args:
-        pg: página RGBA (modificada no lugar).
-        stamp: imagem RGBA do carimbo.
-        center: centro (x, y) do carimbo na página.
-        ts: tempo desde o impacto em segundos (<= 0 não desenha).
+        pg: RGBA page (modified in place).
+        stamp: RGBA image of the stamp.
+        center: stamp center (x, y) on the page.
+        ts: time since impact in seconds (<= 0 draws nothing).
 
     Returns:
         None.
@@ -492,20 +492,20 @@ def slam_stamp(pg, stamp, center, ts):
 
 
 def place_page(pg, angle, scale, cy, ox, oy, bg, seed):
-    """Posiciona a página na tela: escala, rotação, sombra, tremor e grão de filme.
+    """Place the page on screen: scale, rotation, shadow, shake and film grain.
 
     Args:
-        pg: página RGBA já com as animações aplicadas.
-        angle: rotação em graus.
-        scale: escala relativa da página.
-        cy: centro vertical na tela.
-        ox: deslocamento horizontal (tremor).
-        oy: deslocamento vertical (tremor).
-        bg: fundo RGB.
-        seed: semente do grão de filme.
+        pg: RGBA page with animations already applied.
+        angle: rotation in degrees.
+        scale: relative page scale.
+        cy: vertical center on screen.
+        ox: horizontal offset (shake).
+        oy: vertical offset (shake).
+        bg: RGB background.
+        seed: film grain seed.
 
     Returns:
-        Quadro RGB no tamanho final.
+        RGB frame at the final size.
     """
     logger.debug("place_page angle={:.1f} scale={:.3f}", angle, scale)
     sw, sh = max(2, int(PAGE_W * scale * 0.9)), max(2, int(PAGE_H * scale * 0.9))
@@ -537,10 +537,10 @@ def place_page(pg, angle, scale, cy, ox, oy, bg, seed):
 
 
 def main(out_path):
-    """Renderiza todos os quadros e codifica o MP4 via ffmpeg.
+    """Render all frames and encode the MP4 via ffmpeg.
 
     Args:
-        out_path: caminho do arquivo MP4 de saída.
+        out_path: path of the output MP4 file.
 
     Returns:
         None.

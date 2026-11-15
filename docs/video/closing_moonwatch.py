@@ -1,17 +1,17 @@
-"""Gera o vídeo de FECHAMENTO (5 s): edição extra do jornal com o logo MoonWatch.
+"""Generate the CLOSING video (5 s): extra edition of the newspaper with the MoonWatch logo.
 
 Uso:
-    python3 docs/video/closing_moonwatch.py [saida.mp4]
+    python3 docs/video/closing_moonwatch.py [output.mp4]
 
-Linha do tempo:
-    0.0–1.0 s  página "EXTRA EDITION" gira e entra
-    1.0–2.8 s  logo MoonWatch se desenha em tinta na foto viva; trajetória tracejada avança
+Timeline:
+    0.0–1.0 s  "EXTRA EDITION" page spins in
+    1.0–2.8 s  MoonWatch logo draws itself in ink on the live photo; dashed trajectory advances
     1.4/2.0 s  "SEE THE RISK." / "PICK THE SITE."
-    2.7 s      carimbo verde "MOONWATCH." com tremor de câmera
+    2.7 s      green stamp "MOONWATCH." with camera shake
     3.4 s      "SAVE THE MISSION."
-    4.6–5.0 s  fade para o escuro
+    4.6–5.0 s  fade to dark
 
-Reaproveita o visual e a câmera de hook_newspaper.py.
+Reuses the look and camera of hook_newspaper.py.
 """
 
 import math
@@ -62,10 +62,10 @@ PATH_A, PATH_B = (520, 655), (690, 890)  # dashed trajectory: Earth -> lander
 
 
 def load_logo():
-    """Extrai o traço verde do logo e recorta na área do desenho.
+    """Extract the green stroke of the logo and crop it to the drawing area.
 
     Returns:
-        Tupla (alfa float32 0..1 recortado, offset (x, y) do recorte na imagem original).
+        Tuple (cropped float32 alpha 0..1, (x, y) offset of the crop in the original image).
     """
     logger.debug("load_logo path={}", LOGO_PATH)
     rgb = np.asarray(Image.open(LOGO_PATH).convert("RGB")).astype(np.float32)
@@ -80,17 +80,17 @@ def load_logo():
 
 
 def build_reveal_map(shape, offset):
-    """Calcula, por pixel, o instante normalizado (0..1) em que o traço aparece.
+    """Compute, per pixel, the normalized instant (0..1) at which the stroke appears.
 
-    Moldura: varredura angular. Título: esquerda para direita. Oval: varredura angular.
-    Ícones internos: por distância ao centro. Tracejado: ao longo da trajetória.
+    Frame: angular sweep. Title: left to right. Oval: angular sweep.
+    Inner icons: by distance from the center. Dashes: along the trajectory.
 
     Args:
-        shape: (altura, largura) do recorte do logo.
-        offset: (x, y) do recorte na imagem original.
+        shape: (height, width) of the logo crop.
+        offset: (x, y) of the crop in the original image.
 
     Returns:
-        Array float32 com o instante de revelação normalizado.
+        float32 array with the normalized reveal instant.
     """
     logger.debug("build_reveal_map shape={}", shape)
     h, w = shape
@@ -123,10 +123,10 @@ def build_reveal_map(shape, offset):
 
 
 def build_logo_layers():
-    """Prepara o logo redimensionado para a foto e seu mapa de revelação.
+    """Prepare the logo resized for the photo and its reveal map.
 
     Returns:
-        Dict com alfa e mapa redimensionados, posição na página e trajetória em coordenadas de página.
+        Dict with resized alpha and map, position on the page and trajectory in page coordinates.
     """
     logger.info("build_logo_layers start")
     alpha, offset = load_logo()
@@ -154,10 +154,10 @@ def build_logo_layers():
 
 
 def build_page():
-    """Monta a página "EXTRA EDITION" (sem logo, sem frases e sem animações).
+    """Build the "EXTRA EDITION" page (without logo, taglines or animations).
 
     Returns:
-        Página RGBA envelhecida.
+        Aged RGBA page.
     """
     logger.info("build_page start")
     page = Image.new("RGB", (PAGE_W, PAGE_H), PAPER)
@@ -224,10 +224,10 @@ def build_page():
 
 
 def build_tagline_layers():
-    """Desenha cada frase da chamada em camada própria (para o efeito de tinta escorrendo).
+    """Draw each tagline phrase on its own layer (for the ink-bleed effect).
 
     Returns:
-        Lista de tuplas (imagem RGBA recortada, posição (x, y) na página).
+        List of tuples (cropped RGBA image, (x, y) position on the page).
     """
     logger.debug("build_tagline_layers start")
     col_x0 = PLATE_BOX[2] + 70
@@ -247,18 +247,18 @@ def build_tagline_layers():
 
 
 def render_frame(t, page, logo, taglines, stamp, bg):
-    """Renderiza um quadro do fechamento no instante t.
+    """Render one frame of the closing at time t.
 
     Args:
-        t: tempo em segundos.
-        page: página base RGBA.
-        logo: resultado de build_logo_layers.
-        taglines: resultado de build_tagline_layers.
-        stamp: imagem RGBA do carimbo.
-        bg: fundo RGB.
+        t: time in seconds.
+        page: base RGBA page.
+        logo: result of build_logo_layers.
+        taglines: result of build_tagline_layers.
+        stamp: RGBA image of the stamp.
+        bg: RGB background.
 
     Returns:
-        Quadro RGB no tamanho final.
+        RGB frame at the final size.
     """
     logger.debug("render_frame t={:.3f}", t)
     pg = page.copy()
@@ -317,10 +317,10 @@ def render_frame(t, page, logo, taglines, stamp, bg):
 
 
 def main(out_path):
-    """Renderiza todos os quadros e codifica o MP4 via ffmpeg.
+    """Render all frames and encode the MP4 via ffmpeg.
 
     Args:
-        out_path: caminho do arquivo MP4 de saída.
+        out_path: path of the output MP4 file.
 
     Returns:
         None.
