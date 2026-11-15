@@ -53,7 +53,7 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs for phone width
 
 Two video sections (`site/shared/videos.js`, muted, no audio, 5 s each):
 - `#intro`, above `#home`: `site/shared/media/hook_newspaper.mp4` ("The Lunar Gazette" hook).
-- `#closing`, after `#about`: `site/shared/media/closing_moonwatch.mp4` (extra edition with the MoonWatch logo); it stops at 4.5 s, before its fade to dark.
+- `#closing`, after `#sites` (Landing & Impact Sites): `site/shared/media/closing_moonwatch.mp4` (extra edition with the MoonWatch logo); it stops at 4.5 s, before its fade to dark.
 
 Each one plays once when its section is at least half on screen and stops on its last frame; Stop / Play button (Play replays it). With reduced motion they do not autoplay and show the poster.
 

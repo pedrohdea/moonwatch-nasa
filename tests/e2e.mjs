@@ -375,7 +375,7 @@ async function main() {
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }
 
-  // Video sections: #intro above #home and #closing after #about play once when visible and stop at the end; Play replays, Stop pauses.
+  // Video sections: #intro above #home and #closing after #sites play once when visible and stop at the end; Play replays, Stop pauses.
   for (const [lib, port] of Object.entries(PORTS)) {
     errors.length = 0;
     console.log(`${lib} (:${port}) video sections width=${WIDTH}`);
@@ -383,7 +383,7 @@ async function main() {
     const vid = (id) => `document.querySelector('#${id} video')`;
     const btn = (id) => `document.querySelector('#${id} .video-toggle')`;
     check('intro section above #home, video playing', await evaluate(`(()=>{const s=document.getElementById('intro'),v=${vid('intro')};return !!v&&s.nextElementSibling.id==='home'&&!v.paused&&v.currentTime>0})()`));
-    check('closing section after #about, not started off screen', await evaluate(`document.getElementById('about').nextElementSibling.id==='closing'&&${vid('closing')}.paused&&${vid('closing')}.currentTime===0`));
+    check('closing section after #sites, not started off screen', await evaluate(`document.getElementById('sites').nextElementSibling.id==='closing'&&${vid('closing')}.paused&&${vid('closing')}.currentTime===0`));
     await wait(4500);
     check('intro: auto stop at the end (button says Play)', await evaluate(`${vid('intro')}.ended&&${vid('intro')}.paused&&${btn('intro')}.textContent.includes('Play')`));
     await evaluate(`${btn('intro')}.click()`); await wait(500);

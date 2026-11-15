@@ -276,7 +276,7 @@ th.sortable:hover { color: var(--neon-yellow); }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
 
-/* Video sections #intro (above #home) and #closing (after #about), site/shared/videos.js */
+/* Video sections #intro (above #home) and #closing (after #sites), site/shared/videos.js */
 .video-section { padding: 24px 0 0; background: var(--deep-blue); }
 #closing { padding: 0 0 48px; }
 .video-frame { position: relative; margin: 0; aspect-ratio: 16 / 9; border-radius: var(--radius); overflow: hidden; background: #000; border: 1px solid var(--line); }

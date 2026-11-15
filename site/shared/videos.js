@@ -1,4 +1,4 @@
-// Video sections (site/shared/media/): #intro above #home ("Lunar Gazette" hook) and #closing after #about (MoonWatch extra edition).
+// Video sections (site/shared/media/): #intro above #home ("Lunar Gazette" hook) and #closing after #sites, Landing & Impact Sites (MoonWatch extra edition); loads after landing.js, which creates #sites.
 // Each video plays once when its section first becomes visible and stops at the end (or at stopAt, before a fade-out),
 // showing its last meaningful frame; Stop / Play button (Play after the end replays it). Reduced motion: no autoplay, poster only.
 (function (root) {
@@ -9,7 +9,7 @@
   var VIDEOS = [
     { id: 'intro', label: 'Intro video', anchor: 'home', where: 'beforebegin', file: 'hook_newspaper',
       caption: 'At the lunar south pole, a four-day launch slip can mean months of waiting, and millions lost.' },
-    { id: 'closing', label: 'Closing video', anchor: 'about', where: 'afterend', file: 'closing_moonwatch', stopAt: 4.5, // the video fades to dark after 4.6 s
+    { id: 'closing', label: 'Closing video', anchor: 'sites', where: 'afterend', file: 'closing_moonwatch', stopAt: 4.5, // the video fades to dark after 4.6 s
       caption: 'Extra edition: See the risk. Pick the site. MoonWatch. Save the mission.' }
   ];
 
