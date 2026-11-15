@@ -203,6 +203,29 @@
           '</ul>' +
           '<p>The chart is drawn from the table points. Each point has a <strong>confidence</strong> (0–100%): in this prototype it is <strong>random</strong> (drawn on each load; <code>?seed=N</code> repeats a draw). On the curves, the point sits away from the theoretical curve in proportion to the confidence: 100% on the curve, 0% at 2.5 units from it. On the spurious correlations the values are real and only the confidence is random.</p>' +
           '<p>Charts by <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a> 4.4.1, with no network dependency (local library).</p>' +
+          '<figure class="about-logo"><img src="shared/media/moonwatch_logo.jpg" width="240" height="214" alt="MoonWatch logo: hand-drawn green sketch of the Moon, a dashed trajectory and stars">' +
+            '<figcaption>Logo hand-drawn by the team\u2019s 8-year-old kids.</figcaption></figure>' +
+        '</div>' +
+      '</section>' +
+      '<section id="data-sources" class="about data-sources">' +
+        '<div class="wrap">' +
+          '<h2>Data Sources</h2>' +
+          '<p class="hint">Data actually used by this prototype. The viability values are simulated (placeholder data), not real mission data.</p>' +
+          '<h3>Public data and NASA assets</h3>' +
+          '<div class="sources-scroll"><table class="data sources-table"><thead><tr><th>Source</th><th>Provider</th><th>Used for</th></tr></thead><tbody>' +
+            '<tr><td><a href="https://trek.nasa.gov/moon/" target="_blank" rel="noopener">NASA Moon Trek</a> — LRO WAC global mosaic</td><td>NASA / JPL, LRO</td><td>Canvas globe texture (128 tiles, 4096×2048)</td></tr>' +
+            '<tr><td><a href="https://svs.gsfc.nasa.gov/14959/" target="_blank" rel="noopener">Moon 3D model (moon_small.glb)</a></td><td>NASA Scientific Visualization Studio</td><td>three.js globe (LRO color + topography)</td></tr>' +
+            '<tr><td><a href="https://svs.gsfc.nasa.gov/4720/" target="_blank" rel="noopener">CGI Moon Kit</a> (LROC color, 2k)</td><td>NASA Scientific Visualization Studio</td><td>Fallback globe texture; Moon photo in the intro video</td></tr>' +
+            '<tr><td><a href="https://science.nasa.gov/3d-resources/" target="_blank" rel="noopener">NASA 3D Resources</a></td><td>NASA</td><td>Terrain 3D: Apollo 11/12/14/15/16 landing-site height maps (STL) and the Apollo Lunar Module (GLB)</td></tr>' +
+            '<tr><td><a href="https://moon3dmap.com/en/" target="_blank" rel="noopener">Moon3DMap</a></td><td>moon3dmap.com</td><td>Coordinates of the 16 historic landing and impact sites; Moon3DMap tab</td></tr>' +
+            '<tr><td><a href="https://www.tylervigen.com/spurious-correlations" target="_blank" rel="noopener">Spurious Correlations</a></td><td>Tyler Vigen (CC BY 4.0)</td><td>Four real datasets used to test chart usability</td></tr>' +
+          '</tbody></table></div>' +
+          '<h3>Synthetic / placeholder data</h3>' +
+          '<div class="sources-scroll"><table class="data sources-table"><thead><tr><th>Table</th><th>Content</th></tr></thead><tbody>' +
+            '<tr><td><code>dMission</code></td><td>Fictional missions and objectives (<code>docs/dMission.csv</code>)</td></tr>' +
+            '<tr><td><code>dLandingSites</code></td><td>50 fictional landing sites in 10 missions, with coordinates (<code>dLandingSites.csv</code>)</td></tr>' +
+            '<tr><td><code>fLandingSites_viability</code></td><td>Simulated daily viability per site, 2024-01-01 to 2025-12-31 (<code>docs/fLandingSites_viability.csv</code>)</td></tr>' +
+          '</tbody></table></div>' +
         '</div>' +
       '</section>' +
       '<section id="references" class="about references">' +

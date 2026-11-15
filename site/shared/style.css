@@ -294,3 +294,21 @@ th.sortable:hover { color: var(--neon-yellow); }
 .refs .ref-num { flex: none; min-width: 2.2em; font-family: var(--font-mono); color: var(--neon-yellow); font-weight: 700; }
 .refs li:target { color: var(--white); }
 .ref-back { text-decoration: none; }
+
+/* Data Sources section */
+.data-sources h3 { font-family: var(--font-head); font-size: 20px; margin: 24px 0 8px; }
+.sources-scroll { overflow-x: auto; }
+.sources-table td { white-space: normal; vertical-align: top; }
+.sources-table td:first-child { white-space: nowrap; }
+@media (max-width: 640px) { /* phones: each source row becomes a small card */
+  .sources-table thead { display: none; }
+  .sources-table tr, .sources-table td { display: block; }
+  .sources-table td { border-bottom: 0; padding: 2px 0; }
+  .sources-table td:first-child { white-space: normal; font-weight: 700; padding-top: 12px; }
+  .sources-table tr { border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+}
+
+/* About: hand-drawn logo */
+.about-logo { margin: 24px 0 0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.about-logo img { width: 240px; height: auto; border-radius: var(--radius); background: #fff; }
+.about-logo figcaption { color: var(--text-muted); font-size: 15px; font-style: italic; }
