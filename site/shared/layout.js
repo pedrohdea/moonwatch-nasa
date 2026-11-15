@@ -92,6 +92,7 @@
             '<select id="dataset-select">' + datasetOptions + '</select>' +
           '</label>' +
           datasetInfo +
+          '<div id="chart" class="chart" role="img" aria-label="Gráfico de linhas das séries do conjunto de dados"></div>' +
           '<p class="viz-info"><strong>Assertividade · ' + vizMode.label + ':</strong> ' + vizMode.help +
             ' Referência = ' + root.MoonSeries.dataset.referenceLabel + '.' +
             (vizMode.key === 'cor'
@@ -114,7 +115,6 @@
             '<span class="vlines-label" title="Uma linha para todas as séries: o preenchimento fica acima dela">Viabilidade mínima</span>' +
             '<div id="hlines-list" class="vlines-list"></div>' +
           '</div>' +
-          '<div id="chart" class="chart" role="img" aria-label="Gráfico de linhas com seis funções matemáticas"></div>' +
           '<div class="table-box" id="table-box" tabindex="0" aria-label="Dados do gráfico">' +
             '<table class="data">' +
               '<thead id="table-head"></thead>' +
