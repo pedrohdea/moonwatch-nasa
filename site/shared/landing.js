@@ -176,6 +176,7 @@
         '</div>' +
         '<p id="landing-info" class="dataset-info" aria-live="polite"></p>' +
         '<div class="table-bar landing-points-bar" data-for="landing-points" hidden><span class="table-bar-title">Sítios selecionados</span>' +
+          '<input type="search" id="landing-search" class="table-search" placeholder="Filtrar sítios…" aria-label="Filtrar sítios selecionados">' +
           '<button type="button" class="btn btn-ghost table-toggle" aria-controls="landing-points" aria-expanded="false">Maximizar</button></div>' +
         '<div id="landing-points" class="table-box landing-points is-min" hidden></div>' +
         '<p class="dataset-info">Textura: NASA Scientific Visualization Studio, CGI Moon Kit (LRO/LROC, domínio público). Coordenadas: <a href="https://moon3dmap.com/pt/" target="_blank" rel="noopener">moon3dmap.com</a>.</p>' +
@@ -188,6 +189,7 @@
   var stage = doc.querySelector('.landing-stage');
   var state = { tab: 'canvas', mission: null, view: { lat: 0, lon: 0, zoom: 1 }, groups: [], checked: [], url: null };
   var pointsBox = doc.getElementById('landing-points');
+  if (root.MoonTableKit) root.MoonTableKit.attach(pointsBox, doc.getElementById('landing-search'));
   var renderers = {};
   var anim = null;
 
@@ -412,6 +414,7 @@
     state.groups.forEach(function (g) { if (state.checked.indexOf(g.key) >= 0) pts = pts.concat(g.points); });
     pointsBox.hidden = !pts.length;
     doc.querySelector('.landing-points-bar').hidden = !pts.length;
+    if (root.MoonTableKit) root.setTimeout(function () { root.MoonTableKit.apply(pointsBox); }, 0); // keep sort + filter after re-render
     doc.querySelector('.landing-points-bar .table-bar-title').textContent = 'Sítios selecionados (' + pts.length + ')';
     pointsBox.innerHTML = pts.length
       ? '<table class="data"><thead><tr><th>ID</th><th>Missão</th><th>Nome</th><th>Latitude</th><th>Longitude</th><th>PRSID</th><th>NEARESTCOLD</th><th class="num">Soma de viabilidade</th></tr></thead><tbody>' +

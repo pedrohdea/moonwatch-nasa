@@ -104,6 +104,7 @@
             '<div id="hlines-list" class="vlines-list"></div>' +
           '</div>' +
           '<div class="table-bar" data-for="table-box"><span class="table-bar-title">Tabela de dados</span>' +
+            '<input type="search" id="table-search" class="table-search" placeholder="Filtrar linhas…" aria-label="Filtrar linhas da tabela de dados">' +
             '<button type="button" class="btn btn-ghost table-toggle" aria-controls="table-box" aria-expanded="false">Maximizar</button></div>' +
           '<div class="table-box is-min" id="table-box" tabindex="0" aria-label="Dados do gráfico">' +
             '<table class="data">' +

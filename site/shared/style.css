@@ -165,8 +165,18 @@ section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + a
 
 /* Table with internal infinite scroll */
 /* Table bar: title + Maximizar/Minimizar; tables start minimized (.is-min). */
-.table-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; }
+.table-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 20px; }
 .table-bar-title { font-weight: 700; font-size: 15px; }
+.table-bar-title { margin-right: auto; }
+.table-search {
+  width: min(260px, 45vw); font: inherit; font-size: 14px; color: var(--white);
+  background: var(--deep-blue); border: 1px solid var(--line); border-radius: 8px; padding: 5px 10px;
+}
+.table-search:focus-visible { border-color: var(--neon-yellow); }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--neon-yellow); }
+.sort-mark { color: var(--neon-yellow); }
+.data tbody tr[hidden] { display: none; }
 .table-bar + .table-box { margin-top: 8px; }
 .table-box.is-min { display: none; }
 .table-bar[hidden] { display: none; }

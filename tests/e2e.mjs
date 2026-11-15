@@ -235,6 +235,15 @@ async function main() {
     check('data table starts minimized', await evaluate(`getComputedStyle(document.getElementById('table-box')).display==='none'`));
     await evaluate(`document.querySelector('.table-toggle[aria-controls=table-box]').click()`); await wait(300);
     check('Maximizar opens the data table', await evaluate(`getComputedStyle(document.getElementById('table-box')).display!=='none' && document.querySelector('.table-toggle[aria-controls=table-box]').textContent==='Minimizar'`));
+    // Sort: clicking the last-but-one header twice sorts it descending (whole data set, not only the rendered batch).
+    const sortedDesc = `(()=>{const ths=document.querySelectorAll('#table-head th');const i=ths.length-2;const v=[...document.querySelectorAll('#table-body tr')].slice(0,20).map(tr=>MoonTableKit.key(tr.cells[i].textContent));return v.every((x,k)=>k===0||v[k-1]>=x)&&ths[i].getAttribute('aria-sort')==='descending';})()`;
+    const clickSortHeader = `(()=>{const ths=document.querySelectorAll('#table-head th');ths[ths.length-2].click();})()`; // header is re-rendered on each click
+    await evaluate(clickSortHeader); await wait(200); await evaluate(clickSortHeader); await wait(300);
+    check('header click sorts the data table (descending)', await evaluate(sortedDesc));
+    // Filter: typing a series name keeps only its rows.
+    await evaluate(`(i=>{i.value=MoonSeries.all[0].name;i.dispatchEvent(new Event('input'))})(document.getElementById('table-search'))`); await wait(300);
+    check('text filter keeps only matching rows', await evaluate(`[...document.querySelectorAll('#table-body tr')].every(tr=>tr.textContent.toLowerCase().includes(MoonSeries.all[0].name.toLowerCase()))&&document.querySelector('.table-bar[data-for=table-box] .table-bar-title').textContent.includes(' de ')`));
+    await evaluate(`(i=>{i.value='';i.dispatchEvent(new Event('input'))})(document.getElementById('table-search'))`); await wait(300);
     const before = await evaluate(`document.querySelectorAll('#table-body tr').length`);
     for (let i = 0; i < 4; i++) { await evaluate(`(b=>b.scrollTop=b.scrollHeight)(document.getElementById('table-box'))`); await wait(250); }
     const after = await evaluate(`document.querySelectorAll('#table-body tr').length`);
@@ -270,6 +279,8 @@ async function main() {
     check('filter Grupo 3 selects only group 3 on the globe', (await evaluate(`JSON.stringify(MoonLanding.state.checked)`)) === '["csv-3"]' &&
       (await evaluate(`document.querySelectorAll('#landing-points tbody tr').length`)) === 5);
     const wantSum = await evaluate(`new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(MoonSeries.all[2].sites.reduce((a,id)=>a+MoonViability.siteTotals[id],0))`);
+    await evaluate(`(t=>{t.click();t.click();})([...document.querySelectorAll('#landing-points thead th')].pop())`); await wait(300);
+    check('landing table sorts by viability sum (descending)', await evaluate(`(()=>{const v=[...document.querySelectorAll('#landing-points tbody tr')].map(tr=>MoonTableKit.key(tr.cells[tr.cells.length-1].textContent));return v.length===5&&v.every((x,k)=>k===0||v[k-1]>=x);})()`));
     check('globe shows the viability sum of the selected sites', (await evaluate(`document.querySelector('.landing-sum strong')?.textContent`)) === wantSum &&
       (await evaluate(`document.querySelector('#landing-points thead').textContent.includes('Soma de viabilidade')`)), wantSum);
     await evaluate(`MoonCore.setFilter(null)`); await wait(500);
