@@ -298,6 +298,15 @@ async function main() {
     // Green on the globe = the mission of the green (largest) "Área preenchida" card.
     check('globe green group = largest area card', await evaluate(`(()=>{const card=document.querySelector('#fill-areas .fill-area.is-max .fill-area-name').textContent;const s=MoonSeries.all.find(x=>x.name===card);return MoonLanding.bestGroupKey()==='csv-'+s.group;})()`));
     await evaluate(`MoonCore.departure.set(MoonCore.departure.list()[0].id, 600, 'input')`); await wait(300);
+    // Hover title on a Canvas globe point = its mission's "Área preenchida" value (same number as the card).
+    await evaluate(`document.getElementById('pouso').scrollIntoView({behavior:'instant'})`); await wait(2500);
+    const hp = await evaluate(`(()=>{const cv=document.querySelector('[data-pane=canvas]');const r=cv.getBoundingClientRect();const k=r.width/cv.width;const h=MoonLanding.canvasHits().find(h=>h.title.includes('Área preenchida:')&&!h.title.includes('—'));if(!h)return null;const name=h.title.split(' · ')[1].split('\\n')[0];return {x:r.left+h.x*k,y:r.top+h.y*k,name};})()`);
+    if (hp) {
+      await mouse('mouseMoved', hp.x, hp.y); await wait(300);
+      const want = await evaluate(`(()=>{const s=MoonSeries.all.find(x=>x.name===${JSON.stringify(hp.name)});const a=MoonCore.areas().find(a=>a.seriesIndex===s.index);return new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}).format(a.area);})()`);
+      check('hover a globe point shows its filled area', (await evaluate(`document.querySelector('[data-pane=canvas]').title`)).includes('Área preenchida: ' + want), want);
+    } else skip('hover a globe point shows its filled area', 'no CSV point visible on the Canvas');
+    await evaluate(`document.getElementById('track').scrollIntoView({behavior:'instant'})`); await wait(300);
     check('globe green follows the card when lines move', await evaluate(`(()=>{const card=document.querySelector('#fill-areas .fill-area.is-max .fill-area-name').textContent;const s=MoonSeries.all.find(x=>x.name===card);return MoonLanding.bestGroupKey()==='csv-'+s.group;})()`));
     await evaluate(`MoonCore.departure.set(MoonCore.departure.list()[0].id, 0, 'input')`); await wait(300);
     await evaluate(`MoonCore.setFilter(2)`); await wait(800);

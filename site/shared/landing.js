@@ -202,6 +202,19 @@
     var S = canvas.width;
     var out = ctx.createImageData(S, S);
     var out32 = new Uint32Array(out.data.buffer);
+    var hits = []; // screen positions of the drawn dots (canvas pixels), for the hover title
+
+    // Hover title: nearest dot within 10 px -> mission / site name and the group's "Área preenchida".
+    canvas.addEventListener('mousemove', function (e) {
+      var rect = canvas.getBoundingClientRect();
+      var k = canvas.width / rect.width;
+      var mx = (e.clientX - rect.left) * k, my = (e.clientY - rect.top) * k;
+      var best = null, bestD = 10 * k;
+      hits.forEach(function (h) { var d = Math.hypot(h.x - mx, h.y - my); if (d <= bestD) { bestD = d; best = h; } });
+      var title = best ? best.title() : '';
+      if (canvas.title !== title) canvas.title = title;
+      canvas.style.cursor = best ? 'help' : '';
+    });
     var tex = null, tw = 0, th = 0;
     var img = new Image();
     img.onload = function () {
@@ -217,6 +230,7 @@
 
     function draw(view) {
       if (!tex) return;
+      hits = [];
       var R = 0.46 * S * view.zoom, c = S / 2;
       var p0 = view.lat * RAD, sinP0 = Math.sin(p0), cosP0 = Math.cos(p0);
       for (var py = 0; py < S; py++) {
@@ -247,6 +261,7 @@
         var s = latLonToScreen(m.lat, m.lon, view);
         if (!s.visible) return;
         var sel = state.mission === m;
+        hits.push({ x: c + s.x * R, y: c - s.y * R, title: function () { return m.name; } });
         ctx.beginPath();
         ctx.arc(c + s.x * R, c - s.y * R, sel ? 7 : 3.5, 0, 2 * Math.PI);
         ctx.fillStyle = sel ? '#EAFE07' : 'rgba(46,150,245,0.9)';
@@ -267,6 +282,7 @@
         g.points.forEach(function (r) {
           var s = latLonToScreen(r.lat, r.lon, view);
           if (!s.visible) return;
+          hits.push({ x: c + s.x * R, y: c - s.y * R, title: function () { return r.name + ' · ' + g.name + '\n' + groupAreaText(g); } });
           ctx.beginPath();
           ctx.arc(c + s.x * R, c - s.y * R, top ? 6 : sel ? 4 : 3, 0, 2 * Math.PI);
           ctx.fillStyle = top ? BEST_GREEN : sel ? '#EAFE07' : 'rgba(255,106,61,0.9)';
@@ -275,7 +291,7 @@
         });
       });
     }
-    return { draw: draw };
+    return { draw: draw, hits: function () { return hits; } };
   }
 
   // ----- three.js: textured, lit sphere; script loaded on first use -----
@@ -406,6 +422,17 @@
   }
 
   // Multi-select of CSV groups: highlights them, lists their points and autoscales the view to frame all of them.
+  // "Área preenchida: 1.234,56 (dias × ...)" of a landing group, from the same MoonCore.areas() as the cards.
+  var areaFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  function groupAreaText(g) {
+    if (!root.MoonCore || !root.MoonCore.areas || !root.MoonSeries || root.MoonSeries.dataset.kind !== 'viability') return '';
+    var s = root.MoonSeries.all.filter(function (x) { return 'csv-' + x.group === g.key; })[0];
+    var a = s && root.MoonCore.areas().filter(function (x) { return x.seriesIndex === s.index; })[0];
+    var unit = '(dias × ' + root.MoonSeries.dataset.yLabel + ')';
+    return a ? 'Área preenchida: ' + areaFmt.format(a.area) + ' ' + unit + (g.key === bestGroupKey() ? ' · maior área' : '')
+      : 'Área preenchida: — (missão oculta ou filtrada no gráfico)';
+  }
+
   // Group with the largest filled area (the green "Área preenchida" card), as 'csv-<missionID>'; null when none.
   var BEST_GREEN = '#3DDC84';
   function bestGroupKey() {
@@ -517,5 +544,6 @@
     [root.MoonCore.vlines, root.MoonCore.hlines, root.MoonCore.departure].forEach(function (set) { set.onChange(function () { draw(); }); });
   }
 
-  root.MoonLanding = { missions: MISSIONS, state: state, select: selectMission, setGroups: setGroups, bestGroupKey: bestGroupKey, setTab: setTab, math: math, ready: ready };
+  root.MoonLanding = { missions: MISSIONS, state: state, select: selectMission, setGroups: setGroups, bestGroupKey: bestGroupKey, groupAreaText: groupAreaText,
+    canvasHits: function () { return renderers.canvas ? renderers.canvas.hits().map(function (h) { return { x: h.x, y: h.y, title: h.title() }; }) : []; }, setTab: setTab, math: math, ready: ready };
 })(typeof window !== 'undefined' ? window : globalThis);
