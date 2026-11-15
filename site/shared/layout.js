@@ -226,6 +226,19 @@
             '<tr><td><code>dLandingSites</code></td><td>50 fictional landing sites in 10 missions, with coordinates (<code>dLandingSites.csv</code>)</td></tr>' +
             '<tr><td><code>fLandingSites_viability</code></td><td>Simulated daily viability per site, 2024-01-01 to 2025-12-31 (<code>docs/fLandingSites_viability.csv</code>)</td></tr>' +
           '</tbody></table></div>' +
+          '<div class="in-progress" aria-label="In progress">' +
+            '<h3>In progress: viability calculation</h3>' +
+            '<p>Connecting NASA data for prediction and viability. Not used by the site yet:</p>' +
+            '<ul>' +
+              '<li><strong><a href="https://pgda.gsfc.nasa.gov/products/69" target="_blank" rel="noopener">LOLA Polar Illumination &amp; Earth Visibility maps</a></strong>: average sunlight and Earth visibility per landing site</li>' +
+              '<li><strong><a href="https://pgda.gsfc.nasa.gov/products/81" target="_blank" rel="noopener">LOLA topography (south pole DEMs)</a></strong>: elevation, slope, horizon angles, distance to permanently shadowed regions</li>' +
+              '<li><strong><a href="https://pds-geosciences.wustl.edu/missions/lro/diviner.htm" target="_blank" rel="noopener">Diviner Lunar Radiometer products</a></strong>: rock abundance, temperature in nearby shadowed regions</li>' +
+              '<li><strong><a href="https://ccmc.gsfc.nasa.gov/tools/DONKI/" target="_blank" rel="noopener">DONKI space weather</a></strong>: solar flares, CMEs and SEP events by date</li>' +
+              '<li><strong><a href="https://www.earthdata.nasa.gov/data/catalog/ges-disc-tsis-tsi-l3-24hr-05" target="_blank" rel="noopener">TSIS-1 TIM total solar irradiance</a></strong>: daily solar irradiance</li>' +
+              '<li><strong><a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">JPL Horizons ephemerides</a></strong>: daily Sun and Earth position per site</li>' +
+              '<li><strong><a href="https://www.nasa.gov/news-release/nasa-provides-update-on-artemis-iii-moon-landing-regions/" target="_blank" rel="noopener">Artemis III candidate landing regions</a></strong>: south-pole regions the sites are grouped into</li>' +
+            '</ul>' +
+          '</div>' +
         '</div>' +
       '</section>' +
       '<section id="references" class="about references">' +

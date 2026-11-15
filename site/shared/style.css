@@ -312,3 +312,11 @@ th.sortable:hover { color: var(--neon-yellow); }
 .about-logo { margin: 24px 0 0; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
 .about-logo img { width: 240px; height: auto; border-radius: var(--radius); background: #fff; }
 .about-logo figcaption { color: var(--text-muted); font-size: 15px; font-style: italic; }
+
+/* Data Sources: work in progress, shown in grey */
+.in-progress { margin-top: 24px; padding: 16px 20px; border: 1px dashed rgba(255, 255, 255, 0.25); border-radius: var(--radius); background: rgba(255, 255, 255, 0.05); color: #9AA3B5; filter: grayscale(1); }
+.in-progress h3 { color: #C2C8D4; margin-top: 0; }
+.in-progress a { color: inherit; }
+.in-progress ul { margin: 8px 0 0; padding-left: 20px; font-size: 15px; }
+.in-progress p { margin: 0; }
+
