@@ -293,30 +293,65 @@
   }
 
   // ----- three.js: textured, lit sphere; script loaded on first use -----
+  // three.js as ES modules (import map "three" in index.html); loaded only when a 3D tab opens.
+  var THREE_LIBS = null;
+  function loadThree() {
+    if (!THREE_LIBS) {
+      var base = doc.baseURI;
+      THREE_LIBS = Promise.all([
+        import('three'),
+        import(new URL('shared/vendor/three/addons/loaders/GLTFLoader.js', base).href),
+        import(new URL('shared/vendor/three/addons/loaders/STLLoader.js', base).href)
+      ]).then(function (m) { return { THREE: m[0], GLTFLoader: m[1].GLTFLoader, STLLoader: m[2].STLLoader }; });
+    }
+    return THREE_LIBS;
+  }
+
+  // NASA SVS 14959 Moon model (LRO color + topography). GLB_YAW aligns its longitude 0 with our sphere frame.
+  var MOON_GLB = 'shared/vendor/nasa/moon_small.glb';
+  var GLB_YAW = -Math.PI / 2; // measured: the SVS model's lon 0 faces -Z in its frame; ours faces +X
+
   function createThreeRenderer() {
     var el = pane('three');
-    var api = { draw: function () {} };
-    var script = doc.createElement('script');
-    script.src = 'shared/vendor/three.min.js';
-    script.onerror = function () { el.textContent = 'Could not load three.js.'; };
-    script.onload = function () {
-      var THREE = root.THREE;
+    var api = { draw: function () {}, source: 'loading' };
+    loadThree().then(function (libs) {
+      var THREE = libs.THREE;
       var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(2, root.devicePixelRatio || 1));
       el.appendChild(renderer.domElement);
       var scene = new THREE.Scene();
       var camera = new THREE.PerspectiveCamera(35, 1, 0.001, 100);
-      scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-      var sun = new THREE.DirectionalLight(0xffffff, 2.6);
-      sun.position.set(-2, 1.5, 3);
+      // Mostly frontal light: the sites must be readable everywhere (no night side); a slight angle shows the relief.
+      scene.add(new THREE.AmbientLight(0xffffff, 1.1));
+      var sun = new THREE.DirectionalLight(0xffffff, 1.8);
+      sun.position.set(-0.6, 0.5, 3);
       scene.add(sun);
+      // Group rotated by the view; holds the surface (sphere fallback or NASA GLB) and the markers.
+      var globe = new THREE.Group();
+      scene.add(globe);
       var texture = new THREE.TextureLoader().load(TEXTURE, function () { api.draw(state.view); });
       texture.colorSpace = THREE.SRGBColorSpace;
-      var globe = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 64), new THREE.MeshStandardMaterial({ map: texture, roughness: 1, metalness: 0 }));
-      scene.add(globe);
+      var sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 128, 64), new THREE.MeshStandardMaterial({ map: texture, roughness: 1, metalness: 0 }));
+      globe.add(sphere);
+      api.source = 'sphere';
+      new libs.GLTFLoader().load(MOON_GLB, function (gltf) {
+        var moon = gltf.scene;
+        var box = new THREE.Box3().setFromObject(moon);
+        var center = box.getCenter(new THREE.Vector3());
+        var radius = (box.max.x - box.min.x) / 2 || 1; // half the width: the GLB is a sphere (relief is tiny)
+        moon.position.sub(center);
+        var holder = new THREE.Group();
+        holder.add(moon);
+        holder.scale.setScalar(1 / radius);
+        holder.rotation.y = GLB_YAW;
+        globe.add(holder);
+        sphere.visible = false;
+        api.source = 'glb';
+        api.draw(state.view);
+      }, undefined, function (err) { console.error('NASA Moon GLB did not load (' + MOON_GLB + '): ' + err.message); });
       var markers = MISSIONS.map(function (m) {
         var dot = new THREE.Mesh(new THREE.SphereGeometry(0.008, 12, 8), new THREE.MeshBasicMaterial({ color: 0x2e96f5 }));
-        dot.position.fromArray(surfacePoint(m.lat, m.lon)).multiplyScalar(1.004);
+        dot.position.fromArray(surfacePoint(m.lat, m.lon)).multiplyScalar(1.012); // above the GLB relief
         globe.add(dot);
         return dot;
       });
@@ -326,7 +361,7 @@
         state.groups.forEach(function (g) {
           g.points.forEach(function (r) {
             var dot = new THREE.Mesh(new THREE.SphereGeometry(0.006, 12, 8), new THREE.MeshBasicMaterial({ color: 0xff6a3d }));
-            dot.position.fromArray(surfacePoint(r.lat, r.lon)).multiplyScalar(1.006); // above mission dots
+            dot.position.fromArray(surfacePoint(r.lat, r.lon)).multiplyScalar(1.014); // above mission dots
             dot.userData.group = g;
             globe.add(dot);
             csvMarkers.push(dot);
@@ -359,8 +394,10 @@
         renderer.render(scene, camera);
       };
       api.draw(state.view);
-    };
-    doc.head.appendChild(script);
+    }).catch(function (err) {
+      console.error(err);
+      el.textContent = 'Could not load three.js.';
+    });
     return api;
   }
 
@@ -542,6 +579,6 @@
     [root.MoonCore.vlines, root.MoonCore.hlines, root.MoonCore.departure, root.MoonCore.deadline].forEach(function (set) { set.onChange(function () { draw(); }); });
   }
 
-  root.MoonLanding = { missions: MISSIONS, state: state, select: selectMission, setGroups: setGroups, bestGroupKey: bestGroupKey, groupAreaText: groupAreaText,
+  root.MoonLanding = { missions: MISSIONS, state: state, renderers: renderers, select: selectMission, setGroups: setGroups, bestGroupKey: bestGroupKey, groupAreaText: groupAreaText,
     canvasHits: function () { return renderers.canvas ? renderers.canvas.hits().map(function (h) { return { x: h.x, y: h.y, title: h.title() }; }) : []; }, setTab: setTab, math: math, ready: ready };
 })(typeof window !== 'undefined' ? window : globalThis);
