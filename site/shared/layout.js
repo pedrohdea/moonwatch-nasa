@@ -204,7 +204,7 @@
           '<p>The chart is drawn from the table points. Each point has a <strong>confidence</strong> (0–100%): in this prototype it is <strong>random</strong> (drawn on each load; <code>?seed=N</code> repeats a draw). On the curves, the point sits away from the theoretical curve in proportion to the confidence: 100% on the curve, 0% at 2.5 units from it. On the spurious correlations the values are real and only the confidence is random.</p>' +
           '<p>Charts by <a href="https://www.chartjs.org/" target="_blank" rel="noopener">Chart.js</a> 4.4.1, with no network dependency (local library).</p>' +
           '<figure class="about-logo"><img src="shared/media/moonwatch_logo.jpg" width="240" height="214" alt="MoonWatch logo: hand-drawn green sketch of the Moon, a dashed trajectory and stars">' +
-            '<figcaption>Logo hand-drawn by the team\u2019s 8-year-old kids.</figcaption></figure>' +
+            '<figcaption>Logo hand-drawn by the team\u2019s 8-year-old members.</figcaption></figure>' +
         '</div>' +
       '</section>' +
       '<section id="data-sources" class="about data-sources">' +
