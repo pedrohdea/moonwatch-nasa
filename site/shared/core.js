@@ -30,6 +30,8 @@
       getFilter: function () { return active; },
       onFilterChange: function (cb) { listeners.push(cb); },
       setVisible: setVisible,
+      // Show or hide every series at once ("Todos os grupos" checkbox); the chart adapter mirrors it.
+      setAllVisible: function (value) { for (var k = 0; k < seriesCount; k++) setVisible(k, value); },
       isVisible: function (index) { return visible[index] !== false; },
       visibleCount: function () { return visible.filter(Boolean).length; },
       onVisibilityChange: function (cb) { visibilityListeners.push(cb); }

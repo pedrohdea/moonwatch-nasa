@@ -13,6 +13,10 @@ const HANDLE_DX = { chartjs: 6 };
 const LEGEND_TOGGLE = {
   chartjs: `(k)=>{const cv=document.querySelector('#chart canvas');const c=Chart.getChart(cv);const b=c.legend.legendHitBoxes[c.legend.legendItems.findIndex(it=>it.datasetIndex===k)];const r=cv.getBoundingClientRect();return [r.left+b.left+b.width/2,r.top+b.top+b.height/2];}`,
 };
+// Number of datasets drawn by the chart library.
+const VISIBLE_DATASETS = {
+  chartjs: `()=>{const c=Chart.getChart(document.querySelector('#chart canvas'));return c.data.datasets.filter((_,i)=>c.isDatasetVisible(i)).length;}`,
+};
 // Visible x range per library (to prove dragging the line did not zoom).
 const XVIEW = {
   chartjs: `()=>{const c=Chart.getChart(document.querySelector('#chart canvas'));return [c.scales.x.min,c.scales.x.max];}`,
@@ -213,6 +217,12 @@ async function main() {
     check('legend hide: one vertical line less', (await shownChips()) === nSeries - 1 && (await cards()) === nSeries - 1, `${await shownChips()} chips, ${await cards()} cards`);
     await toggle();
     check('legend show: lines back', (await evaluate(`MoonCore.isVisible(0)`)) === true && (await shownChips()) === nSeries && (await cards()) === nSeries);
+    // "Todos os grupos" checkbox: unchecking hides every series (chart, travel-time chips, cards); checking shows all.
+    const setAll = (v) => evaluate(`(b=>{b.checked=${v};b.dispatchEvent(new Event('change'))})(document.getElementById('all-series'))`);
+    await setAll(false); await wait(400);
+    check('uncheck all: nothing visible', (await evaluate(`MoonCore.visibleCount()`)) === 0 && (await shownChips()) === 0 && (await cards()) === 0 && (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === 0);
+    await setAll(true); await wait(400);
+    check('check all: everything back', (await evaluate(`MoonCore.visibleCount()`)) === nSeries && (await shownChips()) === nSeries && (await evaluate(`(${VISIBLE_DATASETS[lib]})()`)) === nSeries);
     const areasMatch = `(()=>{const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
     check('filled areas shown per vertical line', await evaluate(areasMatch));
     const areaBefore = await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`);

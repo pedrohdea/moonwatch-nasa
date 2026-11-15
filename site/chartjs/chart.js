@@ -202,9 +202,11 @@
         ctx.fillStyle = '#FFFFFF';
         ctx.fill();
         ctx.font = "bold 11px 'Fira Code', monospace";
-        ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Partida', px - VH_W / 2 - 3, cy);
+        // Label left of the arrow; flip to the right when it would cover the y axis.
+        var left = px - VH_W / 2 - 3 - ctx.measureText('Partida').width >= a.left;
+        ctx.textAlign = left ? 'right' : 'left';
+        ctx.fillText('Partida', left ? px - VH_W / 2 - 3 : px + VH_W / 2 + 3, cy);
         ctx.restore();
       });
     }
@@ -485,7 +487,11 @@
     root.MoonCore.hlines.onChange(function () { chart.draw(); });
     root.MoonCore.vlines.onChange(function () { chart.draw(); });
     root.MoonCore.departure.onChange(function () { chart.draw(); });
-    root.MoonCore.onVisibilityChange(function () { chart.draw(); });
+    // Visibility can also change outside the legend ("Todos os grupos" checkbox): mirror it on the datasets.
+    root.MoonCore.onVisibilityChange(function (k, visible) {
+      if (chart.isDatasetVisible(k) !== visible) { chart.setDatasetVisibility(k, visible); chart.update('none'); }
+      else chart.draw();
+    });
 
     var down = null;
     canvas.addEventListener('pointerdown', function (e) { down = { x: e.clientX, y: e.clientY }; });

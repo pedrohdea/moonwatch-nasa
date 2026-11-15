@@ -75,6 +75,7 @@
             '<select id="dataset-select">' + datasetOptions + '</select>' +
           '</label>' +
           datasetInfo +
+          '<label class="all-series"><input type="checkbox" id="all-series" checked> ' + (data.kind === 'viability' ? 'Todos os grupos' : 'Todas as séries') + '</label>' +
           '<div id="chart" class="chart" role="img" aria-label="Gráfico de linhas das séries do conjunto de dados"></div>' +
           '<p class="viz-info"><strong>Assertividade · ' + vizMode.label + ':</strong> ' + vizMode.help +
             ' Referência = ' + root.MoonSeries.dataset.referenceLabel + '.' +
@@ -253,6 +254,17 @@
     refreshHChips();
     renderAreas();
   });
+  // "Todos os grupos": checked = all series visible, unchecked = none, indeterminate = some (legend toggles).
+  var allBox = doc.getElementById('all-series');
+  function syncAllBox() {
+    var n = root.MoonSeries.all.length, shown = root.MoonCore.visibleCount();
+    allBox.checked = shown === n;
+    allBox.indeterminate = shown > 0 && shown < n;
+  }
+  allBox.addEventListener('change', function () { root.MoonCore.setAllVisible(allBox.checked); });
+  root.MoonCore.onVisibilityChange(syncAllBox);
+  syncAllBox();
+
   // A series filter also filters the travel-time chips and area cards.
   root.MoonCore.onFilterChange(function () {
     refreshVChips();

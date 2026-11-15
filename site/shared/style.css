@@ -153,6 +153,8 @@ section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + a
   background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
   overflow: hidden;
 }
+.all-series { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-weight: 700; font-size: 15px; cursor: pointer; }
+.all-series input { width: 18px; height: 18px; accent-color: var(--neon-yellow); cursor: pointer; }
 /* Chart sits right under the dataset picker; its controls follow below it. */
 #track .chart { margin: 16px 0 4px; }
 #track .chart + .viz-info { margin-top: 12px; }

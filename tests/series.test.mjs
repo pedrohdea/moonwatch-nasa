@@ -179,4 +179,8 @@ test('core visibility: legend toggles tracked per series', () => {
   assert.equal(core.visibleCount(), 2);
   core.setVisible(1, true);
   assert.deepEqual(seen, [[1, false], [1, true]]);
+  core.setAllVisible(false);
+  assert.equal(core.visibleCount(), 0);
+  core.setAllVisible(true);
+  assert.equal(core.visibleCount(), 3);
 });
