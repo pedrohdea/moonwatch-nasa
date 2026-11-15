@@ -1,12 +1,16 @@
 // Builds site/shared/data/viability.js (daily mean VIABILITY per missionID group + total VIABILITY per site) from:
 //   docs/fLandingSites_viability.csv  LANDINGSITEID,DATE,VIABILITY
 //   site/shared/data/dLandingSites.csv  ID,NAME,LAT,LONG,missionID,...
+//   docs/dMission.csv                  ID,NAME,OBJECTIVES  (ID = missionID; names the groups)
 // Usage: node scripts/build-viability.mjs
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const root = new URL('..', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8').trim().split(/\r?\n/).slice(1).map((l) => l.split(','));
 
+// OBJECTIVES may contain commas only if quoted; these files have none, so keep the plain split but join the tail.
+const missions = new Map(readFileSync(new URL('docs/dMission.csv', root), 'utf8').trim().split(/\r?\n/).slice(1)
+  .map((l) => l.split(',')).map(([id, name, ...objectives]) => [Number(id), { name: name.trim(), objectives: objectives.join(',').trim() }]));
 const groupOf = new Map(read('site/shared/data/dLandingSites.csv').map((c) => [c[0], Number(c[4])]));
 const dates = new Set();
 const sums = new Map(); // group -> Map(date -> [sum, count])
@@ -31,6 +35,8 @@ days.forEach((d, i) => {
 
 const groups = [...sums.keys()].sort((a, b) => a - b).map((g) => ({
   group: g,
+  name: missions.has(g) ? missions.get(g).name : `Grupo ${g}`,
+  objectives: missions.has(g) ? missions.get(g).objectives : '',
   sites: [...groupOf].filter(([, gg]) => gg === g).map(([id]) => Number(id)),
   mean: days.map((d) => {
     const s = sums.get(g).get(d);

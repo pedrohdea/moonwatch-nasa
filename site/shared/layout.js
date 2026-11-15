@@ -244,7 +244,8 @@
     areasEl.innerHTML = '<span class="fill-areas-label">Área preenchida <span class="unit">(' + (data.xDate ? 'dias' : data.xLabel) + ' × ' + data.yLabel + ')</span></span>' +
       (items.map(function (a) {
         var isMax = maxArea > 0 && a.area === maxArea;
-        return '<span class="fill-area' + (isMax ? ' is-max' : '') + '" title="' + a.name + (isMax ? ' · maior área' : '') + '" style="--area-color:' + a.color + '">' +
+        var objectives = root.MoonSeries.all[a.seriesIndex].objectives;
+        return '<span class="fill-area' + (isMax ? ' is-max' : '') + '" title="' + escapeHtml(a.name + (objectives ? ' — ' + objectives : '') + (isMax ? ' · maior área' : '')) + '" style="--area-color:' + a.color + '">' +
           '<span><span class="vline-tag" style="color:' + a.color + '">' + a.label + '</span> <span class="fill-area-name">' + a.name + '</span></span>' +
           '<strong>' + areaFmt.format(a.area) + '</strong></span>';
       }).join('') || '<span class="vlines-empty">nenhum tempo de percurso</span>');

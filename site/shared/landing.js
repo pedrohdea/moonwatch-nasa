@@ -125,7 +125,9 @@
     var groups = {};
     rows.forEach(function (r) { (groups[r.group] = groups[r.group] || []).push(r); });
     return Object.keys(groups).map(Number).sort(function (a, b) { return a - b; }).map(function (g) {
-      return { key: 'csv-' + g, name: 'Grupo ' + g, points: groups[g] };
+      // Group name = mission name from docs/dMission.csv (via viability.js), else "Grupo N".
+      var mission = root.MoonViability && root.MoonViability.groups.filter(function (x) { return String(x.group) === String(g); })[0];
+      return { key: 'csv-' + g, name: mission && mission.name ? mission.name : 'Grupo ' + g, objectives: mission ? mission.objectives : '', points: groups[g] };
     });
   }
 
@@ -394,6 +396,10 @@
   // Multi-select of CSV groups: highlights them, lists their points and autoscales the view to frame all of them.
   // Total VIABILITY of a site over every day of docs/fLandingSites_viability.csv (null when not loaded).
   var sumFmt = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
+  function groupName(g) {
+    var hit = state.groups.filter(function (x) { return x.key === 'csv-' + g; })[0];
+    return hit ? hit.name : String(g);
+  }
   function siteTotal(id) {
     var t = root.MoonViability && root.MoonViability.siteTotals ? root.MoonViability.siteTotals[id] : undefined;
     return t === undefined ? null : t;
@@ -408,10 +414,10 @@
     doc.querySelector('.landing-points-bar').hidden = !pts.length;
     doc.querySelector('.landing-points-bar .table-bar-title').textContent = 'Sítios selecionados (' + pts.length + ')';
     pointsBox.innerHTML = pts.length
-      ? '<table class="data"><thead><tr><th>ID</th><th>Grupo</th><th>Nome</th><th>Latitude</th><th>Longitude</th><th>PRSID</th><th>NEARESTCOLD</th><th class="num">Soma de viabilidade</th></tr></thead><tbody>' +
+      ? '<table class="data"><thead><tr><th>ID</th><th>Missão</th><th>Nome</th><th>Latitude</th><th>Longitude</th><th>PRSID</th><th>NEARESTCOLD</th><th class="num">Soma de viabilidade</th></tr></thead><tbody>' +
         pts.map(function (r) {
           var total = siteTotal(r.id);
-          return '<tr><td>' + r.id + '</td><td>' + r.group + '</td><td class="mono">' + escapeHtml(r.name) + '</td><td>' + nf.format(r.lat) + '</td><td>' + nf.format(r.lon) +
+          return '<tr><td>' + r.id + '</td><td class="mono">' + escapeHtml(groupName(r.group)) + '</td><td class="mono">' + escapeHtml(r.name) + '</td><td>' + nf.format(r.lat) + '</td><td>' + nf.format(r.lon) +
             '</td><td>' + r.prsId + '</td><td>' + nf.format(r.nearestCold) + '</td><td class="num mono">' + (total === null ? '—' : sumFmt.format(total)) + '</td></tr>';
         }).join('') + '</tbody></table>'
       : '';
@@ -459,7 +465,7 @@
   }).then(function (text) {
     state.groups = groupSites(parseSites(text));
     groupList.innerHTML = state.groups.map(function (g) {
-      return '<label><input type="checkbox" value="' + g.key + '"> ' + g.name + ' <span class="muted">(' + g.points.length + ')</span></label>';
+      return '<label title="' + escapeHtml(g.objectives || '') + '"><input type="checkbox" value="' + g.key + '"> ' + escapeHtml(g.name) + ' <span class="muted">(' + g.points.length + ')</span></label>';
     }).join('');
     doc.getElementById('landing-groups').hidden = false;
     draw();
