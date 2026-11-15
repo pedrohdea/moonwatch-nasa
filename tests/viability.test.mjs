@@ -53,5 +53,5 @@ test('group names come from docs/dMission.csv (ID = missionID)', () => {
   const V = globalThis.MoonViability;
   const missions = readFileSync(new URL('../docs/dMission.csv', import.meta.url), 'utf8').trim().split('\n').slice(1).map((l) => l.split(','));
   for (const [id, name] of missions) assert.equal(V.groups.find((g) => g.group === Number(id)).name, name, `mission ${id}`);
-  assert.equal(MoonSeries.load('viabilidade')[0].name, 'silent-voyage-101');
+  assert.equal(MoonSeries.load('viabilidade')[0].name, 'silent-voyage');
 });
