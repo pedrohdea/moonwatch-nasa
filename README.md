@@ -8,15 +8,16 @@ NASA’s Commercial Lunar Payload Services (CLPS) program and other lunar missio
 
 ## Run locally
 
-Site at http://localhost:8003/, charts with Chart.js 4.4.1 + chartjs-plugin-zoom 2.0.1 (local libraries).
+Requirements: Node.js ≥ 22.13 (no `npm install`), GNU make optional. Works on Linux, macOS and Windows. Step-by-step guide: [docs/HOWTO-run-locally.md](docs/HOWTO-run-locally.md).
 
 ```bash
-./scripts/serve.sh   # serves the site on port 8003 (Node, no browser cache); Ctrl+C to stop
-node --test          # core tests (tests/*.test.mjs)
-# E2E (line click, empty area, drags, legend, infinite scroll):
-google-chrome --headless=new --remote-debugging-port=9333 --user-data-dir=/tmp/mw-e2e about:blank &
-node tests/e2e.mjs   # W=390 node tests/e2e.mjs for phone width
+make          # build the data, then serve the whole page on http://localhost:8003/ (Ctrl+C stops)
+make help     # other targets: build, serve, test, e2e, assets, clean
+# without make:
+node scripts/build-viability.mjs && node --no-warnings scripts/build-db.mjs && node scripts/serve.mjs
 ```
+
+Site charts use Chart.js 4.4.1 + chartjs-plugin-zoom 2.0.1 (local libraries).
 
 - Single page with anchors `#home`, `#track`, `#sites` (Landing & Impact Sites), `#mission` (Mission Definitions, below the Moon map), `#about`.
 - Click a chart line: the table below shows only that series. Click an empty area or "Clear filter" to see everything.
