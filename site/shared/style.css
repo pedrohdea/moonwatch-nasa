@@ -59,7 +59,16 @@ section { scroll-margin-top: calc(var(--topbar-h) + 8px); }
   font-size: 14px; font-weight: 700; text-decoration: none; color: var(--text-muted);
   border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px;
 }
-.variants.viz { margin-left: auto; align-items: center; } /* same row as the nav */
+.variants.viz { align-items: center; }
+/* Settings gear (top bar, right): expandable panel with the Confidence modes */
+.settings { position: relative; margin-left: auto; }
+.settings-toggle { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 999px; background: transparent; color: var(--white); cursor: pointer; }
+.settings-toggle:hover, .settings-toggle[aria-expanded="true"] { color: var(--neon-yellow); border-color: var(--neon-yellow); }
+.settings-toggle svg { transition: transform 0.3s ease; }
+.settings-toggle[aria-expanded="true"] svg { transform: rotate(60deg); }
+.settings-panel { position: absolute; right: 0; top: calc(100% + 8px); padding: 10px 12px; background: var(--deep-blue); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); white-space: nowrap; }
+.settings-panel[hidden] { display: none; }
+.settings-panel .variants { flex-wrap: nowrap; margin-left: 0; }
 .topbar .variant { font-size: 13px; padding: 1px 10px; }
 .variants-label { font-size: 13px; color: var(--text-muted); font-weight: 700; margin-right: 2px; }
 .viz-info { color: var(--text-muted); font-size: 15px; margin: 8px 0 0; }
@@ -258,8 +267,8 @@ th.sortable:hover { color: var(--neon-yellow); }
   body { font-size: 16px; }
   .topbar { gap: 2px 8px; padding: 4px 10px; }
   .nav a { font-size: 14px; padding: 3px 6px; }
-  .variants.viz { margin-left: 0; }
-  .variants-label { display: none; } /* phones: pills alone, keeps the bar to two rows */
+  .settings { order: 1; } /* phones: gear on the brand row, nav on its own row */
+  .nav { order: 2; flex-basis: 100%; }
   .hero { padding: 56px 0 48px; }
   .track, .mission, .landing, .about { padding: 48px 0; }
   .roadmap-card, .roadmap-card-simple { grid-template-columns: 1fr; gap: 16px; }

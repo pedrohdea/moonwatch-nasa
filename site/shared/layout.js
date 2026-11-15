@@ -107,7 +107,15 @@
       '<nav class="nav" aria-label="Sections">' +
         '<a href="#home">Home</a><a href="#track">Track</a><a href="#mission">Mission</a><a href="#roadmap">Roadmap</a><a href="#about">About</a>' +
       '</nav>' +
-      '<div class="variants viz" aria-label="Confidence visualization"><span class="variants-label">Confidence:</span>' + vizLinks + '</div>' +
+      '<div class="settings">' +
+        '<button type="button" class="settings-toggle" aria-expanded="false" aria-controls="settings-panel" aria-label="Settings" title="Settings">' +
+          '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>' +
+        '</button>' +
+        '<div id="settings-panel" class="settings-panel" hidden>' +
+          '<div class="variants viz" role="group" aria-label="Confidence visualization"><span class="variants-label">Confidence</span>' + vizLinks + '</div>' +
+        '</div>' +
+      '</div>' +
     '</header>' +
     '<main>' +
       '<section id="home" class="hero">' +
@@ -223,6 +231,17 @@
   }
   roadmapSearch.addEventListener('input', filterRoadmap);
   filterRoadmap();
+
+  // Settings gear: expands the panel with the Confidence modes; outside click or Esc closes it.
+  var settingsToggle = doc.querySelector('.settings-toggle');
+  var settingsPanel = doc.getElementById('settings-panel');
+  function setSettings(open) {
+    settingsPanel.hidden = !open;
+    settingsToggle.setAttribute('aria-expanded', String(open));
+  }
+  settingsToggle.addEventListener('click', function () { setSettings(settingsPanel.hidden); });
+  doc.addEventListener('click', function (e) { if (!settingsPanel.hidden && !e.target.closest('.settings')) setSettings(false); });
+  doc.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !settingsPanel.hidden) { setSettings(false); settingsToggle.focus(); } });
 
   // Fixed top bar: reserve exactly its height (it wraps on narrow screens) for the body and anchor offsets.
   var topbar = doc.querySelector('.topbar');
