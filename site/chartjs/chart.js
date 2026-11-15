@@ -65,46 +65,50 @@
     var decor = {
       id: 'moonDecor',
       beforeDatasetsDraw: function (c) { drawFills(c); drawDecor(c, true); },
-      afterDatasetsDraw: function (c) { drawDecor(c, false); drawLine(c); drawVLines(c); },
+      afterDatasetsDraw: function (c) { drawDecor(c, false); drawHLines(c); drawVLines(c); },
       beforeInit: function (c) { root.Chart.layouts.addBox(c, spacer); }
     };
 
-    var LINE_COLOR = '#EAFE07';
     var HANDLE_W = 11; // px: arrow width
     var HANDLE_H = 12; // px: arrow height
+    var HANDLE_X = 6; // px: handle center right of the plot edge
 
-    // Pixel y of the draggable line, or null when outside the visible y range (zoom).
-    function linePixel(c) {
-      var py = c.scales.y.getPixelForValue(root.MoonCore.line.get());
+    // Pixel y of a horizontal line, or null when outside the visible y range (zoom).
+    function hlinePixel(c, v) {
+      var py = c.scales.y.getPixelForValue(v);
       return py >= c.chartArea.top - 0.5 && py <= c.chartArea.bottom + 0.5 ? py : null;
     }
 
-    // Dashed horizontal line + left-pointing arrow just right of the plot + pt-BR value label.
-    function drawLine(c) {
-      var py = linePixel(c);
-      if (py === null) return;
-      var ctx = c.ctx, a = c.chartArea;
-      ctx.save();
-      ctx.beginPath();
-      ctx.moveTo(a.left, py);
-      ctx.lineTo(a.right, py);
-      ctx.setLineDash([6, 4]);
-      ctx.lineWidth = 1.75;
-      ctx.strokeStyle = LINE_COLOR;
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.beginPath();
-      ctx.moveTo(a.right + 1, py);
-      ctx.lineTo(a.right + 1 + HANDLE_W, py - HANDLE_H / 2);
-      ctx.lineTo(a.right + 1 + HANDLE_W, py + HANDLE_H / 2);
-      ctx.closePath();
-      ctx.fillStyle = LINE_COLOR;
-      ctx.fill();
-      ctx.font = "11px 'Fira Code', monospace";
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(root.MoonCore.line.get().toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }), a.right + HANDLE_W + 3, py);
-      ctx.restore();
+    // Dashed horizontal lines + left-pointing handle just right of the plot + H1..Hn label.
+    function drawHLines(c) {
+      var ctx = c.ctx, a = c.chartArea, cx = a.right + HANDLE_X;
+      root.MoonCore.hlines.list().forEach(function (l, i) {
+        if (!root.MoonCore.hlineVisible(i)) return; // series hidden in the legend
+        var py = hlinePixel(c, l.value);
+        if (py === null) return;
+        var color = root.MoonCore.hlineColor(i);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(a.left, py);
+        ctx.lineTo(a.right, py);
+        ctx.setLineDash([6, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = withAlpha(color, 0.85);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(cx - HANDLE_H / 2, py);
+        ctx.lineTo(cx + HANDLE_H / 2, py - HANDLE_W / 2);
+        ctx.lineTo(cx + HANDLE_H / 2, py + HANDLE_W / 2);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.font = "11px 'Fira Code', monospace";
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(root.MoonCore.hlineLabel(i), cx + HANDLE_H / 2 + 3, py);
+        ctx.restore();
+      });
     }
 
     var VH_W = 12; // px: down-arrow width
@@ -232,8 +236,8 @@
             normalized: true,
             tension: 0, // straight segments between table points
             showLine: true,
-            pointRadius: function (ctx) { return viz === 'tamanho' ? MoonSeries.markerSize(ctx.raw.acc) / 2 : viz === 'cor' ? 3.5 : 3; }, // tamanho: bigger = more accurate
-            pointHoverRadius: function (ctx) { return viz === 'tamanho' ? MoonSeries.markerSize(ctx.raw.acc) / 2 + 1.5 : 6; },
+            pointRadius: function (ctx) { return viz === 'tamanho' ? MoonSeries.markerSize(ctx.raw.acc) / 2 : viz === 'cor' ? 3.5 : 0; }, // tamanho: bigger = more accurate
+            pointHoverRadius: function (ctx) { return viz === 'tamanho' ? MoonSeries.markerSize(ctx.raw.acc) / 2 + 1.5 : 4; },
             pointBackgroundColor: viz === 'cor' ? colorFill(i) : s.color,
             pointBorderColor: s.color,
             borderWidth: 2,
@@ -352,39 +356,43 @@
       return bestDist <= PICK_RADIUS ? best : null;
     }
 
-    // Line drag (horizontal line or vertical lines): capture-phase listeners keep plugin-zoom (drag-zoom/pan) and the filter click out of it.
-    var lineDrag = false, vDrag = null, swallowClick = false;
-    function onHandle(e) {
-      var py = linePixel(chart);
-      if (py === null) return false;
-      var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea;
-      var onArrow = Math.abs(pos.x - (a.right + 1 + HANDLE_W / 2)) <= 8 + HANDLE_W / 2 && pos.x >= a.right && Math.abs(pos.y - py) <= 8;
-      var onLine = pos.x >= a.left && pos.x <= a.right && Math.abs(pos.y - py) <= 5;
-      return onArrow || onLine;
+    // Line drag (horizontal or vertical lines): capture-phase listeners keep plugin-zoom (drag-zoom/pan) and the filter click out of it.
+    var lineDrag = false, vDrag = null, hDrag = null, swallowClick = false;
+    // Id of the horizontal line whose handle (<= 9 px) or body (<= 5 px, inside the plot) is under the pointer, or null.
+    function hHit(e) {
+      var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea, hit = null, best = Infinity;
+      root.MoonCore.hlines.list().forEach(function (l, k) {
+        if (!root.MoonCore.hlineVisible(k)) return; // hidden lines are not hit-testable
+        var py = hlinePixel(chart, l.value);
+        if (py === null) return;
+        // Handle only: with one guide line per series, line bodies would steal clicks meant for the curves.
+        var d = Math.hypot(pos.x - (a.right + HANDLE_X), pos.y - py);
+        if (d <= 9 && d < best) { best = d; hit = l.id; }
+      });
+      return hit;
     }
-    // Id of the vertical line whose handle (<= 9 px) or body (<= 5 px, inside the plot) is under the pointer, or null.
+    // Id of the vertical line whose ▼ handle (<= 9 px) is under the pointer, or null.
     function vHit(e) {
       var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea, hit = null, best = Infinity;
       root.MoonCore.vlines.list().forEach(function (l, k) {
         if (!root.MoonCore.vlineVisible(k)) return; // hidden lines are not hit-testable
         var px = vlinePixel(chart, l.value);
         if (px === null) return;
-        var d = Math.abs(pos.x - px);
-        var onHandleV = Math.hypot(pos.x - px, pos.y - (a.top - VH_OFFSET)) <= 9;
-        var onBody = pos.y >= a.top && pos.y <= a.bottom && d <= 5;
-        if ((onHandleV || onBody) && d < best) { best = d; hit = l.id; }
+        var d = Math.hypot(pos.x - px, pos.y - (a.top - VH_OFFSET)); // handle only (see hHit)
+        if (d <= 9 && d < best) { best = d; hit = l.id; }
       });
       return hit;
     }
     function setFromPointer(e) {
       var pos = root.Chart.helpers.getRelativePosition(e, chart);
       if (vDrag !== null) root.MoonCore.vlines.set(vDrag, chart.scales.x.getValueForPixel(pos.x), 'drag');
-      else root.MoonCore.line.set(chart.scales.y.getValueForPixel(pos.y), 'drag');
+      else root.MoonCore.hlines.set(hDrag, chart.scales.y.getValueForPixel(pos.y), 'drag');
     }
     canvas.addEventListener('pointerdown', function (e) {
-      var v = onHandle(e) ? null : vHit(e); // horizontal handle has priority
-      if (v === null && !onHandle(e)) return;
+      var h = hHit(e), v = h === null ? vHit(e) : null; // horizontal handle has priority
+      if (h === null && v === null) return;
       lineDrag = true;
+      hDrag = h;
       vDrag = v;
       canvas.setPointerCapture(e.pointerId);
       e.stopImmediatePropagation();
@@ -392,22 +400,23 @@
       setFromPointer(e);
     }, true);
     canvas.addEventListener('mousedown', function (e) {
-      if (lineDrag || onHandle(e) || vHit(e) !== null) { e.stopImmediatePropagation(); e.preventDefault(); }
+      if (lineDrag || hHit(e) !== null || vHit(e) !== null) { e.stopImmediatePropagation(); e.preventDefault(); }
     }, true);
     canvas.addEventListener('pointermove', function (e) {
       if (lineDrag) { setFromPointer(e); return; }
-      canvas.style.cursor = onHandle(e) ? 'ns-resize' : vHit(e) !== null ? 'ew-resize' : '';
+      canvas.style.cursor = hHit(e) !== null ? 'ns-resize' : vHit(e) !== null ? 'ew-resize' : '';
     });
     function endDrag() {
       if (!lineDrag) return;
       lineDrag = false;
       vDrag = null;
+      hDrag = null;
       swallowClick = true;
       root.setTimeout(function () { swallowClick = false; }, 0); // click, if any, fires right after pointerup
     }
     canvas.addEventListener('pointerup', endDrag);
     canvas.addEventListener('pointercancel', endDrag);
-    root.MoonCore.line.onChange(function () { chart.draw(); });
+    root.MoonCore.hlines.onChange(function () { chart.draw(); });
     root.MoonCore.vlines.onChange(function () { chart.draw(); });
     root.MoonCore.onVisibilityChange(function () { chart.draw(); });
 

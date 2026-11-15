@@ -64,7 +64,6 @@ section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + a
 .viz-info strong { color: var(--white); }
 .viz-hint { color: var(--neon-yellow); font-weight: 700; }
 .reroll { font-weight: 700; white-space: nowrap; }
-.line-input { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
 /* Filled-area indices: one card per vertical line, big number */
 .fill-areas { display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px; margin: 8px 0 14px; }
 .fill-areas-label { flex-basis: 100%; font-size: 15px; font-weight: 700; }
@@ -94,10 +93,6 @@ section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + a
   background: transparent; color: var(--text-muted); font-size: 18px; line-height: 1;
 }
 .vline-remove:hover { color: var(--rocket-red); background: rgba(255, 255, 255, 0.08); }
-.line-input input {
-  width: 84px; font: inherit; font-family: var(--font-mono); font-weight: 400; color: var(--neon-yellow);
-  background: var(--deep-blue); border: 1px dashed var(--neon-yellow); border-radius: 8px; padding: 4px 8px;
-}
 .acc-scale { display: inline-block; width: 120px; height: 10px; border-radius: 999px; vertical-align: middle; }
 .variant[aria-current="page"] { color: var(--deep-blue); background: var(--neon-yellow); border-color: var(--neon-yellow); }
 

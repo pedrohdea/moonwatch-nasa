@@ -61,7 +61,7 @@
         };
         if (withData) {
           o.data = s.points; o.dimensions = ['x', 'y', 'raw', 'acc', 'ref'];
-          o.encode = { x: 'x', y: 'y' }; o.showSymbol = true; o.symbolSize = symbolSize;
+          o.encode = { x: 'x', y: 'y' }; o.showSymbol = viz === 'tamanho' || viz === 'cor'; o.symbolSize = symbolSize;
           o.triggerLineEvent = true; o.smooth = false; o.emphasis = { disabled: true };
         }
         return o;
@@ -251,102 +251,92 @@
       if (!e.target && Date.now() - lastDragAt > 300) core.setFilter(null);
     });
 
-    // Draggable horizontal line: graphic group (dashed line + hit area + arrow + value label).
-    var LINE = core.line;
-    var lastSig = '';
     var lastDragAt = 0;
-    function drawLine() {
-      var gm = chart.getModel().getComponent('grid');
-      if (!gm || !gm.coordinateSystem) return;
-      var rect = gm.coordinateSystem.getRect();
-      var v = LINE.get();
-      var py = chart.convertToPixel({ yAxisIndex: 0 }, v);
-      var hidden = !isFinite(py) || py < rect.y - 0.5 || py > rect.y + rect.height + 0.5;
-      var sig = [rect.x, rect.y, rect.width, rect.height, py, v].join('|');
-      if (sig === lastSig) return;
-      lastSig = sig;
-      var drag = {
-        draggable: true, cursor: 'ns-resize', z: 100, invisible: hidden,
-        ondrag: function (e) {
-          lastDragAt = Date.now();
-          LINE.set(chart.convertFromPixel({ yAxisIndex: 0 }, e.offsetY), 'drag');
-        }
-      };
-      var right = rect.x + rect.width;
-      chart.setOption({ graphic: { elements: [{
-        id: 'hline', type: 'group', x: 0, y: 0, z: 100, children: [
-          Object.assign({ id: 'hline-line', type: 'line', x: rect.x, y: py,
-            shape: { x1: 0, y1: 0, x2: rect.width, y2: 0 },
-            style: { stroke: ACCENT, lineWidth: 2, lineDash: [6, 4] } }, drag),
-          Object.assign({ id: 'hline-hit', type: 'rect', x: rect.x, y: py - 6,
-            shape: { x: 0, y: 0, width: rect.width, height: 12 }, style: { fill: 'rgba(0,0,0,0)' } }, drag),
-          Object.assign({ id: 'hline-arrow', type: 'polygon', x: right + 2, y: py,
-            shape: { points: [[0, 0], [12, -7], [12, 7]] }, style: { fill: ACCENT } }, drag),
-          Object.assign({ id: 'hline-text', type: 'text', x: right + 18, y: py,
-            style: { text: isFinite(v) ? v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
-              fill: ACCENT, font: '11px "Fira Code", monospace', textVerticalAlign: 'middle' } }, drag)
-        ]
-      }] } });
-    }
-    // Draggable vertical lines: one graphic group per line (id 'vline-<id>'), geometry in absolute pixels.
+    // Draggable guide lines: ONE flat graphic list (all 'hline-<id>' and 'vline-<id>' groups, children always
+    // inside their group) applied with replaceMerge, so ids that vanish are removed and never re-added in the same call.
+    // Only the arrow handles (H: right of the plot, V: above it) are draggable; lines and labels are silent.
+    var HL = core.hlines;
     var VL = core.vlines;
-    var vSig = '';
-    var vPrevIds = [];
-    function drawVLines() {
+    var gSig = '';
+    function drawGuides() {
       var gm = chart.getModel().getComponent('grid');
       if (!gm || !gm.coordinateSystem) return;
       var rect = gm.coordinateSystem.getRect();
-      var items = [];
-      VL.list().forEach(function (l, n) {
-        if (!core.vlineVisible(n)) return; // hidden series: draw nothing (old group is removed below)
-        var px = chart.convertToPixel({ xAxisIndex: 0 }, l.value);
-        items.push({ id: l.id, n: n, px: px, hidden: !isFinite(px) || px < rect.x - 0.5 || px > rect.x + rect.width + 0.5 });
+      var hs = [], vs = [];
+      HL.list().forEach(function (l, n) {
+        if (!core.hlineVisible(n)) return; // hidden series: draw nothing
+        var py = chart.convertToPixel({ yAxisIndex: 0 }, l.value);
+        hs.push({ id: l.id, n: n, py: py, hidden: !isFinite(py) || py < rect.y - 0.5 || py > rect.y + rect.height + 0.5 });
       });
-      var sig = [rect.x, rect.y, rect.width, rect.height].concat(items.map(function (it) { return it.id + ':' + it.px + ':' + it.n; })).join('|');
-      if (sig === vSig) return;
-      vSig = sig;
-      var ids = items.map(function (it) { return it.id; });
-      var elements = vPrevIds.filter(function (id) { return ids.indexOf(id) < 0; })
-        .map(function (id) { return { id: 'vline-' + id, $action: 'remove' }; });
-      vPrevIds = ids;
-      var top = rect.y, bottom = rect.y + rect.height, cy = top - 8; // handle center: 8 px above the plot
-      items.forEach(function (it) {
-        var cx = it.px, p = it.id;
-        var drag = {
-          draggable: true, cursor: 'ew-resize', z: 100, invisible: it.hidden,
-          ondrag: function (e) {
-            lastDragAt = Date.now();
-            if (e.target) { e.target.x = 0; e.target.y = 0; } // geometry is absolute; only the redraw moves it
-            VL.set(it.id, chart.convertFromPixel({ xAxisIndex: 0 }, e.offsetX), 'drag');
-          },
-          ondragend: function () { lastDragAt = Date.now(); vSig = ''; drawVLines(); }
-        };
+      VL.list().forEach(function (l, n) {
+        if (!core.vlineVisible(n)) return;
+        var px = chart.convertToPixel({ xAxisIndex: 0 }, l.value);
+        vs.push({ id: l.id, n: n, px: px, hidden: !isFinite(px) || px < rect.x - 0.5 || px > rect.x + rect.width + 0.5 });
+      });
+      var sig = [rect.x, rect.y, rect.width, rect.height]
+        .concat(hs.map(function (it) { return 'h' + it.id + ':' + it.py + ':' + it.n; }))
+        .concat(vs.map(function (it) { return 'v' + it.id + ':' + it.px + ':' + it.n; })).join('|');
+      if (sig === gSig) return;
+      gSig = sig;
+      var elements = [];
+      var left = rect.x, right = rect.x + rect.width, top = rect.y, bottom = rect.y + rect.height;
+      var hx = right + 8; // H handle center: 8 px right of the plot
+      var vy = top - 8;   // V handle center: 8 px above the plot
+      var lineStyle = function (color) { return { stroke: color, opacity: 0.85, lineWidth: 1.5, lineDash: [6, 4] }; };
+      var textStyle = function (text, x, y, color) {
+        return { text: text, x: x, y: y, fill: color, font: '11px "Fira Code", monospace', textVerticalAlign: 'middle' };
+      };
+      hs.forEach(function (it) {
+        var cy = it.py, p = 'hline-' + it.id, color = core.hlineColor(it.n);
         elements.push({
-          id: 'vline-' + p, type: 'group', x: 0, y: 0, z: 100, invisible: it.hidden, children: [
-            Object.assign({ id: 'vline-' + p + '-line', type: 'line', x: 0, y: 0,
-              shape: { x1: cx, y1: top, x2: cx, y2: bottom },
-              style: { stroke: MoonCore.vlineColor(it.n), opacity: 0.85, lineWidth: 1.5, lineDash: [6, 4] } }, drag), // color of series n
-            Object.assign({ id: 'vline-' + p + '-hit', type: 'rect', x: 0, y: 0,
-              shape: { x: cx - 5, y: top, width: 10, height: rect.height }, style: { fill: 'rgba(0,0,0,0)' } }, drag),
-            Object.assign({ id: 'vline-' + p + '-arrow', type: 'polygon', x: 0, y: 0,
-              shape: { points: [[cx - 6, cy - 5], [cx + 6, cy - 5], [cx, cy + 5]] }, style: { fill: MoonCore.vlineColor(it.n) } }, drag),
-            Object.assign({ id: 'vline-' + p + '-text', type: 'text', x: 0, y: 0,
-              style: { text: 'V' + (it.n + 1), x: cx + 9, y: cy, fill: MoonCore.vlineColor(it.n),
-                font: '11px "Fira Code", monospace', textVerticalAlign: 'middle' } }, drag)
+          id: p, type: 'group', x: 0, y: 0, z: 100, invisible: it.hidden, children: [
+            { id: p + '-line', type: 'line', x: 0, y: 0, z: 100, silent: true, invisible: it.hidden,
+              shape: { x1: left, y1: cy, x2: right, y2: cy }, style: lineStyle(color) },
+            { id: p + '-arrow', type: 'polygon', x: 0, y: 0, z: 100, invisible: it.hidden,
+              draggable: true, cursor: 'ns-resize',
+              shape: { points: [[hx - 6, cy], [hx + 6, cy - 5], [hx + 6, cy + 5]] }, style: { fill: color },
+              ondrag: function (e) {
+                lastDragAt = Date.now();
+                if (e.target) { e.target.x = 0; e.target.y = 0; } // geometry is absolute; only the redraw moves it
+                HL.set(it.id, chart.convertFromPixel({ yAxisIndex: 0 }, e.offsetY), 'drag');
+              },
+              ondragend: function () { lastDragAt = Date.now(); gSig = ''; drawGuides(); } },
+            { id: p + '-text', type: 'text', x: 0, y: 0, z: 100, silent: true, invisible: it.hidden,
+              style: textStyle(MoonCore.hlineLabel(it.n), hx + 10, cy, color) }
           ]
         });
       });
-      chart.setOption({ graphic: { elements: elements } });
+      vs.forEach(function (it) {
+        var cx = it.px, p = 'vline-' + it.id, color = core.vlineColor(it.n);
+        elements.push({
+          id: p, type: 'group', x: 0, y: 0, z: 100, invisible: it.hidden, children: [
+            { id: p + '-line', type: 'line', x: 0, y: 0, z: 100, silent: true, invisible: it.hidden,
+              shape: { x1: cx, y1: top, x2: cx, y2: bottom }, style: lineStyle(color) },
+            { id: p + '-arrow', type: 'polygon', x: 0, y: 0, z: 100, invisible: it.hidden,
+              draggable: true, cursor: 'ew-resize',
+              shape: { points: [[cx - 6, vy - 5], [cx + 6, vy - 5], [cx, vy + 5]] }, style: { fill: color },
+              ondrag: function (e) {
+                lastDragAt = Date.now();
+                if (e.target) { e.target.x = 0; e.target.y = 0; }
+                VL.set(it.id, chart.convertFromPixel({ xAxisIndex: 0 }, e.offsetX), 'drag');
+              },
+              ondragend: function () { lastDragAt = Date.now(); gSig = ''; drawGuides(); } },
+            { id: p + '-text', type: 'text', x: 0, y: 0, z: 100, silent: true, invisible: it.hidden,
+              style: textStyle('V' + (it.n + 1), cx + 9, vy, color) }
+          ]
+        });
+      });
+      chart.setOption({ graphic: { elements: elements } }, { replaceMerge: ['graphic'] });
     }
 
-    function drawAll() { drawLine(); drawVLines(); }
-    LINE.onChange(function () { drawLine(); drawFills(); });
-    VL.onChange(function () { drawVLines(); drawFills(); });
+    function drawAll() { drawGuides(); }
+    HL.onChange(function () { drawGuides(); drawFills(); });
+    VL.onChange(function () { drawGuides(); drawFills(); });
     // Legend toggle -> shared visibility; the redraw happens in onVisibilityChange.
     chart.on('legendselectchanged', function (e) {
       series.forEach(function (s, k) { core.setVisible(k, e.selected[s.name] !== false); });
     });
-    core.onVisibilityChange(function () { drawVLines(); drawFills(); });
+    core.onVisibilityChange(function () { drawGuides(); drawFills(); });
     chart.on('datazoom', drawAll);
     // 'finished' can fire inside ECharts' main process, where setOption is silently ignored: defer it.
     chart.on('finished', function () { setTimeout(drawAll, 0); }); // signature checks prevent loops

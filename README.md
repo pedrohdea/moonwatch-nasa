@@ -27,9 +27,11 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - Página única com âncoras `#home`, `#track`, `#mission` (Definições da missão), `#about`.
 - Clique numa linha do gráfico: a tabela abaixo mostra só os dados daquela série. Clique em área vazia ou em "Limpar filtro" para ver tudo.
 - Tabela equivalente ao gráfico logo abaixo dele, com scroll infinito (50 linhas por vez) dentro da própria caixa.
-- Linha horizontal tracejada com setinha amarela na borda direita do gráfico: arraste a seta (ou digite em "Linha horizontal" na barra) para reposicionar. O valor fica na URL (`?linha=`).
 - Linhas verticais arrastáveis: uma por série do gráfico (V1…Vn, com a cor da série n), cada uma com setinha ▼ na borda de cima do gráfico. Arraste a seta para mudar a posição, digite no chip da linha, "×" exclui e "+ Linha vertical" adiciona de volta (máximo = número de séries). Posições na URL (`?vlinhas=`).
-- Preenchimento: cada curva é pintada (cor da série, translúcida) entre ela e a linha horizontal, só onde a curva está acima da linha e à direita da linha vertical da série (Vk ↔ série k). Com filtro, só a série escolhida. Acompanha o arrasto das linhas.
+- Viabilidade mínima: uma única linha horizontal amarela, comum a todas as séries, com setinha ◀ na borda direita do gráfico para arrastar e um campo para digitar. Valor na URL (`?minima=`).
+- Linhas verticais seguem a legenda: esconder uma série esconde a linha vertical, o preenchimento e o cartão de área dela.
+- O gráfico mostra só as linhas, sem pontos (exceto nos modos de assertividade "Tamanho" e "Cor", que precisam dos marcadores).
+- Preenchimento: cada curva é pintada (cor da série, translúcida) entre ela e a viabilidade mínima, só onde a curva está acima dessa linha e à direita da linha vertical da série (Vk). Com filtro, só a série escolhida. Acompanha o arrasto das linhas.
 - Seletor "Conjunto de dados" (`?dataset=<chave>`):
   - `curvas` — 20 tipos de curva matemática, dados fictícios, 21 pontos medidos por curva (linear, quadrática, parabólica, cúbica, quártica, polinomial, exponencial, logarítmica, hiperbólica, racional, modular, inversa, potência, radical, por partes, implícita, paramétrica, trigonométrica, senoidal, cossenoidal).
   - `barco`, `milho`, `malta`, `sarah` — correlações espúrias reais de [Tyler Vigen](https://www.tylervigen.com/spurious-correlations) (CC BY 4.0). Cada série é normalizada para 0–10 no gráfico; a tabela mostra os valores reais, uma linha por ano, como no site original.
@@ -46,8 +48,6 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs para largura de celular
 - E2E: `VIZ=desvio,cor DATASETS=curvas node tests/e2e.mjs` limita modos e conjuntos.
 - Bibliotecas ficam em `site/<versão>/vendor/`; funciona sem internet (só as fontes do Google caem para fontes do sistema).
 
-Estrutura: tudo que não é gráfico (dados, filtro, tabela, layout, CSS) fica em `site/shared/` e vale para as 3 versões. Cada versão só tem seu `chart.js` (adaptador da biblioteca). Plano e decisões: [`docs/PLAN.md`](docs/PLAN.md).
-
 ### Banco de dados (SQLite)
 
 ```bash
@@ -63,6 +63,8 @@ Esquema estrela, montado com o `node:sqlite` nativo do Node 22 (sem dependência
 | `v_viability` | join das duas | — |
 
 O build valida cabeçalhos, números, datas e chaves estrangeiras, e carrega tudo numa transação (se algo falhar, não sobra banco pela metade).
+
+Estrutura: tudo que não é gráfico (dados, filtro, tabela, layout, CSS) fica em `site/shared/` e vale para as 3 versões. Cada versão só tem seu `chart.js` (adaptador da biblioteca). Plano e decisões: [`docs/PLAN.md`](docs/PLAN.md).
 
 About the Challenge
 https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/

@@ -23,7 +23,7 @@ const XVIEW = {
 };
 
 // Lines are straight segments between table points, so the helpers interpolate 8 samples per segment.
-const NORM = `const d=MoonSeries.dataset,nx=x=>(x-d.xRange[0])/(d.xRange[1]-d.xRange[0]),ny=y=>(y-d.yRange[0])/(d.yRange[1]-d.yRange[0]),g=9/document.getElementById('chart').clientWidth,nearGuide=(a,b)=>Math.abs(b-ny(MoonCore.line.get()))<g||MoonCore.vlines.list().some(l=>Math.abs(a-nx(l.value))<g),dense=s=>s.points.flatMap((p,k,a)=>k===0?[p]:Array.from({length:8},(_,j)=>[a[k-1][0]+(p[0]-a[k-1][0])*(j+1)/8,a[k-1][1]+(p[1]-a[k-1][1])*(j+1)/8]));`;
+const NORM = `const d=MoonSeries.dataset,nx=x=>(x-d.xRange[0])/(d.xRange[1]-d.xRange[0]),ny=y=>(y-d.yRange[0])/(d.yRange[1]-d.yRange[0]),gx=9/document.getElementById('chart').clientWidth,gy=9/document.getElementById('chart').clientHeight,nearGuide=(a,b)=>MoonCore.hlines.list().some(l=>Math.abs(b-ny(l.value))<gy)||MoonCore.vlines.list().some(l=>Math.abs(a-nx(l.value))<gx),dense=s=>s.points.flatMap((p,k,a)=>k===0?[p]:Array.from({length:8},(_,j)=>[a[k-1][0]+(p[0]-a[k-1][0])*(j+1)/8,a[k-1][1]+(p[1]-a[k-1][1])*(j+1)/8]));`;
 // Spot on series s farthest from every other series (avoids the edges, where legends/toolbars sit). Returns [x, y, distance].
 const ISOLATED = `(s)=>{${NORM}const me=dense(MoonSeries.all[s]),others=MoonSeries.all.filter((_,i)=>i!==s).flatMap(dense);let best=null,bd=-1;for(const[x,y]of me){const a=nx(x),b=ny(y);if(a<0.08||a>0.92||b<0.08||b>0.92||nearGuide(a,b))continue;let m=1e9;for(const[ox,oy]of others){const dd=(nx(ox)-a)**2+(ny(oy)-b)**2;if(dd<m)m=dd}if(m>bd){bd=m;best=[x,y,Math.sqrt(m)]}}return best||[...me[Math.floor(me.length/2)].slice(0,2),0];}`;
 // Spot inside the plot farthest from every line.
@@ -130,7 +130,7 @@ async function main() {
 
     // Draggable horizontal line: press on the arrow handle, drag to y=2, release.
     await evaluate(`MoonCore.setFilter(${first})`); await wait(300);
-    const lineStart = await evaluate(`MoonCore.line.get()`);
+    const lineStart = await evaluate(`MoonCore.hlines.list()[0].value`); // drag H1 by its ◀ handle
     const d = await evaluate(`MoonSeries.dataset`);
     const [rx, ry] = await px(0, d.xRange[1], lineStart);
     const target = 2;
@@ -139,21 +139,22 @@ async function main() {
     await mouse('mouseMoved', hx, ry); await mouse('mousePressed', hx, ry);
     for (let k = 1; k <= 6; k++) await mouse('mouseMoved', hx, ry + ((ty - ry) * k) / 6);
     await mouse('mouseReleased', hx, ty); await wait(400);
-    const lineEnd = await evaluate(`MoonCore.line.get()`);
+    const lineEnd = await evaluate(`MoonCore.hlines.list()[0].value`);
     check('drag arrow moves the line', Math.abs(lineEnd - target) <= 0.25, `${lineStart} -> ${lineEnd}`);
-    check('input follows the line', Math.abs(Number(await evaluate(`document.getElementById('line-value').value`)) - lineEnd) < 1e-9);
+    check('H1 chip follows the line', Math.abs(Number(await evaluate(`document.querySelector('#hlines-list .vline-chip input').value`)) - lineEnd) < 1e-9);
     check('line drag keeps the filter', (await badge()).includes(series[first]), await badge());
     const [zx0, zx1] = await evaluate(`(${XVIEW[lib]})()`);
     const span = d.xRange[1] - d.xRange[0];
     check('line drag does not zoom', Math.abs(zx0 - d.xRange[0]) < span * 0.01 && Math.abs(zx1 - d.xRange[1]) < span * 0.01, `${zx0}..${zx1}`);
     // Typed value must move the drawn handle: drag again from the typed position.
-    await evaluate(`MoonCore.line.set(5.5,'input')`); await wait(300);
-    const [, sy] = await px(0, d.xRange[1], 5.5);
+    // Type a value away from the other handles (top of the y range) so the press can only hit H1.
+    await evaluate(`MoonCore.hlines.set(MoonCore.hlines.list()[0].id,MoonCore.hlines.max,'input')`); await wait(300);
+    const [, sy] = await px(0, d.xRange[1], d.yRange[1]);
     const [, ey8] = await px(0, d.xRange[1], 8);
     await mouse('mouseMoved', hx, sy); await mouse('mousePressed', hx, sy);
     for (let k = 1; k <= 6; k++) await mouse('mouseMoved', hx, sy + ((ey8 - sy) * k) / 6);
     await mouse('mouseReleased', hx, ey8); await wait(400);
-    check('typed value moves the handle', Math.abs((await evaluate(`MoonCore.line.get()`)) - 8) <= 0.25, String(await evaluate(`MoonCore.line.get()`)));
+    check('typed value moves the handle', Math.abs((await evaluate(`MoonCore.hlines.list()[0].value`)) - 8) <= 0.25, String(await evaluate(`MoonCore.hlines.list()[0].value`)));
     await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
 
     // Vertical lines: 3 by default, add/remove buttons, drag V1 by its ▼ handle (plot top − 8 px).
@@ -170,7 +171,7 @@ async function main() {
     await evaluate(`MoonCore.setFilter(${first})`); await wait(300);
     // Put the plot top below the sticky top bar (3 rows on phones), instantly (page uses smooth scroll).
     await evaluate(`(()=>{const r=document.getElementById('chart').getBoundingClientRect();const bar=document.querySelector('.topbar').getBoundingClientRect().bottom;window.scrollTo({top:scrollY+r.top-bar-40,behavior:'instant'})})()`); await wait(300);
-    const hBefore = await evaluate(`MoonCore.line.get()`);
+    const hBefore = await evaluate(`JSON.stringify(MoonCore.hlines.list())`);
     const v1 = (await evaluate(`MoonCore.vlines.list()`))[0];
     const vTarget = d.xRange[0] + span * 0.4;
     const [vx, vtop] = await px(0, v1.value, d.yRange[1]);
@@ -185,7 +186,7 @@ async function main() {
     check('vertical drag keeps the filter', (await badge()).includes(series[first]), await badge());
     const [vz0, vz1] = await evaluate(`(${XVIEW[lib]})()`);
     check('vertical drag does not zoom', Math.abs(vz0 - d.xRange[0]) < span * 0.01 && Math.abs(vz1 - d.xRange[1]) < span * 0.01, `${vz0}..${vz1}`);
-    check('vertical drag leaves the horizontal line', (await evaluate(`MoonCore.line.get()`)) === hBefore);
+    check('vertical drag leaves the horizontal lines', (await evaluate(`JSON.stringify(MoonCore.hlines.list())`)) === hBefore);
     // Legend toggle: hiding series 0 removes its vertical line, chip and area card; showing it brings them back.
     const toggle = async () => {
       // Legend sits above the plot: bring the chart's top edge just below the sticky top bar first.
@@ -202,7 +203,7 @@ async function main() {
     const areasMatch = `(()=>{const f=new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});const want=MoonCore.areas().map(a=>f.format(a.area));const got=[...document.querySelectorAll('#fill-areas .fill-area strong')].map(e=>e.textContent);return got.length===want.length&&got.every((t,i)=>t===want[i]);})()`;
     check('filled areas shown per vertical line', await evaluate(areasMatch));
     const areaBefore = await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`);
-    await evaluate(`MoonCore.line.set(MoonCore.line.min + (MoonCore.line.max - MoonCore.line.min) * 0.1, 'input')`); await wait(200);
+    await evaluate(`MoonCore.hlines.set(MoonCore.hlines.list()[0].id, MoonCore.hlines.min + (MoonCore.hlines.max - MoonCore.hlines.min) * 0.1, 'input')`); await wait(200);
     check('areas follow the horizontal line', (await evaluate(areasMatch)) && (await evaluate(`document.querySelector('#fill-areas .fill-area strong')?.textContent`)) !== areaBefore, String(areaBefore));
     await evaluate(`document.getElementById('clear-filter').click()`); await wait(200);
 
@@ -214,6 +215,19 @@ async function main() {
     check('no horizontal page scroll', await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`));
     check('no JS errors', errors.length === 0, errors.join(' | '));
   }
+
+  // Switching dataset must drop the old ?vlinhas=/?linha= so the new dataset starts with one line per series.
+  for (const [lib, port] of Object.entries(PORTS)) {
+    console.log(`${lib} (:${port}) dataset switch width=${WIDTH}`);
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=sarah&vlinhas=1990,2000&minima=3&seed=${SEED}#track` });
+    await wait(2000);
+    await evaluate(`(s=>{s.value='curvas';s.dispatchEvent(new Event('change'))})(document.getElementById('dataset-select'))`);
+    await wait(3000);
+    const n = await evaluate(`MoonSeries.all.length`);
+    check('switch to curvas: one vertical line per series', (await evaluate(`MoonCore.vlines.list().length`)) === n, `${await evaluate(`MoonCore.vlines.list().length`)} of ${n}`);
+    check('switch to curvas: one minimum-viability line, back to the middle', (await evaluate(`MoonCore.hlines.list().length`)) === 1 && (await evaluate(`MoonCore.hlines.list()[0].value`)) === 5);
+  }
+
   ws.close();
   console.log(failed ? `${failed} FAILED` : 'ALL OK');
   process.exit(failed ? 1 : 0);

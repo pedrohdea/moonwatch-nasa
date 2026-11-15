@@ -99,16 +99,17 @@
           '<div class="toolbar">' +
             '<span id="filter-badge" class="badge" role="status" aria-live="polite"></span>' +
             '<button id="clear-filter" class="btn btn-ghost" type="button">Limpar filtro</button>' +
-            '<label class="line-input" title="Arraste a seta no gráfico ou digite o valor">Linha horizontal ' +
-              '<input id="line-value" type="number" step="0.1" min="' + data.yRange[0] + '" max="' + data.yRange[1] + '" inputmode="decimal">' +
-            '</label>' +
             '<button id="reset-zoom" class="btn btn-ghost" type="button">Resetar zoom</button>' +
           '</div>' +
+          '<div id="fill-areas" class="fill-areas" role="status" aria-live="polite" aria-label="Área preenchida por série"></div>' +
           '<div class="toolbar vlines-bar" aria-label="Linhas verticais">' +
             '<span class="vlines-label">Linhas verticais</span>' +
             '<div id="vlines-list" class="vlines-list"></div>' +
-          '<div id="fill-areas" class="fill-areas" role="status" aria-live="polite" aria-label="Área preenchida por linha vertical"></div>' +
             '<button id="vline-add" class="btn btn-ghost" type="button">+ Linha vertical</button>' +
+          '</div>' +
+          '<div class="toolbar vlines-bar hlines-bar" aria-label="Viabilidade mínima">' +
+            '<span class="vlines-label" title="Uma linha para todas as séries: o preenchimento fica acima dela">Viabilidade mínima</span>' +
+            '<div id="hlines-list" class="vlines-list"></div>' +
           '</div>' +
           '<div id="chart" class="chart" role="img" aria-label="Gráfico de linhas com seis funções matemáticas"></div>' +
           '<div class="table-box" id="table-box" tabindex="0" aria-label="Dados do gráfico">' +
@@ -160,57 +161,62 @@
   root.MoonCore.onFilterChange(updateHint);
   updateHint(root.MoonCore.getFilter());
 
-  // Horizontal line: toolbar input <-> MoonCore.line; value kept in ?linha= (replaceState, no reload).
-  var lineInput = doc.getElementById('line-value');
-  function showLine(value, source) {
-    if (source !== 'input') lineInput.value = value;
-    var url = new URL(root.location.href);
-    url.searchParams.set('linha', value);
-    root.history.replaceState(null, '', url);
-  }
-  lineInput.value = root.MoonCore.line.get();
-  lineInput.addEventListener('input', function () { root.MoonCore.line.set(lineInput.value, 'input'); });
-  lineInput.addEventListener('change', function () { lineInput.value = root.MoonCore.line.get(); });
-  root.MoonCore.line.onChange(showLine);
+  // Line chips (vertical and horizontal share the pattern): one chip per line with a number input and ×,
+  // plus an add button; values kept in the URL (replaceState, no reload). Line k <-> series k (color, visibility).
+  // opts: {param, listId, addId|null, removable, tag(i), color(i), visible(i), kind}
+  function lineBar(set, opts) {
+    var list = doc.getElementById(opts.listId);
+    var add = opts.addId ? doc.getElementById(opts.addId) : null;
+    var step = set.step === 1 ? '1' : '0.1';
+    var param = opts.param;
+    var kind = opts.kind;
 
-  // Vertical lines: one chip per line (number input + remove) and an add button; values kept in ?vlinhas=.
+    function render(lines, source) {
+      var url = new URL(root.location.href);
+      url.searchParams.set(param, lines.map(function (l) { return l.value; }).join(','));
+      root.history.replaceState(null, '', url);
+      if (add) add.disabled = lines.length >= set.limit;
+      // While typing, keep the focused input (and its caret) untouched.
+      if (source === 'input') return;
+      list.innerHTML = lines.map(function (l, i) {
+        var color = opts.color(i);
+        var hiddenAttr = opts.visible(i) ? '' : ' hidden'; // series hidden in the legend
+        var tag = opts.tag(i);
+        return '<span class="vline-chip" data-id="' + l.id + '" style="border-color:' + color + '"' + hiddenAttr + '>' +
+          '<span class="vline-tag" style="color:' + color + '" title="' + root.MoonSeries.all[i % root.MoonSeries.all.length].name + '">' + tag + '</span>' +
+          '<input type="number" step="' + step + '" min="' + set.min + '" max="' + set.max + '" value="' + l.value + '" aria-label="Posição da linha ' + kind + ' ' + tag + '">' +
+          (opts.removable ? '<button type="button" class="vline-remove" aria-label="Excluir linha ' + kind + ' ' + tag + '" title="Excluir">×</button>' : '') +
+        '</span>';
+      }).join('') || '<span class="vlines-empty">nenhuma</span>';
+    }
+
+    list.addEventListener('input', function (e) {
+      var chip = e.target.closest('.vline-chip');
+      if (chip && e.target.tagName === 'INPUT') set.set(Number(chip.getAttribute('data-id')), e.target.value, 'input');
+    });
+    list.addEventListener('change', function () { render(set.list(), 'change'); }); // show the clamped value
+    list.addEventListener('click', function (e) {
+      var chip = e.target.closest('.vline-chip');
+      if (chip && e.target.classList.contains('vline-remove')) set.remove(Number(chip.getAttribute('data-id')), 'button');
+    });
+    if (add) add.addEventListener('click', function () { set.add(null, 'button'); });
+    set.onChange(render);
+    render(set.list(), 'init');
+    return function () { render(set.list(), 'visibility'); };
+  }
+
   var vl = root.MoonCore.vlines;
-  var vlList = doc.getElementById('vlines-list');
-  var vlAdd = doc.getElementById('vline-add');
-  var vlStep = vl.step === 1 ? '1' : '0.1';
-
-  function renderVLines(lines, source) {
-    var url = new URL(root.location.href);
-    url.searchParams.set('vlinhas', lines.map(function (l) { return l.value; }).join(','));
-    root.history.replaceState(null, '', url);
-    vlAdd.disabled = lines.length >= vl.limit;
-    // While typing, only refresh other inputs so the focused one keeps the caret.
-    if (source === 'input') return;
-    vlList.innerHTML = lines.map(function (l, i) {
-      var color = root.MoonCore.vlineColor(i);
-      var hiddenAttr = root.MoonCore.vlineVisible(i) ? '' : ' hidden'; // series hidden in the legend
-      return '<span class="vline-chip" data-id="' + l.id + '" style="border-color:' + color + '"' + hiddenAttr + '>' +
-        '<span class="vline-tag" style="color:' + color + '" title="' + root.MoonSeries.all[i % root.MoonSeries.all.length].name + '">V' + (i + 1) + '</span>' +
-        '<input type="number" step="' + vlStep + '" min="' + vl.min + '" max="' + vl.max + '" value="' + l.value + '" aria-label="Posição da linha vertical V' + (i + 1) + '">' +
-        '<button type="button" class="vline-remove" aria-label="Excluir linha vertical V' + (i + 1) + '" title="Excluir">×</button>' +
-      '</span>';
-    }).join('') || '<span class="vlines-empty">nenhuma</span>';
-  }
-
-  vlList.addEventListener('input', function (e) {
-    var chip = e.target.closest('.vline-chip');
-    if (chip && e.target.tagName === 'INPUT') vl.set(Number(chip.getAttribute('data-id')), e.target.value, 'input');
+  var hl = root.MoonCore.hlines;
+  var refreshVChips = lineBar(vl, {
+    param: 'vlinhas', listId: 'vlines-list', addId: 'vline-add', removable: true, kind: 'vertical',
+    tag: function (i) { return 'V' + (i + 1); }, color: root.MoonCore.vlineColor, visible: root.MoonCore.vlineVisible
   });
-  vlList.addEventListener('change', function () { renderVLines(vl.list(), 'change'); }); // show the clamped value
-  vlList.addEventListener('click', function (e) {
-    var chip = e.target.closest('.vline-chip');
-    if (chip && e.target.classList.contains('vline-remove')) vl.remove(Number(chip.getAttribute('data-id')), 'button');
+  var refreshHChips = lineBar(hl, {
+    param: 'minima', listId: 'hlines-list', addId: null, removable: false, kind: 'de viabilidade mínima',
+    tag: root.MoonCore.hlineLabel, color: root.MoonCore.hlineColor, visible: root.MoonCore.hlineVisible
   });
-  vlAdd.addEventListener('click', function () { vl.add(null, 'button'); });
-  vl.onChange(renderVLines);
-  renderVLines(vl.list(), 'init');
 
-  // Filled area per vertical line (above the horizontal line, right of Vk), refreshed on any line move.
+  // Filled area per series (above the minimum viability, right of Vk), refreshed on any line move.
   var areasEl = doc.getElementById('fill-areas');
   var areaFmt = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   function renderAreas() {
@@ -223,25 +229,26 @@
       }).join('') || '<span class="vlines-empty">nenhuma linha vertical</span>');
   }
   vl.onChange(renderAreas);
-  root.MoonCore.line.onChange(renderAreas);
+  hl.onChange(renderAreas);
   renderAreas();
 
-    url.searchParams.set('dataset', e.target.value);
-    url.hash = 'track';
-    root.location.href = url.toString();
   // Legend toggles change how many lines the chart shows: chips and area cards follow.
   root.MoonCore.onVisibilityChange(function () {
-    renderVLines(vl.list(), 'visibility');
+    refreshVChips();
+    refreshHChips();
     renderAreas();
   });
 
   // Switching dataset reloads the page so every chart adapter starts clean.
   doc.getElementById('dataset-select').addEventListener('change', function (e) {
     var url = new URL(root.location.href);
-  });
+    url.searchParams.set('dataset', e.target.value);
     // Line positions belong to the old dataset's axes and series count: start the new one from defaults.
     url.searchParams.delete('vlinhas');
-    url.searchParams.delete('linha');
+    url.searchParams.delete('minima');
+    url.hash = 'track';
+    root.location.href = url.toString();
+  });
 
   root.MoonLayout = {
     lib: lib,

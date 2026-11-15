@@ -45,7 +45,7 @@
     var traces = series.map(function (s) {
       var t = {
         type: 'scatter',
-        mode: 'lines+markers',
+        mode: (viz === 'tamanho' || viz === 'cor') ? 'lines+markers' : 'lines', // other modes: line only, no point markers
         name: s.name,
         x: s.points.map(function (p) { return p[0]; }),
         y: s.points.map(function (p) { return p[1]; }),
@@ -161,12 +161,14 @@
     var decoCount = 0;
     var devShapes = [];
 
-    // Horizontal draggable line, always the last shape so deviation shapes can be rebuilt independently.
-    function hlineShape() {
-      return {
-        name: 'hline', type: 'line', xref: 'paper', x0: 0, x1: 1, yref: 'y', y0: core.line.get(), y1: core.line.get(),
-        line: { color: LINE_COLOR, width: 2, dash: 'dash' }, layer: 'above'
-      };
+    // Horizontal draggable lines: one shape per line, spanning the full plot width.
+    function hlineShapes() {
+      return core.hlines.list().map(function (l, i) {
+        return {
+          name: 'hline-' + l.id, type: 'line', xref: 'paper', x0: 0, x1: 1, yref: 'y', y0: l.value, y1: l.value,
+          line: { color: core.hlineColor(i), width: 1.5, dash: '6px,4px' }, opacity: 0.85, layer: 'above'
+        };
+      }).filter(function (sh, i) { return core.hlineVisible(i); }); // series hidden in the legend: no line
     }
     // Vertical draggable lines: one shape per line, spanning the full plot height.
     function vlineShapes() {
@@ -194,7 +196,7 @@
       });
       return out;
     }
-    function allShapes() { return fillShapes().concat(devShapes, [hlineShape()], vlineShapes()); }
+    function allShapes() { return fillShapes().concat(devShapes, hlineShapes(), vlineShapes()); }
     layout.shapes = allShapes();
 
     var queue = Promise.resolve();
@@ -224,60 +226,68 @@
     }
 
     return Plotly.newPlot(container, traces, layout, config).then(function () {
-      // Handle: HTML triangle + value label over the right edge of the plot area.
+      // Horizontal line handles: HTML left-pointing triangle + label at the right edge of the plot, one per line.
       if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
-      var handle = document.createElement('div');
-      handle.className = 'hline-handle';
-      handle.style.cssText = 'position:absolute;display:none;align-items:center;height:20px;cursor:ns-resize;touch-action:none;user-select:none;z-index:5;';
-      handle.innerHTML = '<span style="width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-right:11px solid ' + LINE_COLOR + ';"></span>' +
-        '<span class="hline-label" style="margin-left:3px;font:11px Fira Code,monospace;color:' + LINE_COLOR + ';"></span>';
-      container.appendChild(handle);
-      var label = handle.querySelector('.hline-label');
-
-      function placeHandle() {
+      var hHandles = {}; // id -> element
+      function syncHHandles() {
         var L = container._fullLayout;
         if (!L || !L._size) return;
-        var v = core.line.get();
-        var r = L.yaxis.range;
-        label.textContent = v.toFixed(2).replace('.', ',');
-        // Out of the visible y range: hide the handle (the shape is clipped by the plot area).
-        if (v < Math.min(r[0], r[1]) || v > Math.max(r[0], r[1])) { handle.style.display = 'none'; return; }
-        handle.style.display = 'flex';
-        handle.style.left = (L._size.l + L._size.w) + 'px';
-        handle.style.top = (L._size.t + L.yaxis.l2p(v) - 10) + 'px';
+        var live = {};
+        core.hlines.list().forEach(function (l, i) {
+          if (!core.hlineVisible(i)) return; // hidden series: handle removed below so it cannot catch events
+          live[l.id] = true;
+          var el = hHandles[l.id] || createHHandle(l.id);
+          var r = L.yaxis.range;
+          el.querySelector('.hline-label').textContent = core.hlineLabel(i);
+          el.querySelector('.hline-label').style.color = core.hlineColor(i);
+          el.firstChild.style.borderRightColor = core.hlineColor(i);
+          if (l.value < Math.min(r[0], r[1]) || l.value > Math.max(r[0], r[1])) { el.style.display = 'none'; return; }
+          el.style.display = 'block';
+          el.style.left = (L._size.l + L._size.w + 5 - 10) + 'px'; // 20 px box: triangle center exactly 5 px right of the plot edge
+          el.style.top = (L._size.t + L.yaxis.l2p(l.value) - 10) + 'px';
+        });
+        Object.keys(hHandles).forEach(function (id) {
+          if (!live[id]) { hHandles[id].remove(); delete hHandles[id]; }
+        });
       }
-      function drawLine() {
-        placeHandle();
+      function createHHandle(id) {
+        var el = document.createElement('div');
+        el.className = 'hline-handle';
+        el.style.cssText = 'position:absolute;display:none;width:20px;height:20px;cursor:ns-resize;touch-action:none;user-select:none;z-index:6;';
+        el.innerHTML = '<span style="position:absolute;left:4px;top:5px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-right:12px solid #FFFFFF;"></span>' +
+          '<span class="hline-label" style="position:absolute;left:19px;top:3px;font:11px Fira Code,monospace;color:#FFFFFF;white-space:nowrap;"></span>';
+        container.appendChild(el);
+        hHandles[id] = el;
+        el.addEventListener('pointerdown', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          el.setPointerCapture(e.pointerId);
+          function move(ev) {
+            var L = container._fullLayout;
+            var py = ev.clientY - container.getBoundingClientRect().top - L._size.t;
+            core.hlines.set(id, L.yaxis.p2l(py), 'drag');
+          }
+          function up(ev) {
+            el.removeEventListener('pointermove', move);
+            el.removeEventListener('pointerup', up);
+            el.removeEventListener('pointercancel', up);
+            if (el.hasPointerCapture(ev.pointerId)) el.releasePointerCapture(ev.pointerId);
+          }
+          el.addEventListener('pointermove', move);
+          el.addEventListener('pointerup', up);
+          el.addEventListener('pointercancel', up);
+        });
+        ['mousedown', 'click'].forEach(function (t) {
+          el.addEventListener(t, function (e) { e.stopPropagation(); });
+        });
+        return el;
+      }
+      core.hlines.onChange(function () {
+        syncHHandles();
         Plotly.relayout(container, { shapes: allShapes() });
-      }
-      core.line.onChange(function (v, source) {
-        if (source === 'drag') { placeHandle(); Plotly.relayout(container, { shapes: allShapes() }); } else drawLine();
       });
-      container.on('plotly_afterplot', placeHandle);
-      placeHandle();
-
-      handle.addEventListener('pointerdown', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        handle.setPointerCapture(e.pointerId);
-        function move(ev) {
-          var L = container._fullLayout;
-          var py = ev.clientY - container.getBoundingClientRect().top - L._size.t;
-          core.line.set(L.yaxis.p2l(py), 'drag');
-        }
-        function up(ev) {
-          handle.removeEventListener('pointermove', move);
-          handle.removeEventListener('pointerup', up);
-          handle.removeEventListener('pointercancel', up);
-          if (handle.hasPointerCapture(ev.pointerId)) handle.releasePointerCapture(ev.pointerId);
-        }
-        handle.addEventListener('pointermove', move);
-        handle.addEventListener('pointerup', up);
-        handle.addEventListener('pointercancel', up);
-      });
-      ['mousedown', 'click'].forEach(function (t) {
-        handle.addEventListener(t, function (e) { e.stopPropagation(); });
-      });
+      container.on('plotly_afterplot', syncHHandles);
+      syncHHandles();
 
       // Vertical line handles: HTML down-pointing triangle + label above the plot, one per line.
       var vHandles = {}; // id -> element
@@ -347,6 +357,7 @@
         container._fullData.slice(0, mainCount).forEach(function (t, k) { core.setVisible(k, t.visible === true); });
       });
       core.onVisibilityChange(function () {
+        syncHHandles();
         syncVHandles();
         Plotly.relayout(container, { shapes: allShapes() });
       });

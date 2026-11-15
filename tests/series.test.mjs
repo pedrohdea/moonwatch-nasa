@@ -5,7 +5,7 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const MoonSeries = require('../site/shared/series.js');
-const { createCore, createLine, createVLines, defaultVLines, fillRegions } = require('../site/shared/core.js');
+const { createCore, createVLines, defaultVLines, fillRegions } = require('../site/shared/core.js');
 
 const near = (a, b) => Math.abs(a - b) < 1e-3;
 
@@ -124,20 +124,6 @@ test('viz modes, accuracy colors and focus', () => {
   assert.deepEqual(MoonSeries.focus(3), [3]);
   assert.deepEqual(MoonSeries.focus(null), [], 'decorations only on the selected series');
   assert.deepEqual(MoonSeries.load('sarah').length, 2);
-});
-
-test('horizontal line: default middle, clamps, rounds, notifies with source', () => {
-  const line = createLine(0, 10, NaN);
-  assert.equal(line.get(), 5);
-  const seen = [];
-  line.onChange((v, src) => seen.push([v, src]));
-  line.set(12, 'drag');
-  line.set(12, 'drag');
-  line.set('3.456', 'input');
-  line.set('abc', 'input');
-  line.set(-1);
-  assert.deepEqual(seen, [[10, 'drag'], [3.46, 'input'], [0, undefined]]);
-  assert.equal(createLine(0, 10, '7.5').get(), 7.5);
 });
 
 test('vertical lines: defaults, add in widest gap, remove, set with step and clamp, limit', () => {

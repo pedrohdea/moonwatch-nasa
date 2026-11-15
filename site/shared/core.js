@@ -36,38 +36,7 @@
     };
   }
 
-  // Horizontal line value, clamped to [min, max] and rounded to 0.01. `source` tells listeners who moved it.
-  function createLine(min, max, initial) {
-    var value = null;
-    var listeners = [];
-
-    function normalize(v) {
-      if (v === '' || v === null || v === undefined) return null; // Number('') would be 0
-      var n = Number(v);
-      if (!isFinite(n)) return null;
-      return Math.round(Math.min(max, Math.max(min, n)) * 100) / 100;
-    }
-
-    function set(v, source) {
-      var next = normalize(v);
-      if (next === null || next === value) return;
-      value = next;
-      listeners.forEach(function (cb) { cb(value, source); });
-    }
-
-    value = normalize(initial);
-    if (value === null) value = normalize((min + max) / 2);
-
-    return {
-      get: function () { return value; },
-      set: set,
-      onChange: function (cb) { listeners.push(cb); },
-      min: min,
-      max: max
-    };
-  }
-
-  // Draggable vertical lines: ordered list of {id, value}; ids are stable so adapters can track handles.
+  // Draggable guide lines (vertical or horizontal): ordered list of {id, value}; ids are stable so adapters can track handles.
   // `step` rounds values (1 for years, 0.01 otherwise). Listeners get (lines, source).
   function createVLines(min, max, step, initial, limit) {
     var lines = [];
@@ -189,44 +158,56 @@
   var api = root.MoonSeries ? createCore(root.MoonSeries.all.length) : null;
   if (api) {
     var ds = root.MoonSeries.dataset;
-    var range = ds.yRange;
     var params = new URLSearchParams(root.location && root.location.search ? root.location.search : '');
-    var initial = params.get('linha');
-    var vparam = params.get('vlinhas'); // "" = user removed all lines; absent = defaults
-    api.createCore = createCore;
-    api.line = createLine(range[0], range[1], initial === null ? NaN : initial);
     var seriesCount = root.MoonSeries.all.length;
-    api.vlines = createVLines(ds.xRange[0], ds.xRange[1], ds.xIsYear ? 1 : 0.01,
-      vparam === null ? defaultVLines(ds.xRange[0], ds.xRange[1], seriesCount) : vparam.split(',').filter(Boolean), seriesCount);
-    // Line k (order of list()) takes the color of series k, so each vertical line maps to one chart line.
+    // "" in the URL = user removed all lines; absent = one line per series, evenly spaced.
+    function initialLines(param, min, max) {
+      var v = params.get(param);
+      return v === null ? defaultVLines(min, max, seriesCount) : v.split(',').filter(Boolean);
+    }
+    api.createCore = createCore;
+    api.vlines = createVLines(ds.xRange[0], ds.xRange[1], ds.xIsYear ? 1 : 0.01, initialLines('vlinhas', ds.xRange[0], ds.xRange[1]), seriesCount);
+    // Minimum viability: ONE horizontal line shared by every series (default: middle of the y range).
+    var minimaParam = params.get('minima');
+    api.hlines = createVLines(ds.yRange[0], ds.yRange[1], 0.01,
+      [minimaParam !== null && minimaParam !== '' ? minimaParam : (ds.yRange[0] + ds.yRange[1]) / 2], 1);
+    // Vertical line k takes the color of series k; the minimum-viability line is Neon Yellow.
     api.vlineColor = function (k) { return root.MoonSeries.colors[k % seriesCount]; };
-    // Fills to draw now: [{seriesIndex, color, polygons}] — all series, or only the filtered one.
-    // Series k uses vertical line k; a series without a vertical line (removed) gets no fill.
+    api.hlineColor = function () { return '#EAFE07'; };
+    api.hlineLabel = function () { return 'Mín.'; };
+
+    // Series k is filled/measured with its vertical line Vk and the shared minimum-viability line.
+    function pairFor(k) {
+      var v = api.vlines.list()[k];
+      var h = api.hlines.list()[0];
+      return v && h ? { h: h.value, v: v.value } : null;
+    }
+
+    // Fills to draw now: [{seriesIndex, color, polygons}] — visible series, all or only the filtered one.
     api.fills = function () {
-      var lines = api.vlines.list();
-      var h = api.line.get();
       var active = api.getFilter();
       return root.MoonSeries.all
-        .filter(function (s) { return (active === null || s.index === active) && lines[s.index] && api.isVisible(s.index); })
+        .filter(function (s) { return (active === null || s.index === active) && api.isVisible(s.index) && pairFor(s.index); })
         .map(function (s) {
-          return { seriesIndex: s.index, color: s.color, polygons: fillRegions(s.points, h, lines[s.index].value) };
+          var p = pairFor(s.index);
+          return { seriesIndex: s.index, color: s.color, polygons: fillRegions(s.points, p.h, p.v) };
         });
     };
     api.fillRegions = fillRegions;
-    // Filled area per vertical line: V(k+1) <-> series k, independent of the series filter.
+    // Filled area per series (above the minimum viability, right of Vk), independent of the series filter.
     api.areas = function () {
-      var h = api.line.get();
-      return api.vlines.list().slice(0, seriesCount).map(function (l, k) {
-        var s = root.MoonSeries.all[k];
-        var area = fillRegions(s.points, h, l.value).reduce(function (sum, poly) { return sum + polygonArea(poly); }, 0);
-        return { label: 'V' + (k + 1), seriesIndex: k, name: s.name, color: s.color, area: area };
-      }).filter(function (a) { return api.isVisible(a.seriesIndex); });
+      return root.MoonSeries.all
+        .filter(function (s) { return api.isVisible(s.index) && pairFor(s.index); })
+        .map(function (s) {
+          var p = pairFor(s.index);
+          var area = fillRegions(s.points, p.h, p.v).reduce(function (sum, poly) { return sum + polygonArea(poly); }, 0);
+          return { label: 'V' + (s.index + 1), seriesIndex: s.index, name: s.name, color: s.color, area: area };
+        });
     };
-    // Vertical line k is drawn only while series k is visible in the chart.
-    api.vlineVisible = function (k) {
-      return k < seriesCount && api.isVisible(k);
-    };
+    // Line k (vertical or horizontal) is drawn only while series k is visible in the chart.
+    api.vlineVisible = function (k) { return k < seriesCount && api.isVisible(k); };
+    api.hlineVisible = function () { return true; }; // shared line: never tied to one series
     root.MoonCore = api;
   }
-  if (typeof module !== 'undefined' && module.exports) module.exports = { createCore: createCore, createLine: createLine, createVLines: createVLines, defaultVLines: defaultVLines, fillRegions: fillRegions, polygonArea: polygonArea };
+  if (typeof module !== 'undefined' && module.exports) module.exports = { createCore: createCore, createVLines: createVLines, defaultVLines: defaultVLines, fillRegions: fillRegions, polygonArea: polygonArea };
 })(typeof window !== 'undefined' ? window : globalThis);
