@@ -185,7 +185,7 @@
   var hint = doc.getElementById('viz-hint');
   function updateHint(index) {
     var needsFocus = ['band', 'label'].indexOf(root.MoonSeries.viz) >= 0;
-    hint.textContent = needsFocus && root.MoonSeries.focus(index).length === 0 ? 'Click a line to see it.' : '';
+    hint.textContent = needsFocus && root.MoonSeries.focus(index).length === 0 ? 'Select a line to see it.' : '';
   }
   root.MoonCore.onFilterChange(updateHint);
   updateHint(root.MoonCore.getFilter());
