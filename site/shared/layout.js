@@ -144,6 +144,7 @@
             '<li><input type="checkbox" disabled aria-label="Pending"><span class="todo-tag">Improvement</span><span>Recalculate transit time from the Departure date and day-to-day variables (daily lunar conditions and space weather), instead of fixed offsets.</span></li>' +
             '<li><input type="checkbox" disabled aria-label="Pending"><span class="todo-tag">Improvement</span><span>Ground the Viability, Departure and Deadline models in real NASA LRO lunar maps and DONKI space weather data (today the viability data is simulated).</span></li>' +
             '<li><input type="checkbox" disabled aria-label="Pending"><span class="todo-tag">Improvement</span><span>Real-time viability: ingest official internal NASA sources (not mapped yet) into a structured data lake, following the current star schema, relate them by landing site and date, and compute viability in real time.</span></li>' +
+            '<li><input type="checkbox" disabled aria-label="Pending"><span class="todo-tag">Improvement</span><span>Demo and pilot with data from successful and delayed missions.</span></li>' +
           '</ul>' +
         '</div>' +
       '</section>' +
