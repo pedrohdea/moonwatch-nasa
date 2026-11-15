@@ -5,8 +5,6 @@
   var doc = root.document;
   var lib = doc.body.getAttribute('data-lib') || 'Chart';
   var data = root.MoonSeries.dataset;
-  var total = root.MoonSeries.all.reduce(function (n, s) { return n + s.points.length; }, 0);
-  var fmt = new Intl.NumberFormat('en-US');
 
   function escapeHtml(text) {
     return String(text).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; });
@@ -123,14 +121,6 @@
           '<p class="eyebrow">Usability prototype · ' + lib + '</p>' +
           '<h1>Compare landing sites,<br>filter with a click.</h1>' +
           '<p class="lead">Daily viability of candidate lunar landing sites, grouped by mission. Click a line to filter the table, the viable areas and the site map.</p>' +
-          '<div class="stats">' +
-            '<div><strong>' + root.MoonSeries.all.length + '</strong><span>series</span></div>' +
-            '<div><strong>' + fmt.format(total) + '</strong><span>points</span></div>' +
-            (data.xDate
-              ? '<div><strong>' + data.xDate(data.xRange[0]) + '–' + data.xDate(data.xRange[1]) + '</strong><span>period</span></div>'
-              : '<div><strong>' + data.xRange[0] + '–' + data.xRange[1] + '</strong><span>' + escapeHtml(data.xLabel) + ' range</span></div>') +
-          '</div>' +
-          '<a class="btn" href="#track">View chart</a>' +
         '</div>' +
       '</section>' +
       '<section id="track" class="track">' +
