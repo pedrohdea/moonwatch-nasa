@@ -251,6 +251,21 @@ async function main() {
     check('switch to curvas: one minimum-viability line, back to the middle', (await evaluate(`MoonCore.hlines.list().length`)) === 1 && (await evaluate(`MoonCore.hlines.list()[0].value`)) === 5);
   }
 
+  // Viability chart filter -> "Sítios de pouso e impacto": filtering Grupo N selects only group N on the globe.
+  for (const [lib, port] of Object.entries(PORTS)) {
+    errors.length = 0;
+    console.log(`${lib} (:${port}) filter -> landing groups width=${WIDTH}`);
+    await send('Page.navigate', { url: `http://localhost:${port}/?dataset=viabilidade&seed=${SEED}#track` });
+    await wait(3000);
+    await evaluate(`MoonLanding.ready`);
+    await evaluate(`MoonCore.setFilter(2)`); await wait(800);
+    check('filter Grupo 3 selects only group 3 on the globe', (await evaluate(`JSON.stringify(MoonLanding.state.checked)`)) === '["csv-3"]' &&
+      (await evaluate(`document.querySelectorAll('#landing-points tbody tr').length`)) === 5);
+    await evaluate(`MoonCore.setFilter(null)`); await wait(500);
+    check('clearing the filter unselects the group', (await evaluate(`MoonLanding.state.checked.length`)) === 0);
+    check('no JS errors', errors.length === 0, errors.join(' | '));
+  }
+
   // #pouso globe: after picking a mission, Canvas and three.js views end centered on it (far side included).
   for (const [lib, port] of Object.entries(PORTS)) {
     errors.length = 0;

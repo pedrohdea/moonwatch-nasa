@@ -455,5 +455,23 @@
   }
 
   setTab('canvas');
+
+  // Viability chart filter -> landing groups: filtering "Grupo N" selects only group N here (globe frames its sites);
+  // clearing the filter unselects it, unless the user changed the selection meanwhile.
+  var linkedKey = null;
+  if (root.MoonCore && root.MoonSeries && root.MoonSeries.dataset.kind === 'viability') {
+    root.MoonCore.onFilterChange(function (index) {
+      ready.then(function () {
+        if (index !== null && root.MoonSeries.all[index] && root.MoonSeries.all[index].group !== undefined) {
+          linkedKey = 'csv-' + root.MoonSeries.all[index].group;
+          setGroups([linkedKey]);
+        } else if (linkedKey !== null) {
+          if (state.checked.length === 1 && state.checked[0] === linkedKey) setGroups([]);
+          linkedKey = null;
+        }
+      });
+    });
+  }
+
   root.MoonLanding = { missions: MISSIONS, state: state, select: selectMission, setGroups: setGroups, setTab: setTab, math: math, ready: ready };
 })(typeof window !== 'undefined' ? window : globalThis);

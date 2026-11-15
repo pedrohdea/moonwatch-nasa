@@ -188,7 +188,7 @@
         return [day, v, v, Math.round(100 * (1 - Math.abs(v - ref) / VIAB_DEV)), ref];
       });
       return {
-        index: index, name: 'Grupo ' + g.group, color: colors[index], sites: g.sites, points: points,
+        index: index, name: 'Grupo ' + g.group, group: g.group, color: colors[index], sites: g.sites, points: points,
         reference: points.map(function (p) { return [p[0], p[4]]; })
       };
     });
