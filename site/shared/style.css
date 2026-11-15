@@ -214,9 +214,9 @@ th.sortable:hover { color: var(--neon-yellow); }
 .landing-tabs { margin-left: 0; }
 .landing-tabs .variant { background: transparent; font-family: inherit; cursor: pointer; }
 .landing-tabs .variant[aria-pressed="true"] { color: var(--deep-blue); background: var(--neon-yellow); border-color: var(--neon-yellow); }
-.landing-stage { margin-top: 16px; width: 100%; max-width: 560px; aspect-ratio: 1; }
+.landing-stage { margin: 16px auto 0; width: 100%; max-width: 560px; aspect-ratio: 1; }
 .landing-stage[data-tab="iframe"] { max-width: none; aspect-ratio: 16 / 10; min-height: 480px; }
-.landing-groups { margin: 16px 0 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius); max-width: 760px; }
+.landing-groups { margin: 16px auto 0; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius); max-width: 760px; }
 .landing-groups legend { font-weight: 700; padding: 0 6px; }
 .landing-group-list { display: flex; flex-wrap: wrap; gap: 4px 16px; margin-bottom: 8px; font-size: 16px; }
 .landing-group-list label { white-space: nowrap; cursor: pointer; }

@@ -131,10 +131,9 @@
           '<p class="lead">Daily viability of candidate lunar landing sites, grouped by mission.' + refMark(1) + ' Click a line to filter the table, the viable areas and the site map.</p>' +
         '</div>' +
       '</section>' +
-      '<section id="track" class="track">' +
+      '<section id="track" class="track" title="Click a line to filter. Click an empty area or “Clear filter” to see everything. Use the mouse wheel or drag to zoom.">' +
         '<div class="wrap">' +
           '<h2>Track</h2>' +
-          '<p class="hint">Click a line to filter. Click an empty area or “Clear filter” to see everything. Use the mouse wheel or drag to zoom.</p>' +
           '<label class="dataset-picker">Dataset ' +
             '<select id="dataset-select">' + datasetOptions + '</select>' +
           '</label>' + refMark(2) +
@@ -156,7 +155,7 @@
             '<div id="deadline-list" class="vlines-list"></div>' +
           '</div>' +
           '<div class="toolbar vlines-bar" aria-label="Transit time">' +
-            '<span class="vlines-label" title="One vertical line per series (V1…Vn): the fill starts at it">Transit time</span>' +
+            '<span class="vlines-label" title="One vertical line per series (V1…Vn): the fill starts at it">Transit time [days]</span>' +
             '<div id="vlines-list" class="vlines-list"></div>' +
             '<button id="vline-add" class="btn btn-ghost" type="button">+ Transit time</button>' +
           '</div>' +
@@ -211,7 +210,7 @@
           '<h2>References</h2>' +
           '<ol class="refs">' + REFS.map(function (text, i) {
             var n = i + 1;
-            return '<li id="ref-' + n + '"><span class="ref-num">*' + n + '</span> <span>' + text + ' <a class="ref-back" href="#refmark-' + n + '" aria-label="Back to the text">↩</a></span></li>';
+            return '<li id="ref-' + n + '"><span class="ref-num">*' + n + '</span> <span><span class="ref-text">' + text + '</span> <a class="ref-back" href="#refmark-' + n + '" aria-label="Back to the text">↩</a></span></li>';
           }).join('') + '</ol>' +
         '</div>' +
       '</section>' +
@@ -233,6 +232,14 @@
   }
   roadmapSearch.addEventListener('input', filterRoadmap);
   filterRoadmap();
+
+  // Asterisk marks show their reference on hover (title = note text). After DOMContentLoaded: landing.js adds its mark later.
+  doc.addEventListener('DOMContentLoaded', function () {
+    doc.querySelectorAll('.ref-mark a').forEach(function (a) {
+      var note = doc.querySelector(a.getAttribute('href') + ' .ref-text');
+      if (note) a.title = note.textContent.trim();
+    });
+  });
 
   // Settings gear: expands the panel with the Confidence modes; outside click or Esc closes it.
   var settingsToggle = doc.querySelector('.settings-toggle');
@@ -307,8 +314,8 @@
         var hiddenAttr = opts.visible(i) ? '' : ' hidden'; // series hidden in the legend
         var tag = opts.tag(i);
         return '<span class="vline-chip" data-id="' + l.id + '" style="border-color:' + color + '"' + hiddenAttr + '>' +
-          '<span class="vline-tag" style="color:' + color + '" title="' + root.MoonSeries.all[i % root.MoonSeries.all.length].name + '">' + tag + '</span>' +
-          '<input type="' + input.type + '" step="' + input.step + '" min="' + input.min + '" max="' + input.max + '" value="' + show(l) + '" aria-label="' + kind + ' line ' + tag + '">' +
+          (tag ? '<span class="vline-tag" style="color:' + color + '" title="' + root.MoonSeries.all[i % root.MoonSeries.all.length].name + '">' + tag + '</span>' : '') +
+          '<input type="' + input.type + '" step="' + input.step + '" min="' + input.min + '" max="' + input.max + '" value="' + show(l) + '" aria-label="' + kind + ' line' + (tag ? ' ' + tag : '') + '">' +
           (opts.removable ? '<button type="button" class="vline-remove" aria-label="Remove ' + kind + ' line ' + tag + '" title="Remove">×</button>' : '') +
         '</span>';
       }).join('') || '<span class="vlines-empty">none</span>';
@@ -342,7 +349,7 @@
   function dateLineBar(set, param, label, color) {
     var opts = {
       param: param, listId: param + '-list', addId: null, removable: false, kind: param,
-      tag: function () { return label; }, color: function () { return color; }, visible: function () { return true; }
+      tag: function () { return ''; }, color: function () { return color; }, visible: function () { return true; } // the bar label already names it
     };
     if (start !== null) {
       opts.input = { type: 'date', min: isoFromDay(data.xRange[0]), max: isoFromDay(data.xRange[1]), step: 1 };
