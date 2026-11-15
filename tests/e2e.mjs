@@ -204,6 +204,21 @@ async function main() {
     const posAfter = await evaluate(`MoonCore.vlines.list().map(l=>l.value)`);
     const shift = depAfter - depValue;
     check('every travel-time line shifted with the departure', posAfter.every((v, i) => Math.abs(v - Math.min(d.xRange[1], posBefore[i] + shift)) < 0.02), `shift ${shift}`);
+    // Deadline: default at the end of the axis; dragging its ▼ back cuts the viable areas (never increases them).
+    check('deadline starts at the end of the x axis', (await evaluate(`MoonCore.deadline.list()[0].value`)) === d.xRange[1]);
+    const totalArea = () => evaluate(`MoonCore.areas().reduce((s,a)=>s+a.area,0)`);
+    const totalBefore = await totalArea();
+    const [kx, ktop] = await px(0, d.xRange[1], d.yRange[1]);
+    const kTarget = d.xRange[0] + span * 0.6;
+    const [ktx] = await px(0, kTarget, d.yRange[1]);
+    await mouse('mouseMoved', kx, ktop - 8); await mouse('mousePressed', kx, ktop - 8);
+    for (let k = 1; k <= 6; k++) await mouse('mouseMoved', kx + ((ktx - kx) * k) / 6, ktop - 8);
+    await mouse('mouseReleased', ktx, ktop - 8); await wait(400);
+    const kAfter = await evaluate(`MoonCore.deadline.list()[0].value`);
+    check('drag Deadline moves it', Math.abs(kAfter - kTarget) <= Math.max(span * 0.02, 1), `${kAfter} (want ${kTarget})`);
+    check('deadline cuts the viable areas', (await totalArea()) <= totalBefore + 1e-9 && (await evaluate(`MoonCore.fills().every(f=>f.polygons.every(p=>p.every(pt=>pt[0]<=MoonCore.deadline.list()[0].value+1e-9)))`)));
+    check('deadline chip follows the drag', await evaluate(`!!document.querySelector('#deadline-list .vline-chip input')`));
+    await evaluate(`MoonCore.deadline.set(MoonCore.deadline.list()[0].id, MoonSeries.dataset.xRange[1], 'input')`); await wait(300);
     // Legend toggle: hiding series 0 removes its vertical line, chip and area card; showing it brings them back.
     const toggle = async () => {
       // Legend sits above the plot: bring the chart's top edge just below the sticky top bar first.

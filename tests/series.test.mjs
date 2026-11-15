@@ -184,3 +184,14 @@ test('core visibility: legend toggles tracked per series', () => {
   core.setAllVisible(true);
   assert.equal(core.visibleCount(), 3);
 });
+
+test('fillRegions with a deadline: region stops at x <= end', () => {
+  const { polygonArea } = require('../site/shared/core.js');
+  const tri = [[0, 0], [4, 8], [8, 0]];
+  assert.deepEqual(fillRegions(tri, 4, 0, 5), [[[2, 4], [4, 8], [5, 6], [5, 4]]]);
+  assert.deepEqual(fillRegions(tri, 4, 0, 10), fillRegions(tri, 4, 0)); // deadline after the data: no change
+  assert.deepEqual(fillRegions(tri, 4, 6, 5), []); // deadline before the transit line: nothing
+  const full = fillRegions(tri, 4, 0).reduce((s, p) => s + polygonArea(p), 0);
+  const cut = fillRegions(tri, 4, 0, 5).reduce((s, p) => s + polygonArea(p), 0);
+  assert.ok(cut < full && Math.abs(cut - 7) < 1e-9, `cut=${cut}`); // triangle 2..4 (4) + trapezoid 4..5 with heights 4 and 2 (3)
+});

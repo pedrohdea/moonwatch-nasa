@@ -97,6 +97,10 @@
             '<span class="vlines-label" title="Moving the departure moves every transit time line with it">Departure</span>' +
             '<div id="departure-list" class="vlines-list"></div>' +
           '</div>' +
+          '<div class="toolbar vlines-bar departure-bar deadline-bar" aria-label="Deadline">' +
+            '<span class="vlines-label" title="Viable areas only count up to the deadline">Deadline</span>' +
+            '<div id="deadline-list" class="vlines-list"></div>' +
+          '</div>' +
           '<div class="toolbar vlines-bar" aria-label="Transit time">' +
             '<span class="vlines-label" title="One vertical line per series (V1…Vn): the fill starts at it">Transit time</span>' +
             '<div id="vlines-list" class="vlines-list"></div>' +
@@ -236,16 +240,21 @@
   var start = root.MoonViability && data.xDate ? Date.parse(root.MoonViability.start + 'T00:00:00Z') : null;
   function isoFromDay(day) { return new Date(start + Math.round(day) * 864e5).toISOString().slice(0, 10); }
   function dayFromIso(iso) { return Math.round((Date.parse(iso + 'T00:00:00Z') - start) / 864e5); }
-  lineBar(dep, start === null ? {
-    param: 'departure', listId: 'departure-list', addId: null, removable: false, kind: 'departure',
-    tag: function () { return 'Departure'; }, color: function () { return '#FFFFFF'; }, visible: function () { return true; }
-  } : {
-    param: 'departure', listId: 'departure-list', addId: null, removable: false, kind: 'departure',
-    tag: function () { return 'Departure'; }, color: function () { return '#FFFFFF'; }, visible: function () { return true; },
-    input: { type: 'date', min: isoFromDay(data.xRange[0]), max: isoFromDay(data.xRange[1]), step: 1 },
-    show: function (l) { return isoFromDay(l.value); },
-    write: function (id, v, source) { if (v) dep.set(id, dayFromIso(v), source); }
-  });
+  // Departure and Deadline: single-line bars with a date input when the x axis is a day index.
+  function dateLineBar(set, param, label, color) {
+    var opts = {
+      param: param, listId: param + '-list', addId: null, removable: false, kind: param,
+      tag: function () { return label; }, color: function () { return color; }, visible: function () { return true; }
+    };
+    if (start !== null) {
+      opts.input = { type: 'date', min: isoFromDay(data.xRange[0]), max: isoFromDay(data.xRange[1]), step: 1 };
+      opts.show = function (l) { return isoFromDay(l.value); };
+      opts.write = function (id, v, source) { if (v) set.set(id, dayFromIso(v), source); };
+    }
+    lineBar(set, opts);
+  }
+  dateLineBar(dep, 'departure', 'Departure', '#FFFFFF');
+  dateLineBar(root.MoonCore.deadline, 'deadline', 'Deadline', '#FF6A3D');
 
   // Travel-time chips show the duration from the departure; typing it moves only that line.
   var refreshVChips = lineBar(vl, {
@@ -279,6 +288,7 @@
   }
   vl.onChange(renderAreas);
   hl.onChange(renderAreas);
+  root.MoonCore.deadline.onChange(renderAreas);
   renderAreas();
 
   // Legend toggles change how many lines the chart shows: chips and area cards follow.
@@ -322,6 +332,7 @@
     url.searchParams.delete('transit');
     url.searchParams.delete('threshold');
     url.searchParams.delete('departure');
+    url.searchParams.delete('deadline');
     url.hash = 'track';
     root.location.href = url.toString();
   });

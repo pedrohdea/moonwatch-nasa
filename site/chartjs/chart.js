@@ -184,33 +184,40 @@
       });
     }
 
-    // Departure: solid white line + ▼ handle labelled "Departure"; every travel-time line is measured from it.
+    // Departure (white) and Deadline (orange): solid line + ▼ handle with its label.
+    // Transit-time lines are measured from the departure; viable areas stop at the deadline.
+    var SINGLE_LINES = [
+      { set: root.MoonCore.departure, label: 'Departure', color: '#FFFFFF' },
+      { set: root.MoonCore.deadline, label: 'Deadline', color: '#FF6A3D' }
+    ];
     function drawDeparture(c) {
       var ctx = c.ctx, a = c.chartArea, cy = a.top - VH_OFFSET;
-      root.MoonCore.departure.list().forEach(function (l) {
-        var px = vlinePixel(c, l.value);
-        if (px === null) return;
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(px, a.top);
-        ctx.lineTo(px, a.bottom);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(px - VH_W / 2, cy - VH_H / 2);
-        ctx.lineTo(px + VH_W / 2, cy - VH_H / 2);
-        ctx.lineTo(px, cy + VH_H / 2);
-        ctx.closePath();
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fill();
-        ctx.font = "bold 11px 'Fira Code', monospace";
-        ctx.textBaseline = 'middle';
-        // Label left of the arrow; flip to the right when it would cover the y axis.
-        var left = px - VH_W / 2 - 3 - ctx.measureText('Departure').width >= a.left;
-        ctx.textAlign = left ? 'right' : 'left';
-        ctx.fillText('Departure', left ? px - VH_W / 2 - 3 : px + VH_W / 2 + 3, cy);
-        ctx.restore();
+      SINGLE_LINES.forEach(function (g) {
+        g.set.list().forEach(function (l) {
+          var px = vlinePixel(c, l.value);
+          if (px === null) return;
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(px, a.top);
+          ctx.lineTo(px, a.bottom);
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = withAlpha(g.color, 0.9);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(px - VH_W / 2, cy - VH_H / 2);
+          ctx.lineTo(px + VH_W / 2, cy - VH_H / 2);
+          ctx.lineTo(px, cy + VH_H / 2);
+          ctx.closePath();
+          ctx.fillStyle = g.color;
+          ctx.fill();
+          ctx.font = "bold 11px 'Fira Code', monospace";
+          ctx.textBaseline = 'middle';
+          // Label left of the arrow; flip to the right when it would cover the y axis.
+          var left = px - VH_W / 2 - 3 - ctx.measureText(g.label).width >= a.left;
+          ctx.textAlign = left ? 'right' : 'left';
+          ctx.fillText(g.label, left ? px - VH_W / 2 - 3 : px + VH_W / 2 + 3, cy);
+          ctx.restore();
+        });
       });
     }
 
@@ -418,12 +425,14 @@
 
     // Line drag (horizontal or vertical lines): capture-phase listeners keep plugin-zoom (drag-zoom/pan) and the filter click out of it.
     var lineDrag = false, vDrag = null, hDrag = null, dDrag = null, swallowClick = false;
-    // Id of the departure line whose ▼ handle (<= 9 px) is under the pointer, or null.
+    // Departure/Deadline line whose ▼ handle (<= 9 px) is under the pointer, as {set, id}, or null.
     function dHit(e) {
       var pos = root.Chart.helpers.getRelativePosition(e, chart), a = chart.chartArea, hit = null;
-      root.MoonCore.departure.list().forEach(function (l) {
-        var px = vlinePixel(chart, l.value);
-        if (px !== null && Math.hypot(pos.x - px, pos.y - (a.top - VH_OFFSET)) <= 9) hit = l.id;
+      SINGLE_LINES.forEach(function (g) {
+        g.set.list().forEach(function (l) {
+          var px = vlinePixel(chart, l.value);
+          if (px !== null && Math.hypot(pos.x - px, pos.y - (a.top - VH_OFFSET)) <= 9) hit = { set: g.set, id: l.id };
+        });
       });
       return hit;
     }
@@ -454,12 +463,12 @@
     }
     function setFromPointer(e) {
       var pos = root.Chart.helpers.getRelativePosition(e, chart);
-      if (dDrag !== null) root.MoonCore.departure.set(dDrag, chart.scales.x.getValueForPixel(pos.x), 'drag');
+      if (dDrag !== null) dDrag.set.set(dDrag.id, chart.scales.x.getValueForPixel(pos.x), 'drag');
       else if (vDrag !== null) root.MoonCore.vlines.set(vDrag, chart.scales.x.getValueForPixel(pos.x), 'drag');
       else root.MoonCore.hlines.set(hDrag, chart.scales.y.getValueForPixel(pos.y), 'drag');
     }
     canvas.addEventListener('pointerdown', function (e) {
-      // Priority: minimum viability ◀, then departure ▼, then travel-time ▼.
+      // Priority: minimum viability ◀, then departure/deadline ▼, then travel-time ▼.
       var h = hHit(e), d = h === null ? dHit(e) : null, v = h === null && d === null ? vHit(e) : null;
       if (h === null && d === null && v === null) return;
       lineDrag = true;
@@ -492,6 +501,7 @@
     root.MoonCore.hlines.onChange(live(function () { chart.draw(); }));
     root.MoonCore.vlines.onChange(live(function () { chart.draw(); }));
     root.MoonCore.departure.onChange(live(function () { chart.draw(); }));
+    root.MoonCore.deadline.onChange(live(function () { chart.draw(); }));
     // Visibility can also change outside the legend ("All missions" checkbox): mirror it on the datasets.
     root.MoonCore.onVisibilityChange(live(function (k, visible) {
       if (chart.isDatasetVisible(k) !== visible) { chart.setDatasetVisibility(k, visible); chart.update('none'); }

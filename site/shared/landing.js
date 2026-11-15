@@ -539,7 +539,7 @@
     root.MoonCore.onVisibilityChange(syncFromChart);
     syncFromChart();
     // The largest area (green) can change when lines move: recolor the globe points.
-    [root.MoonCore.vlines, root.MoonCore.hlines, root.MoonCore.departure].forEach(function (set) { set.onChange(function () { draw(); }); });
+    [root.MoonCore.vlines, root.MoonCore.hlines, root.MoonCore.departure, root.MoonCore.deadline].forEach(function (set) { set.onChange(function () { draw(); }); });
   }
 
   root.MoonLanding = { missions: MISSIONS, state: state, select: selectMission, setGroups: setGroups, bestGroupKey: bestGroupKey, groupAreaText: groupAreaText,

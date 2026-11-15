@@ -116,13 +116,22 @@
   // Fill regions of one series: area between the curve and the horizontal line y = h, only where the
   // curve is above h AND x >= v (right of the series' vertical line). Straight segments, linear crossings.
   // Returns polygons in data units: [[x, y], ...], each closed along y = h.
-  function fillRegions(points, h, v) {
+  // Optional `end` (deadline): the region also stops at x <= end.
+  function fillRegions(points, h, v, end) {
+    var stop = end === undefined || end === null ? Infinity : end;
+    if (stop <= v) return []; // deadline at or before the transit line: nothing to fill
     var pts = [];
+    function lerp(a, b, x) { return [x, a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0])]; }
     for (var i = 0; i < points.length; i++) {
       var p = points[i];
-      if (p[0] < v) continue;
       var prev = points[i - 1];
-      if (prev && prev[0] < v && p[0] > prev[0]) pts.push([v, prev[1] + ((p[1] - prev[1]) * (v - prev[0])) / (p[0] - prev[0])]);
+      if (p[0] < v) continue;
+      if (prev && prev[0] < v && p[0] > prev[0]) pts.push(lerp(prev, p, v));
+      if (p[0] > stop) {
+        // The last kept point lies on the same segment (prev..p), so interpolating from it is exact.
+        if (pts.length && pts[pts.length - 1][0] < stop) pts.push(lerp(pts[pts.length - 1], p, stop));
+        break;
+      }
       pts.push([p[0], p[1]]);
     }
     var polys = [];
@@ -175,6 +184,10 @@
     var departureParam = params.get('departure');
     api.departure = createVLines(ds.xRange[0], ds.xRange[1], xStep,
       [departureParam !== null && departureParam !== '' ? departureParam : ds.xRange[0]], 1);
+    // Deadline: one vertical line (default: end of the x axis); viable areas stop at it.
+    var deadlineParam = params.get('deadline');
+    api.deadline = createVLines(ds.xRange[0], ds.xRange[1], xStep,
+      [deadlineParam !== null && deadlineParam !== '' ? deadlineParam : ds.xRange[1]], 1);
     // Default travel-time lines are spread between the departure and the end of the x axis.
     api.vlines = createVLines(ds.xRange[0], ds.xRange[1], xStep, initialLines('transit', api.departure.list()[0].value, ds.xRange[1]), seriesCount);
     var travel = {}; // vline id -> travel time (x units)
@@ -211,7 +224,8 @@
     function pairFor(k) {
       var v = api.vlines.list()[k];
       var h = api.hlines.list()[0];
-      return v && h ? { h: h.value, v: v.value } : null;
+      var d = api.deadline.list()[0];
+      return v && h ? { h: h.value, v: v.value, end: d ? d.value : null } : null;
     }
 
     // Fills to draw now: [{seriesIndex, color, polygons}] — visible series, all or only the filtered one.
@@ -221,7 +235,7 @@
         .filter(function (s) { return (active === null || s.index === active) && api.isVisible(s.index) && pairFor(s.index); })
         .map(function (s) {
           var p = pairFor(s.index);
-          return { seriesIndex: s.index, color: s.color, polygons: fillRegions(s.points, p.h, p.v) };
+          return { seriesIndex: s.index, color: s.color, polygons: fillRegions(s.points, p.h, p.v, p.end) };
         });
     };
     api.fillRegions = fillRegions;
@@ -231,7 +245,7 @@
         .filter(function (s) { return api.vlineVisible(s.index) && pairFor(s.index); }) // legend + series filter
         .map(function (s) {
           var p = pairFor(s.index);
-          var area = fillRegions(s.points, p.h, p.v).reduce(function (sum, poly) { return sum + polygonArea(poly); }, 0);
+          var area = fillRegions(s.points, p.h, p.v, p.end).reduce(function (sum, poly) { return sum + polygonArea(poly); }, 0);
           return { label: 'V' + (s.index + 1), seriesIndex: s.index, name: s.name, color: s.color, area: area };
         });
     };

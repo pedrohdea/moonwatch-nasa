@@ -25,6 +25,7 @@ node tests/e2e.mjs   # W=390 node tests/e2e.mjs for phone width
 - Table equivalent to the chart right below it, with infinite scroll (50 rows at a time) inside its own box.
 - Transit time (draggable vertical lines): one per chart series (V1...Vn, in the color of series n), each with a small arrow ▼ on the top edge of the chart. Drag the arrow to move the line, type in the line chip, "×" removes it and "+ Transit time" adds it back (maximum = number of series). Positions in the URL (`?transit=`).
 - Departure: white vertical line with a draggable ▼ "Departure" and an input field (a date in the viability dataset; `?departure=`). Each transit time is measured from it: Vk = Departure + time k. Moving the Departure moves all transit-time lines together; the transit-time chips show the duration.
+- Deadline: orange vertical line with a draggable ▼ "Deadline" and a date field (`?deadline=`, default = end of the period). Viable areas and fills only count up to the deadline (from each Vk to the Deadline).
 - With a filtered series, "Transit time" and the area cards show only the chosen series.
 - Minimum viability: a single yellow horizontal line, shared by all series, with a ◀ arrow on the right edge of the chart to drag and an input field to type in. Value in the URL (`?threshold=`).
 - Transit time follows the legend: hiding a series hides its vertical line, its fill and its area card.
