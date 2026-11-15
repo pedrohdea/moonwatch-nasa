@@ -82,6 +82,26 @@
     '</article>';
   }
 
+  // Mission Definitions: simplified roadmap cards (image, title, one category chip, text).
+  var DEFINITIONS = [
+    { title: 'Objective', tag: 'Goal', img: TILE + '3/8.jpg', text: 'Help planners, educators, and the public compare landing sites and dates quickly and intuitively.' },
+    { title: 'Landing site', tag: 'Location', img: TILE + '4/7.jpg', text: 'Candidate location on the lunar surface, defined by selenographic latitude and longitude.' },
+    { title: 'Elevation', tag: 'Measurement', img: TILE + '3/5.jpg', text: 'Angle of the Sun or Earth above (positive) or below (negative) the local horizon, in degrees.' },
+    { title: 'Illumination window', tag: 'Window', img: TILE + '2/8.jpg', text: 'Period with the Sun above the local horizon: potential for solar power generation.' },
+    { title: 'Communication window', tag: 'Window', img: TILE + '4/8.jpg', text: 'Period with the Earth above the local horizon: direct-to-Earth (DTE) communication without a relay satellite.' },
+    { title: 'South Pole constraints', tag: 'Constraint', img: TILE + '7/8.jpg', text: 'The Sun and Earth stay low on the horizon, so small changes in date and location greatly change illumination and communication.' }
+  ];
+  function definitionCard(d) {
+    return '<article class="roadmap-card roadmap-card-simple">' +
+      '<div class="roadmap-img" style="background-image:url(' + d.img + ')" role="img" aria-label="NASA Moon Trek image"></div>' +
+      '<div class="roadmap-body">' +
+        '<h3>' + escapeHtml(d.title) + '</h3>' +
+        '<p class="roadmap-tags"><span class="chip chip-area">' + escapeHtml(d.tag) + '</span></p>' +
+        '<p>' + escapeHtml(d.text) + '</p>' +
+      '</div>' +
+    '</article>';
+  }
+
   doc.body.insertAdjacentHTML('afterbegin',
     '<header class="topbar">' +
       '<a class="brand" href="#home">Moon<span>Watch</span></a>' +
@@ -156,14 +176,7 @@
         '<div class="wrap">' +
           '<h2>Mission Definitions</h2>' +
           '<p class="hint">Concepts used to compare landing sites and dates at the lunar south pole.</p>' +
-          '<dl class="defs">' +
-            '<div><dt>Objective</dt><dd>Help planners, educators, and the public compare landing sites and dates quickly and intuitively.</dd></div>' +
-            '<div><dt>Landing site</dt><dd>Candidate location on the lunar surface, defined by selenographic latitude and longitude.</dd></div>' +
-            '<div><dt>Elevation</dt><dd>Angle of the Sun or Earth above (positive) or below (negative) the local horizon, in degrees.</dd></div>' +
-            '<div><dt>Illumination window</dt><dd>Period with the Sun above the local horizon: potential for solar power generation.</dd></div>' +
-            '<div><dt>Communication window</dt><dd>Period with the Earth above the local horizon: direct-to-Earth (DTE) communication without a relay satellite.</dd></div>' +
-            '<div><dt>South Pole constraints</dt><dd>The Sun and Earth stay low on the horizon, so small changes in date and location greatly change illumination and communication.</dd></div>' +
-          '</dl>' +
+          '<div class="roadmap-list">' + DEFINITIONS.map(definitionCard).join('') + '</div>' +
         '</div>' +
       '</section>' +
       '<section id="roadmap" class="about roadmap">' +
