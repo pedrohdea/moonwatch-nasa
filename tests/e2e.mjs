@@ -171,7 +171,7 @@ async function main() {
     await evaluate(`(()=>{const r=document.getElementById('chart').getBoundingClientRect();const bar=document.querySelector('.topbar').getBoundingClientRect().bottom;window.scrollTo({top:scrollY+r.top-bar-40,behavior:'instant'})})()`); await wait(300);
     const hBefore = await evaluate(`JSON.stringify(MoonCore.hlines.list())`);
     // A series filter shows only that series' travel-time line; drag that one (V of the filtered series).
-    check('filter shows only its travel-time line', (await evaluate(`[...document.querySelectorAll('#vlines-list .vline-chip')].filter(e=>!e.hidden).length`)) === 1);
+    check('filter shows only its travel-time line', (await evaluate(`[...document.querySelectorAll('#vlines-list .vline-chip')].filter(e=>getComputedStyle(e).display!=='none').length`)) === 1);
     const v1 = (await evaluate(`MoonCore.vlines.list()`))[first];
     const vTarget = v1.value - span * 0.15;
     const [vx, vtop] = await px(0, v1.value, d.yRange[1]);
@@ -210,7 +210,7 @@ async function main() {
       await evaluate(`(()=>{const r=document.getElementById('chart').getBoundingClientRect();const bar=document.querySelector('.topbar').getBoundingClientRect().bottom;window.scrollTo({top:scrollY+r.top-bar-10,behavior:'instant'})})()`); await wait(200);
       const pt = await evaluate(`(${LEGEND_TOGGLE[lib]})(0)`); if (pt) await click(pt[0], pt[1]); await wait(500);
     };
-    const shownChips = () => evaluate(`[...document.querySelectorAll('#vlines-list .vline-chip')].filter(e=>!e.hidden).length`);
+    const shownChips = () => evaluate(`[...document.querySelectorAll('#vlines-list .vline-chip')].filter(e=>getComputedStyle(e).display!=='none').length`);
     const cards = () => evaluate(`document.querySelectorAll('#fill-areas .fill-area').length`);
     await toggle();
     check('legend hide: series 0 reported hidden', (await evaluate(`MoonCore.isVisible(0)`)) === false);

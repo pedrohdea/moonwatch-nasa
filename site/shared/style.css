@@ -88,6 +88,7 @@ section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + a
   width: 72px; font: inherit; font-family: var(--font-mono); color: var(--white);
   background: transparent; border: 0; border-bottom: 1px solid var(--line); padding: 0 2px;
 }
+.vline-chip[hidden] { display: none; } /* author display:inline-flex would override the hidden attribute */
 .departure-bar .vline-chip input { width: 150px; } /* date input needs room for dd/mm/aaaa + picker */
 .vline-remove {
   width: 24px; height: 24px; border-radius: 50%; border: 0; cursor: pointer;
