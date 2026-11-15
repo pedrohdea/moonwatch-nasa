@@ -15,7 +15,7 @@
   --font-body: 'Overpass', system-ui, sans-serif;
   --font-mono: 'Fira Code', ui-monospace, monospace;
   --radius: 10px;
-  --topbar-h: 64px;
+  --topbar-h: 44px; /* compact fixed top bar (one row) */
   color-scheme: dark;
 }
 
@@ -36,29 +36,31 @@ h2 { font-weight: 700; font-size: clamp(28px, 4.5vw, 40px); }
 a { color: var(--blue-yonder); }
 a:hover { color: var(--neon-yellow); }
 :focus-visible { outline: 2px solid var(--neon-yellow); outline-offset: 2px; }
-section { scroll-margin-top: 112px; } /* sticky top bar: nav + library pills + accuracy pills */
+body { padding-top: var(--topbar-h); } /* room for the fixed top bar */
+section { scroll-margin-top: calc(var(--topbar-h) + 8px); }
 .wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
 
-/* Top bar */
+/* Top bar: one compact row, fixed to the top of the viewport */
 .topbar {
-  position: sticky; top: 0; z-index: 10;
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-  min-height: var(--topbar-h); padding: 8px 16px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  min-height: var(--topbar-h); padding: 4px 16px;
   background: rgba(7, 23, 63, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
 }
-.brand { font-family: var(--font-head); font-weight: 900; font-size: 22px; color: var(--white); text-decoration: none; }
+.brand { font-family: var(--font-head); font-weight: 900; font-size: 18px; color: var(--white); text-decoration: none; }
 .brand span { color: var(--neon-yellow); }
-.nav { display: flex; gap: 4px; }
-.nav a { color: var(--white); text-decoration: none; font-weight: 700; padding: 6px 10px; border-radius: 6px; }
+.nav { display: flex; gap: 2px; }
+.nav a { color: var(--white); text-decoration: none; font-weight: 700; font-size: 15px; padding: 4px 8px; border-radius: 6px; }
 .nav a:hover { color: var(--neon-yellow); }
 .variants { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap; }
 .variant {
   font-size: 14px; font-weight: 700; text-decoration: none; color: var(--text-muted);
   border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px;
 }
-.variants.viz { margin-left: 0; flex-basis: 100%; justify-content: flex-end; align-items: center; }
+.variants.viz { margin-left: auto; align-items: center; } /* same row as the nav */
+.topbar .variant { font-size: 13px; padding: 1px 10px; }
 .variants-label { font-size: 13px; color: var(--text-muted); font-weight: 700; margin-right: 2px; }
 .viz-info { color: var(--text-muted); font-size: 15px; max-width: 860px; margin: 8px 0 0; }
 .viz-info strong { color: var(--white); }
@@ -228,8 +230,10 @@ th.sortable:hover { color: var(--neon-yellow); }
 
 @media (max-width: 640px) {
   body { font-size: 16px; }
-  .variants { margin-left: 0; }
-  section { scroll-margin-top: 170px; } /* top bar wraps to three rows */
+  .topbar { gap: 2px 8px; padding: 4px 10px; }
+  .nav a { font-size: 14px; padding: 3px 6px; }
+  .variants.viz { margin-left: 0; }
+  .variants-label { display: none; } /* phones: pills alone, keeps the bar to two rows */
   .hero { padding: 56px 0 48px; }
   .track, .mission, .landing, .about { padding: 48px 0; }
 }

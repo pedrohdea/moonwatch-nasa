@@ -154,6 +154,13 @@
     '<footer class="footer"><div class="wrap">MoonWatch · Myr Battlesphere · chart by ' + lib + '</div></footer>'
   );
 
+  // Fixed top bar: reserve exactly its height (it wraps on narrow screens) for the body and anchor offsets.
+  var topbar = doc.querySelector('.topbar');
+  function syncTopbar() { doc.documentElement.style.setProperty('--topbar-h', topbar.offsetHeight + 'px'); }
+  syncTopbar();
+  root.addEventListener('resize', syncTopbar);
+  if (root.document.fonts && root.document.fonts.ready) root.document.fonts.ready.then(syncTopbar); // web fonts change its width
+
   // Modes drawn only on focused series tell the user to pick one when nothing is focused.
   var hint = doc.getElementById('viz-hint');
   function updateHint(index) {
