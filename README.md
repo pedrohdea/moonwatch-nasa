@@ -4,6 +4,12 @@ Project MoonWatch - from Space Apps Challenge - by Myr Battlesphere Team
 About the Team
 https://www.spaceappschallenge.org/2026/find-a-team/myr_battlesphere/
 
+## Pitch video
+
+[![MoonWatch pitch (30 s)](docs/media/MoonWatchPitch30.jpg)](docs/media/MoonWatchPitch30.mp4)
+
+30-second presentation: [`docs/media/MoonWatchPitch30.mp4`](docs/media/MoonWatchPitch30.mp4) (click the image to open the video).
+
 NASA’s Commercial Lunar Payload Services (CLPS) program and other lunar missions depend on careful selection of landing sites and dates that balance the needs of both science and engineering teams. One of the most significant challenges in this process is understanding the local lighting and communication environment at a potential landing site. 
 
 ## Run locally
